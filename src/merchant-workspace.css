@@ -754,3 +754,20 @@
   border-color: var(--bippo-primary);
   color: #fff;
 }
+.merchant-guest-name {
+  display: block;
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: var(--bippo-text);
+  overflow-wrap: anywhere;
+}
+.merchant-entry {
+  flex-wrap: wrap;
+}
+.merchant-entry label {
+  min-width: 140px;
+}
+.merchant-entry .merchant-guest-field {
+  flex: 1.4;
+  min-width: 180px;
+}

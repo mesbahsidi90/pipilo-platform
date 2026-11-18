@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { active, normalizeNumber, validTransition } from '../src/domain.js';
+import { active, cleanGuestName, normalizeNumber, validTransition } from '../src/domain.js';
 test('Arabic numerals and leading zeroes normalize to the same active identifier', () => {
   assert.equal(normalizeNumber(' ٠١٠٢ '), '102');
   assert.equal(normalizeNumber('0102'), '102');
@@ -26,4 +26,11 @@ test('cancelled orders leave the active queue and can return only to preparation
   assert.equal(active({ status: 'collected' }), false);
   assert.equal(active({ status: 'preparing' }), true);
   assert.equal(active({ status: 'ready' }), true);
+});
+
+test('guest names are trimmed, single-spaced and capped at 40 characters', () => {
+  assert.equal(cleanGuestName('  Karim   B. '), 'Karim B.');
+  assert.equal(cleanGuestName('   '), null);
+  assert.equal(cleanGuestName(null), null);
+  assert.equal(cleanGuestName('ك'.repeat(50)).length, 40);
 });

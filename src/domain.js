@@ -20,3 +20,16 @@ export function validTransition(from, to) {
   );
 }
 export const active = (o) => o.status === 'preparing' || o.status === 'ready';
+
+// Optional customer name typed by staff: trimmed, single spaces, at most 40
+// characters; empty means no name.
+export function cleanGuestName(value) {
+  const name = Array.from(
+    String(value ?? '')
+      .replace(/\s+/g, ' ')
+      .trim(),
+  )
+    .slice(0, 40)
+    .join('');
+  return name || null;
+}

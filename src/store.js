@@ -1,6 +1,6 @@
 import { t as bippoT } from './i18n.js';
 import { createClient } from '@supabase/supabase-js';
-import { normalizeNumber, validTransition, active } from './domain';
+import { normalizeNumber, validTransition, active, cleanGuestName } from './domain';
 import { branchFetch } from './merchantBranches';
 const url = import.meta.env.VITE_SUPABASE_URL;
 const key = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY;
@@ -53,8 +53,12 @@ export async function listOrders() {
 export const counterScanRequired = () =>
   bippoT('خلّي الزبون يمسح QR الثابت للطلب الحالي، أو ألغيه إذا الزبون ما راحش يمسح.');
 
-export async function createOrder(value, { fixedCounter = false, invoiceRequestKey = null } = {}) {
+export async function createOrder(
+  value,
+  { fixedCounter = false, invoiceRequestKey = null, guestName = null } = {},
+) {
   const number = normalizeNumber(value);
+  const guest_name = cleanGuestName(guestName);
   if (!cloud) {
     const rows = read();
     if (invoiceRequestKey) {
@@ -96,6 +100,7 @@ export async function createOrder(value, { fixedCounter = false, invoiceRequestK
       number,
       status: 'preparing',
       counter_pending: fixedCounter,
+      ...(guest_name && { guest_name }),
       ...(invoiceRequestKey && { invoice_request_key: invoiceRequestKey }),
       created_at: new Date().toISOString(),
     };
@@ -106,6 +111,7 @@ export async function createOrder(value, { fixedCounter = false, invoiceRequestK
     .from('orders')
     .insert({
       number,
+      ...(guest_name && { guest_name }),
     })
     .select()
     .single();

@@ -66,6 +66,7 @@ export default function Orders({ Share, workspace }) {
   const [orders, setOrders] = useState(null),
     [error, setError] = useState(''),
     [number, setNumber] = useState(''),
+    [guestName, setGuestName] = useState(''),
     [notice, setNotice] = useState(''),
     [busy, setBusy] = useState(false),
     [selected, setSelected] = useState(null),
@@ -342,9 +343,10 @@ export default function Orders({ Share, workspace }) {
     setBusy(true);
     setNotice('');
     try {
-      const order = await createOrder(number, { fixedCounter });
+      const order = await createOrder(number, { fixedCounter, guestName });
       setSelected(order);
       setNumber('');
+      setGuestName('');
       setNotice(bippoT('تزاد الطلب ') + order.number);
     } catch (e) {
       setNotice(e.message);
@@ -359,6 +361,7 @@ export default function Orders({ Share, workspace }) {
         <div className="merchant-order-info">
           <DotNumber value={order.number} />
           <div>
+            {order.guest_name && <b className="merchant-guest-name">{order.guest_name}</b>}
             <time dateTime={order.created_at}>
               {new Date(order.created_at).toLocaleString(bippoLocale, {
                 day: '2-digit',
@@ -677,6 +680,9 @@ export default function Orders({ Share, workspace }) {
                         <article className="merchant-order" key={order.id}>
                           <div className="merchant-order-info">
                             <DotNumber value={order.number} />
+                            {order.guest_name && (
+                              <b className="merchant-guest-name">{order.guest_name}</b>
+                            )}
                           </div>
                           {status === 'preparing' ? (
                             <button
@@ -815,6 +821,17 @@ export default function Orders({ Share, workspace }) {
                     value={number}
                     onChange={(e) => setNumber(e.target.value)}
                     required
+                  />
+                </label>
+                <label className="merchant-guest-field">
+                  {bippoT('اسم الزبون (اختياري)')}
+                  <input
+                    id="merchant-guest-name"
+                    placeholder={bippoT('مثلًا كريم')}
+                    maxLength={40}
+                    autoComplete="off"
+                    value={guestName}
+                    onChange={(e) => setGuestName(e.target.value)}
                   />
                 </label>
                 <button

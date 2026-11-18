@@ -1293,5 +1293,7 @@
   "من 5 · {0} تقييم": "sur 5 · {0} notes",
   "مازال ما كاش طلبات جاهزة في هذي الفترة.": "Aucune commande prête sur cette période.",
   "الصفحة مفتوحة فقط": "Page ouverte uniquement",
-  "من الزبائن شافو طلبهم جاهز ولا قالو «راني جاي»": "des clients ont vu leur commande prête ou ont répondu « J’arrive »"
+  "من الزبائن شافو طلبهم جاهز ولا قالو «راني جاي»": "des clients ont vu leur commande prête ou ont répondu « J’arrive »",
+  "اسم الزبون (اختياري)": "Nom du client (facultatif)",
+  "مثلًا كريم": "ex. Karim"
 }

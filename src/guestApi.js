@@ -1,5 +1,6 @@
 import { cloud, db, track } from './store';
 import { getSettings } from './shopSettings';
+import { demoOnlineDetails } from './ordering';
 const key = 'bippo-guest-signals';
 const feedbackKey = 'bipilo-demo-order-feedback';
 const ratingsKey = 'bipilo-demo-order-ratings';
@@ -51,6 +52,10 @@ export async function guestExtras(ticket) {
         o.status === 'collected' && Boolean(settings.private_feedback_enabled),
       feedback_sent: Boolean(readFeedback()[o.id]),
       rating: readRatings()[o.id]?.stars || null,
+      online: (() => {
+        const online = demoOnlineDetails(o.id);
+        return online && { ...online, currency: settings.menu_currency || 'DZD' };
+      })(),
     };
   }
   const { data, error } = await db.rpc('guest_order_extras', { ticket });

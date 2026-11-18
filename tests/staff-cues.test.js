@@ -50,3 +50,16 @@ test('collected and preparing orders are ignored', () => {
   const result = staffCues({ coming: new Set(), unreached: new Set() }, orders, now);
   assert.deepEqual([result.coming, result.unreached], [[], []]);
 });
+
+test('rings once for a new phone order waiting to be accepted', () => {
+  const before = [];
+  const first = staffCues(null, before, now);
+  const after = [
+    { id: 'p', number: '12', status: 'preparing', order_mode: 'table', accepted_at: null },
+  ];
+  const second = staffCues(first.state, after, now);
+  assert.deepEqual(second.incoming, ['12']);
+  assert.deepEqual(staffCues(second.state, after, now).incoming, []);
+  const accepted = [{ ...after[0], accepted_at: 'x' }];
+  assert.deepEqual(staffCues(second.state, accepted, now).incoming, []);
+});

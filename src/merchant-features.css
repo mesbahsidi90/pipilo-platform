@@ -206,3 +206,27 @@
     flex-wrap: wrap;
   }
 }
+.feature-modes {
+  margin: 0;
+  padding: 0;
+  border: 0;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 18px;
+}
+.feature-modes legend {
+  width: 100%;
+  margin-bottom: 6px;
+  font-size: 0.9rem;
+  color: var(--bippo-muted);
+}
+.feature-modes label {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 40px;
+}
+.feature-card small.hint {
+  color: var(--bippo-muted);
+  line-height: 1.7;
+}

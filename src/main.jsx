@@ -59,6 +59,7 @@ import { readRoute, dashboardDestination } from './routes';
 import LoyaltyCard from './LoyaltyCard';
 import MenuView from './MenuView';
 import { ticketMenu } from './menu';
+import { OnlineOrderSummary } from './OrderCheckout';
 const MenuPage = lazy(() => import('./MenuPage'));
 import { loyaltyCard } from './loyalty';
 const route = readRoute(location);
@@ -553,6 +554,7 @@ function Customer({ token }) {
       error={error || (!o && last ? bippoT('راجع موظف المحل باش يعطيك رابط الطلب.') : '')}
       loyalty={
         <>
+          <OnlineOrderSummary online={o?.online} status={o?.status} />
           <LoyaltyCard card={card} />
           {hasMenu && (
             <details className="pager-menu">

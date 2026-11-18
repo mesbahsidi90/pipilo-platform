@@ -65,6 +65,8 @@ import { createOrderAudio } from './orderAudio';
 import { toneSource } from './alertTones';
 import { branchLoyalty, redeemLoyalty } from './loyalty';
 import MerchantFeatures from './MerchantFeatures';
+import OnlineOrderInfo from './OnlineOrderInfo';
+import { acceptOnlineOrder } from './ordering';
 import './loyalty-card.css';
 import './guest-experience.css';
 export default function Orders({ Share, workspace }) {
@@ -176,6 +178,7 @@ export default function Orders({ Share, workspace }) {
     cueState.current = result.state;
     if (!staffSound) return;
     const messages = [
+      ...result.incoming.map((n) => bippoT('طلب جديد من التليفون: {0}. اقبلو باش تبدا.', [n])),
       ...result.coming.map((n) => bippoT('الزبون {0} راه جاي.', [n])),
       ...result.unreached.map((n) => bippoT('الطلب {0} جاهز والزبون ما شافوش بعد. ناديلو.', [n])),
     ];
@@ -197,6 +200,21 @@ export default function Orders({ Share, workspace }) {
       setStaffSound(true);
     } catch {
       setNotice(bippoT('تعذر تشغيل الصوت. عاود المحاولة.'));
+    }
+  }
+
+  async function accept(order) {
+    setBusy(true);
+    try {
+      await acceptOnlineOrder(order.id);
+      setOrders((list) =>
+        list?.map((o) => (o.id === order.id ? { ...o, accepted_at: new Date().toISOString() } : o)),
+      );
+      setNotice(bippoT('قبلت الطلب {0}. حضّرو وعلّمو «جاهز».', [order.number]));
+    } catch (e) {
+      setNotice(e.message);
+    } finally {
+      setBusy(false);
     }
   }
 
@@ -404,6 +422,7 @@ export default function Orders({ Share, workspace }) {
             </time>
             <GuestStatus order={order} unavailable={signalsUnavailable} />
             {order.counter_pending && <small>{bippoT('يستنّى مسح QR')}</small>}
+            <OnlineOrderInfo order={order} currency={shop?.menu_currency} />
             {order.loyalty?.redeemed ? (
               <span className="merchant-loyalty done">
                 <Gift size={15} aria-hidden="true" />
@@ -458,17 +477,29 @@ export default function Orders({ Share, workspace }) {
               >
                 <ScanLine size={19} />
               </button>
-              <button
-                type="button"
-                className="button small"
-                disabled={busy || order.counter_pending}
-                onClick={() => mark(order, order.status === 'preparing' ? 'ready' : 'collected')}
-              >
-                {activity.clinic
-                  ? bippoT(order.status === 'preparing' ? 'نادِ' : 'دخل المريض')
-                  : bippoT(order.status === 'preparing' ? 'جاهز' : 'تسلّم الطلب')}
-                <Check size={15} />
-              </button>
+              {order.order_mode && !order.accepted_at && order.status === 'preparing' ? (
+                <button
+                  type="button"
+                  className="button small"
+                  disabled={busy}
+                  onClick={() => accept(order)}
+                >
+                  {bippoT('قبول')}
+                  <Check size={15} />
+                </button>
+              ) : (
+                <button
+                  type="button"
+                  className="button small"
+                  disabled={busy || order.counter_pending}
+                  onClick={() => mark(order, order.status === 'preparing' ? 'ready' : 'collected')}
+                >
+                  {activity.clinic
+                    ? bippoT(order.status === 'preparing' ? 'نادِ' : 'دخل المريض')
+                    : bippoT(order.status === 'preparing' ? 'جاهز' : 'تسلّم الطلب')}
+                  <Check size={15} />
+                </button>
+              )}
               {order.status === 'ready' && cloud && (
                 <button
                   type="button"
@@ -746,8 +777,19 @@ export default function Orders({ Share, workspace }) {
                             {order.guest_name && (
                               <b className="merchant-guest-name">{order.guest_name}</b>
                             )}
+                            <OnlineOrderInfo order={order} currency={shop?.menu_currency} />
                           </div>
-                          {status === 'preparing' ? (
+                          {status === 'preparing' && order.order_mode && !order.accepted_at ? (
+                            <button
+                              type="button"
+                              className="button"
+                              disabled={busy}
+                              onClick={() => accept(order)}
+                            >
+                              <Check size={18} />
+                              {bippoT('قبول')}
+                            </button>
+                          ) : status === 'preparing' ? (
                             <button
                               type="button"
                               className="button"

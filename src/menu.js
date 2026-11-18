@@ -145,6 +145,9 @@ async function demoPublicMenu(extra = {}) {
   return {
     name: settings.name,
     currency: settings.menu_currency || 'DZD',
+    ordering: settings.ordering_enabled
+      ? { modes: settings.ordering_modes?.length ? settings.ordering_modes : ['pickup'] }
+      : null,
     sections: nest(state.sections, state.items),
     ...extra,
   };

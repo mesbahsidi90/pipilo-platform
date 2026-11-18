@@ -172,6 +172,72 @@ export default function MerchantFeatures({ paid = null, onOpen, onSaved }) {
       </FeatureCard>
 
       <FeatureCard
+        icon={Smartphone}
+        title={bippoT('الطلب من التليفون')}
+        pro
+        status={
+          <Status
+            on={settings.ordering_enabled}
+            label={settings.ordering_enabled ? bippoT('مفعّل') : bippoT('موقف')}
+          />
+        }
+        control={
+          <Switch
+            label={bippoT('فعّل الطلب من التليفون')}
+            checked={Boolean(settings.ordering_enabled)}
+            disabled={
+              locked ||
+              busy === 'ordering' ||
+              (!settings.menu_enabled && !settings.ordering_enabled)
+            }
+            onChange={(on) => save('ordering', { ordering_enabled: on })}
+          />
+        }
+      >
+        <p>
+          {bippoT(
+            'الزبون يختار من المنيو ولا يكتب طلبو ويبعثو من تليفونو. توصلك في «الطلبات»، تقبلها، وتخلّصو كي يستلم.',
+          )}
+        </p>
+        {!settings.menu_enabled && (
+          <small className="feature-plan">{bippoT('فعّل المنيو الإلكتروني أولًا.')}</small>
+        )}
+        <fieldset className="feature-modes">
+          <legend>{bippoT('طرق الاستلام')}</legend>
+          {[
+            ['pickup', 'استلام من المحل'],
+            ['table', 'على الطاولة'],
+            ['car', 'في الطوموبيل'],
+          ].map(([key, label]) => {
+            const modes = settings.ordering_modes?.length ? settings.ordering_modes : ['pickup'];
+            const on = modes.includes(key);
+            return (
+              <label key={key}>
+                <input
+                  type="checkbox"
+                  checked={on}
+                  disabled={locked || busy === 'ordering' || (on && modes.length === 1)}
+                  onChange={(e) =>
+                    save('ordering', {
+                      ordering_modes: e.target.checked
+                        ? [...modes, key]
+                        : modes.filter((m) => m !== key),
+                    })
+                  }
+                />
+                {bippoT(label)}
+              </label>
+            );
+          })}
+        </fieldset>
+        <small className="hint">
+          {bippoT('الزبون يطلب من رابط المنيو. لكود كل طاولة زيد في آخر الرابط:')}{' '}
+          <code dir="ltr">?mode=table&amp;table=5</code>
+        </small>
+        {upgrade && <div className="feature-actions">{upgrade}</div>}
+      </FeatureCard>
+
+      <FeatureCard
         icon={Gift}
         title={bippoT('بطاقة الولاء')}
         pro
@@ -408,15 +474,6 @@ export default function MerchantFeatures({ paid = null, onOpen, onSaved }) {
             {bippoT('افتح الفروع والأكواد')}
           </button>
         </div>
-      </FeatureCard>
-
-      <h2 className="feature-soon-title">{bippoT('قريبًا')}</h2>
-      <FeatureCard
-        icon={Smartphone}
-        title={bippoT('الطلب من التليفون')}
-        status={<Status label={bippoT('قريبًا')} />}
-      >
-        <p>{bippoT('الزبون يطلب من تليفونو: يستلم من المحل، من الطاولة ولا من الطوموبيل.')}</p>
       </FeatureCard>
     </section>
   );

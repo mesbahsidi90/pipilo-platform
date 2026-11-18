@@ -27,6 +27,8 @@ export const defaults = {
   loyalty_reward_fr: '',
   menu_enabled: false,
   menu_currency: 'DZD',
+  ordering_enabled: false,
+  ordering_modes: ['pickup'],
 };
 export async function getSettings() {
   if (!cloud)
@@ -88,6 +90,12 @@ export async function saveSettings(value) {
     ...(typeof value.menu_enabled === 'boolean' && { menu_enabled: value.menu_enabled }),
     ...(['DZD', 'EUR', 'USD', 'MAD', 'TND'].includes(value.menu_currency) && {
       menu_currency: value.menu_currency,
+    }),
+    ...(typeof value.ordering_enabled === 'boolean' && {
+      ordering_enabled: value.ordering_enabled,
+    }),
+    ...(Array.isArray(value.ordering_modes) && {
+      ordering_modes: ['pickup', 'table', 'car'].filter((m) => value.ordering_modes.includes(m)),
     }),
     waiting_mode: value.waiting_mode,
     tracking_mode: ['counter', 'invoice'].includes(value.tracking_mode)

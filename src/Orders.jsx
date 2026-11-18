@@ -3,6 +3,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import {
   Plus,
   Gift,
+  LayoutGrid,
   Volume2,
   VolumeX,
   Hash,
@@ -63,6 +64,7 @@ import { nextOrderNumber } from './orderNumbers';
 import { createOrderAudio } from './orderAudio';
 import { toneSource } from './alertTones';
 import { branchLoyalty, redeemLoyalty } from './loyalty';
+import MerchantFeatures from './MerchantFeatures';
 import './loyalty-card.css';
 import './guest-experience.css';
 export default function Orders({ Share, workspace }) {
@@ -337,6 +339,7 @@ export default function Orders({ Share, workspace }) {
           : bippoT('التيكيات'),
       List,
     ],
+    ...(!workspaceData?.staff ? [['features', bippoT('المزايا'), LayoutGrid]] : []),
     ['reports', bippoT('التحليلات'), BarChart3],
     ...(!cloud ||
     (workspaceData?.manager && paidPlan?.branch === shop?.shop_id && paidPlan?.enabled)
@@ -635,6 +638,14 @@ export default function Orders({ Share, workspace }) {
         )}
         {tab === 'team' && <MerchantTeam workspace={workspaceData} refresh={refreshWorkspace} />}
         {tab === 'feedback' && activeTab && <MerchantFeedback key={shop?.shop_id} />}
+        {tab === 'features' && managerActions && (
+          <MerchantFeatures
+            key={shop?.shop_id}
+            paid={paidPlan && shop && paidPlan.branch === shop.shop_id ? paidPlan.enabled : null}
+            onOpen={setTab}
+            onSaved={setShop}
+          />
+        )}
         {tab === 'reports' &&
           (freeBranch ? (
             <div className="panel">

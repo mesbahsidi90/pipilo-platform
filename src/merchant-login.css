@@ -27,3 +27,16 @@
 .merchant-login-links { display: flex; justify-content: space-between; flex-wrap: wrap; gap: 8px 16px; margin-top: 16px; font-size: .88rem; }
 .merchant-login-links a { color: var(--bippo-primary-deep); text-decoration: underline; text-underline-offset: 3px; }
 .merchant-login .error { margin: 0; }
+
+/* Sign-in method switch and WhatsApp code steps (login + signup). */
+.signin-method { display: grid; grid-template-columns: 1fr 1fr; gap: 4px; padding: 4px; margin: 6px 0 14px; border: 1px solid var(--bippo-border); border-radius: 12px; background: var(--bippo-bg); }
+.signin-method button { display: inline-flex; align-items: center; justify-content: center; gap: 7px; min-height: 40px; border: 0; border-radius: 9px; background: transparent; color: var(--bippo-muted); font: inherit; font-size: .92rem; cursor: pointer; }
+.signin-method button.active { background: #fff; color: var(--bippo-primary-deep); font-weight: 600; box-shadow: 0 1px 3px rgb(0 0 0 / 8%); }
+.signin-method button:focus-visible { outline: 2px solid var(--bippo-primary); outline-offset: 1px; }
+.whatsapp-code { display: grid; gap: 14px; }
+.whatsapp-code label { display: grid; gap: 4px; color: var(--bippo-muted); font-size: .93rem; }
+.whatsapp-code input[name="code"] { letter-spacing: .4em; font-size: 1.25rem; text-align: center; }
+.whatsapp-code-sent { margin: 0; color: var(--bippo-text); font-size: .93rem; }
+.whatsapp-code-actions { display: flex; justify-content: space-between; flex-wrap: wrap; gap: 8px 16px; }
+.whatsapp-code-actions .link { padding: 4px 0; border: 0; background: none; color: var(--bippo-primary-deep); font: inherit; font-size: .88rem; text-decoration: underline; text-underline-offset: 3px; cursor: pointer; }
+.whatsapp-code-actions .link:disabled { color: var(--bippo-muted); text-decoration: none; cursor: default; }

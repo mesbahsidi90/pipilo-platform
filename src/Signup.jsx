@@ -7,6 +7,9 @@ import Brand from './Brand';
 import { Hourglass, MoveUpRight, Printer, Tablet } from 'lucide-react';
 import { shopActivity, shopTypes } from './shopActivities';
 import { cloud, db } from './store';
+import WhatsAppCode from './WhatsAppCode';
+import SignInMethod from './SignInMethod';
+
 export default function Signup({ initialKind = 'cafe' }) {
   const [shop, setShop] = useState(''),
     [kind, setKind] = useState(initialKind),
@@ -19,7 +22,8 @@ export default function Signup({ initialKind = 'cafe' }) {
     [session, setSession] = useState(null),
     [loading, setLoading] = useState(cloud),
     [busy, setBusy] = useState(false),
-    [error, setError] = useState('');
+    [error, setError] = useState(''),
+    [method, setMethod] = useState('whatsapp');
   const activity = shopActivity(kind);
   const flexible = activity.foodService || kind === 'other';
   const waiting = activity.clinic ? 'onsite' : waitChoice || (flexible ? 'onsite' : 'return');
@@ -52,6 +56,10 @@ export default function Signup({ initialKind = 'cafe' }) {
   async function submit(e) {
     e.preventDefault();
     setError('');
+    if (!session && method === 'whatsapp') {
+      setError(bippoT('أكّد رقم الهاتف بالكود اللي وصلك في واتساب.'));
+      return;
+    }
     if (!session && password !== confirm) {
       setError(bippoT('كلمتا المرور ماشي كيف كيف.'));
       return;
@@ -224,7 +232,11 @@ export default function Signup({ initialKind = 'cafe' }) {
             ))}
           </select>
         </label>
-        {!session && (
+        {!session && cloud && <SignInMethod value={method} onChange={setMethod} />}
+        {!session && cloud && method === 'whatsapp' && (
+          <WhatsAppCode onVerified={(active) => setSession(active)} />
+        )}
+        {!session && (!cloud || method === 'email') && (
           <>
             <label>
               {bippoT('البريد الإلكتروني')}
@@ -268,12 +280,20 @@ export default function Signup({ initialKind = 'cafe' }) {
             {error}
           </p>
         )}
-        <button className="button full" disabled={busy || loading}>
+        <button
+          className="button full"
+          disabled={busy || loading || (cloud && !session && method === 'whatsapp')}
+        >
           {busy ? bippoT('نوجدو حسابك…') : bippoT('جهّز المحل')}
         </button>
+        {session && cloud && method === 'whatsapp' && (
+          <p className="whatsapp-code-sent">{bippoT('تأكّد رقمك ✓ كمّل وجهّز المحل.')}</p>
+        )}
         <small>
           {cloud
-            ? bippoT('الدخول مباشرة، بلا رسالة تأكيد للبريد.')
+            ? method === 'whatsapp'
+              ? bippoT('تدخل بعدها برقمك وكود واتساب، بلا كلمة مرور.')
+              : bippoT('الدخول مباشرة، بلا رسالة تأكيد للبريد.')
             : bippoT('وضع تجريبي: ما يتنشأش حساب حقيقي.')}
         </small>
         <a className="recovery-back" href="/login">

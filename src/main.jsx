@@ -78,6 +78,8 @@ import { ticketMenu } from './menu';
 import { OnlineOrderSummary } from './OrderCheckout';
 const MenuPage = lazy(() => import('./MenuPage'));
 import { loyaltyCard } from './loyalty';
+import WhatsAppCode from './WhatsAppCode';
+import SignInMethod from './SignInMethod';
 const route = readRoute(location);
 if (
   route[0] === 'home' &&
@@ -260,6 +262,7 @@ function Login() {
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const [busy, setBusy] = useState(false);
+  const [method, setMethod] = useState('whatsapp');
 
   async function submit(event) {
     event.preventDefault();
@@ -281,42 +284,57 @@ function Login() {
       <div className="merchant-login-content">
         <Brand />
         <h1>{bippoT('أهلًا بعودتك')}</h1>
-        <p>{bippoT('ادخل بالبريد الإلكتروني وكلمة المرور تاع حسابك.')}</p>
-        <form onSubmit={submit} aria-busy={busy}>
-          <label>
-            {bippoT('البريد الإلكتروني')}
-            <input
-              type="email"
-              name="email"
-              dir="ltr"
-              autoComplete="username"
-              placeholder="nom@exemple.com"
-              value={email}
-              required
-              onChange={(e) => setEmail(e.target.value)}
+        <SignInMethod value={method} onChange={setMethod} />
+        {method === 'whatsapp' ? (
+          <>
+            <p>{bippoT('ادخل برقم الهاتف تاع حسابك، نبعثولك كود في واتساب.')}</p>
+            <WhatsAppCode
+              existingOnly
+              onVerified={() => {
+                rememberBranch(null);
+              }}
             />
-          </label>
-          <label>
-            {bippoT('كلمة المرور')}
-            <input
-              type="password"
-              name="password"
-              dir="ltr"
-              autoComplete="current-password"
-              value={password}
-              required
-              onChange={(e) => setPassword(e.target.value)}
-            />
-          </label>
-          {error && (
-            <p role="alert" className="error">
-              {error}
-            </p>
-          )}
-          <button className="button" disabled={busy || !email.trim() || !password}>
-            {busy ? bippoT('جارٍ الاتصال…') : bippoT('دخول')}
-          </button>
-        </form>
+          </>
+        ) : (
+          <>
+            <p>{bippoT('ادخل بالبريد الإلكتروني وكلمة المرور تاع حسابك.')}</p>
+            <form onSubmit={submit} aria-busy={busy}>
+              <label>
+                {bippoT('البريد الإلكتروني')}
+                <input
+                  type="email"
+                  name="email"
+                  dir="ltr"
+                  autoComplete="username"
+                  placeholder="nom@exemple.com"
+                  value={email}
+                  required
+                  onChange={(e) => setEmail(e.target.value)}
+                />
+              </label>
+              <label>
+                {bippoT('كلمة المرور')}
+                <input
+                  type="password"
+                  name="password"
+                  dir="ltr"
+                  autoComplete="current-password"
+                  value={password}
+                  required
+                  onChange={(e) => setPassword(e.target.value)}
+                />
+              </label>
+              {error && (
+                <p role="alert" className="error">
+                  {error}
+                </p>
+              )}
+              <button className="button" disabled={busy || !email.trim() || !password}>
+                {busy ? bippoT('جارٍ الاتصال…') : bippoT('دخول')}
+              </button>
+            </form>
+          </>
+        )}
         <div className="merchant-login-links">
           <a href="/forgot-password">{bippoT('نسيت كلمة المرور؟')}</a>
           <a href="/signup">{bippoT('إنشاء حساب')}</a>

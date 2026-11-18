@@ -226,7 +226,7 @@ export default function LiveDemo() {
               ) : data?.sound_at ? (
                 bippoT('جلسة الصوت جاهزة. فعّل إشعار الخلفية أيضًا.')
               ) : (
-                bippoT('فعّل التنبيه من صفحة الهاتف قبل ما ترنّ.')
+                bippoT('فعّل التنبيه من صفحة الهاتف قبل ما يصوني.')
               )}
             </div>
             <div className="demo-control-row">

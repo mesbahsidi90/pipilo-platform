@@ -134,11 +134,11 @@ export function CallboardHero({ onTry }) {
           <h1>
             {bippoT('تليفون زبونك')}
             <br />
-            <em>{bippoT('هو البيجر.')}</em>
+            <em>{bippoT('هو الـ bipeur.')}</em>
           </h1>
           <p>
             {bippoT(
-              'يمسح الكود، يقعد على راحتو، وتليفونو يرنّ كي يوجد طلبو. بلا تطبيق، بلا حساب، وبلا أجهزة نداء.',
+              'يمسح الكود، يقعد على راحتو، وتليفونو يصوني كي يوجد طلبو. بلا تطبيق، بلا حساب، وبلا bipeur.',
             )}
           </p>
           <div className="callboard-actions">
@@ -146,7 +146,7 @@ export function CallboardHero({ onTry }) {
               {bippoT('ابدا مجانًا')}
             </a>
             <a className="callboard-secondary" href="#try" onClick={onTry}>
-              {bippoT('جرّب الرنّة على تليفونك ')}
+              {bippoT('جرّب كيفاش يصوني تليفونك ')}
               <ArrowLeft size={17} />
             </a>
           </div>
@@ -161,7 +161,7 @@ export function CallboardHero({ onTry }) {
             </li>
             <li>
               <b>0</b>
-              {bippoT('جهاز بيجر')}
+              {bippoT('bipeur')}
             </li>
           </ul>
         </div>
@@ -169,7 +169,7 @@ export function CallboardHero({ onTry }) {
       </div>
       <p className="callboard-footnote">
         {bippoT(
-          '* الرنّة والشاشة مقفولة تحتاج جهاز يدعمها وإذن الإشعارات. على iPhone زيد الصفحة للشاشة الرئيسية.',
+          '* باش يصوني والشاشة مقفولة، يلزم جهاز يدعمها وإذن الإشعارات. على iPhone زيد الصفحة للشاشة الرئيسية.',
         )}
       </p>
     </section>
@@ -187,8 +187,10 @@ const moments = [
   {
     glyph: 'bell',
     tone: 'apricot',
-    title: bippoT('ترنّ كي يوجد'),
-    text: bippoT('تضغط «جاهز» وتليفون الزبون يرنّ ويهتز، حتى والشاشة مقفولة على الأجهزة المدعومة.'),
+    title: bippoT('يصوني كي يوجد'),
+    text: bippoT(
+      'تضغط «جاهز» وتليفون الزبون يصوني ويهتز، حتى والشاشة مقفولة على الأجهزة المدعومة.',
+    ),
     tag: bippoT('في كل الباقات'),
   },
   {

@@ -106,7 +106,7 @@ function Guide() {
           <p>{bippoT('كل واش تحتاج: متصفح عند الكاشير، إنترنت وهاتف الزبون.')}</p>
           <div>
             <Check size={17} />
-            {bippoT(' بلا أجهزة نداء')}
+            {bippoT(' بلا bipeur')}
           </div>
           <div>
             <Check size={17} />

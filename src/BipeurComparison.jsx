@@ -57,13 +57,13 @@ export default function BipeurComparison() {
       <section className="wrap comparison-table-section">
         <div className="comparison-table-scroll">
           <table className="comparison-table">
-            <caption>{bippoT('Bipilo ولا أجهزة نداء الزبائن؟')}</caption>
+            <caption>{bippoT('Bipilo ولا الـ bipeur؟')}</caption>
             <thead>
               <tr>
                 <th scope="col">
                   <span className="comparison-sr-only">{bippoT('وجه المقارنة')}</span>
                 </th>
-                <th scope="col">{bippoT('أجهزة النداء (Bipeur)')}</th>
+                <th scope="col">{bippoT('الـ bipeur')}</th>
                 <th scope="col" className="comparison-bippo">
                   Bipilo
                 </th>
@@ -82,7 +82,7 @@ export default function BipeurComparison() {
         </div>
         <p className="comparison-footnote">
           {bippoT(
-            'المقارنة تخصّ أجهزة نداء الزبائن التقليدية، ماشي زر استدعاء النادل. تنبيه Bipilo يحتاج اتصالًا عند المحل والزبون، ويعتمد على دعم الهاتف وأذوناته. خصائص الأجهزة تختلف حسب الموديل.',
+            'المقارنة تخصّ الـ bipeur التقليدي، ماشي زر استدعاء النادل. تنبيه Bipilo يحتاج اتصالًا عند المحل والزبون، ويعتمد على دعم الهاتف وأذوناته. خصائص الأجهزة تختلف حسب الموديل.',
           )}
         </p>
       </section>
@@ -143,7 +143,7 @@ function CostCalculator() {
         maximumFractionDigits: 2,
       }).format(v) + bippoT(' دج');
   const fields = [
-    ['devices', bippoT('عدد أجهزة النداء'), bippoT('مثال: 20'), 1, 1000],
+    ['devices', bippoT('عدد أجهزة الـ bipeur'), bippoT('مثال: 20'), 1, 1000],
     ['unitPrice', bippoT('سعر الجهاز الواحد — دج'), bippoT('من عرض المورّد'), 0, 1000000000],
     [
       'basePrice',
@@ -224,7 +224,7 @@ function CostCalculator() {
           {result ? (
             <>
               <div className="cost-result">
-                <span>{bippoT('أجهزة نداء الزبائن')}</span>
+                <span>{bippoT('الـ bipeur')}</span>
                 <strong>{money(result.hardware)}</strong>
                 <small>{bippoT('اقتناء + استبدال متوقع + صيانة')}</small>
               </div>
@@ -244,7 +244,7 @@ function CostCalculator() {
                     </>
                   ) : result.difference < 0 ? (
                     <>
-                      {bippoT('حسب أرقامك، تكلفة أجهزة النداء أقل بـ ')}
+                      {bippoT('حسب أرقامك، تكلفة الـ bipeur أقل بـ ')}
                       <b>{money(-result.difference)}</b>
                       {bippoT(' في السنة الأولى.')}
                     </>

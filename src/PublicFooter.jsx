@@ -23,7 +23,7 @@ export const footerGroups = [
       [bippoT('مغاسل الملابس'), 'laundries'],
       [bippoT('مغاسل السيارات'), 'car-washes'],
       [bippoT('الخياطون'), 'tailors'],
-      [bippoT('قارن مع جهاز النداء'), 'bipeur'],
+      [bippoT('قارن مع الـ bipeur'), 'bipeur'],
     ],
   ],
   [

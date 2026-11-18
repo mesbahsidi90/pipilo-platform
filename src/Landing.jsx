@@ -383,7 +383,7 @@ export default function Landing() {
               <article className="bento-card wide">
                 <div className="bento-text">
                   <ShieldCheck />
-                  <h3>{bippoT('تليفون الزبون يعوّض البيجر.')}</h3>
+                  <h3>{bippoT('تليفون الزبون يعوّض الـ bipeur.')}</h3>
                   <p>
                     {bippoT(
                       'الزبون يتابع التيكي ويفعّل التنبيه من متصفحو، بلا حساب وبلا تطبيق. فريقك يسيّر الانتظار من لوحة المحل.',
@@ -475,7 +475,7 @@ export default function Landing() {
           <div className="access-cards">
             <article className="access-card">
               <h3>{bippoT('جرّب التنبيه على تليفونك')}</h3>
-              <p>{bippoT('امسح كود التجربة وفعّل التنبيه، ومن بعد جرّب ترنّ على تليفونك.')}</p>
+              <p>{bippoT('امسح كود التجربة وفعّل التنبيه، ومن بعد جرّب كيفاش يصوني تليفونك.')}</p>
               <div className="access-price">{bippoT('بلا إعداد')}</div>
               <ul>
                 <li>

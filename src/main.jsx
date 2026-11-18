@@ -1,5 +1,5 @@
 import { t as bippoT, language, ticketLink } from './i18n.js';
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, lazy, Suspense } from 'react';
 import { createRoot } from 'react-dom/client';
 import { QRCodeSVG } from 'qrcode.react';
 import {
@@ -24,16 +24,16 @@ import { statuses } from './domain';
 import './style.css';
 import './redesign.css';
 import Landing, { Brand } from './Landing';
-import Account from './Account';
-import Signup from './Signup';
+const Account = lazy(() => import('./Account'));
+const Signup = lazy(() => import('./Signup'));
 import PublicPages from './PublicPages';
 import { publicRoutes, pageInfo } from './publicContent';
-import ResetPassword from './ResetPassword';
-import Admin from './Admin';
+const ResetPassword = lazy(() => import('./ResetPassword'));
+const Admin = lazy(() => import('./Admin'));
 import { ticketBranding } from './shopSettings';
 import WaitingBoard from './WaitingBoard';
 import ClinicQueue from './ClinicQueue';
-import Orders from './Orders';
+const Orders = lazy(() => import('./Orders'));
 import OrderAlerts from './OrderAlerts';
 import FollowTicket from './FollowTicket';
 import { DemoCustomer } from './LiveDemo';
@@ -43,7 +43,7 @@ import './signup-links.css';
 import './merchant-login.css';
 import LanguageSwitcher from './LanguageSwitcher';
 import Receipt from './Receipt';
-import AcceptInvite from './AcceptInvite';
+const AcceptInvite = lazy(() => import('./AcceptInvite'));
 import { rememberBranch } from './merchantBranches';
 import { shopActivity, shopTypes } from './shopActivities';
 import CounterTicket from './CounterTicket';
@@ -557,7 +557,9 @@ function Display({ token }) {
 }
 createRoot(document.getElementById('root')).render(
   <>
-    <App />
+    <Suspense fallback={null}>
+      <App />
+    </Suspense>
     <LanguageSwitcher />
   </>,
 );

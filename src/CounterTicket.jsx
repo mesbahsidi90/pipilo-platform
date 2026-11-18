@@ -5,7 +5,13 @@ import { QRCodeSVG } from 'qrcode.react';
 import Brand from './Brand';
 import { clinicRoute } from './ClinicQueue';
 import { t, ticketLink } from './i18n.js';
-import { claimCounterTicket, counterRoute, counterTicket, invoiceRoute, normalizeTrackingCode } from './counterAccess.js';
+import {
+  claimCounterTicket,
+  counterRoute,
+  counterTicket,
+  invoiceRoute,
+  normalizeTrackingCode,
+} from './counterAccess.js';
 import './counter-ticket.css';
 
 export function CounterPoster({ shop, clinic = false, enabled = true }) {
@@ -29,20 +35,37 @@ export function CounterPoster({ shop, clinic = false, enabled = true }) {
       <h3>{shop.name}</h3>
       <p>{t(clinic ? 'امسح الكود وخذ رقم دورك.' : 'امسح الرمز وتابع طلبك')}</p>
       <QRCodeSVG value={url} size={200} marginSize={4} />
-      <p>{t(clinic ? 'فعّل التنبيه باش تعرف كي يجي دورك.' : invoice
-        ? 'دخل رقم الطلب اللي في الفاتورة وفعّل التنبيه.'
-        : 'امسح بعد ما يسجّل الكاشير طلبك، وفعّل التنبيه.')}</p>
+      <p>
+        {t(
+          clinic
+            ? 'فعّل التنبيه باش تعرف كي يجي دورك.'
+            : invoice
+              ? 'دخل رقم الطلب اللي في الفاتورة وفعّل التنبيه.'
+              : 'امسح بعد ما يسجّل الكاشير طلبك، وفعّل التنبيه.',
+        )}
+      </p>
       <Brand linked={false} />
     </article>
   );
   return (
     <section className="counter-settings">
       <div ref={preview}>{poster}</div>
-      <button type="button" className="button outline" disabled={!enabled} onClick={() => printWithTitle(t('اطبع الكود'))}>
+      <button
+        type="button"
+        className="button outline"
+        disabled={!enabled}
+        onClick={() => printWithTitle(t('اطبع الكود'))}
+      >
         {t('طباعة ملصق الكونتوار')}
       </button>
-      <button type="button" className="button outline" disabled={!enabled} onClick={downloadCode}>{t('تحميل QR بصيغة SVG')}</button>
-      {enabled && createPortal(<div className="receipt-print-root counter-print">{poster}</div>, document.body)}
+      <button type="button" className="button outline" disabled={!enabled} onClick={downloadCode}>
+        {t('تحميل QR بصيغة SVG')}
+      </button>
+      {enabled &&
+        createPortal(
+          <div className="receipt-print-root counter-print">{poster}</div>,
+          document.body,
+        )}
     </section>
   );
 }
@@ -65,10 +88,12 @@ export default function CounterTicket({ branch }) {
       requestKey.current ||= crypto.randomUUID();
     }
     claimCounterTicket(branch, requestKey.current)
-      .then(result => {
+      .then((result) => {
         if (!active) return;
         if (result?.token) {
-          try { sessionStorage.removeItem(storageKey); } catch {}
+          try {
+            sessionStorage.removeItem(storageKey);
+          } catch {}
           location.replace('#track/' + result.token);
         } else {
           setShop(result);
@@ -77,7 +102,9 @@ export default function CounterTicket({ branch }) {
       .catch(() => {
         if (active) setError(t('تعذر الاتصال. عاود المحاولة.'));
       });
-    return () => { active = false; };
+    return () => {
+      active = false;
+    };
   }, [branch, retry]);
 
   async function submit(event) {
@@ -107,27 +134,59 @@ export default function CounterTicket({ branch }) {
         <h1>{shop?.name || t('تابع طلبك')}</h1>
         {shop === undefined && !error && <p role="status">{t('جارٍ الاتصال…')}</p>}
         {shop === null && <p>{t('متابعة الطلبات بهذا الرمز غير متاحة. اسأل الكاشير.')}</p>}
-        {shop && Object.hasOwn(shop, 'token') && <>
-          <p role="status">{t('ما كاش طلب ينتظر المسح. خلي الكاشير يسجّل طلبك ومن بعد عاود.')}</p>
-          <button className="button full" type="button" onClick={() => {
-            setShop(undefined); setError(''); setRetry(value => value + 1);
-          }}>{t('عاود المحاولة')}</button>
-        </>}
-        {shop && <details open={!Object.hasOwn(shop, 'token')}>
-          <summary>{t('عندك كود متابعة مكتوب؟')}</summary>
-          <form onSubmit={submit}>
-            <label>
-              {t('كود المتابعة')}
-              <input dir="ltr" value={code} onChange={e => setCode(e.target.value)}
-                autoCapitalize="characters" autoComplete="off" spellCheck={false}
-                required maxLength={20} placeholder="A1B2-C3D4-E5F6" />
-            </label>
-            <button className="button full" disabled={busy}>{t('افتح الطلب')}</button>
-          </form>
-        </details>}
-        {error && <p role="alert" className="error">{error}</p>}
+        {shop && Object.hasOwn(shop, 'token') && (
+          <>
+            <p role="status">{t('ما كاش طلب ينتظر المسح. خلي الكاشير يسجّل طلبك ومن بعد عاود.')}</p>
+            <button
+              className="button full"
+              type="button"
+              onClick={() => {
+                setShop(undefined);
+                setError('');
+                setRetry((value) => value + 1);
+              }}
+            >
+              {t('عاود المحاولة')}
+            </button>
+          </>
+        )}
+        {shop && (
+          <details open={!Object.hasOwn(shop, 'token')}>
+            <summary>{t('عندك كود متابعة مكتوب؟')}</summary>
+            <form onSubmit={submit}>
+              <label>
+                {t('كود المتابعة')}
+                <input
+                  dir="ltr"
+                  value={code}
+                  onChange={(e) => setCode(e.target.value)}
+                  autoCapitalize="characters"
+                  autoComplete="off"
+                  spellCheck={false}
+                  required
+                  maxLength={20}
+                  placeholder="A1B2-C3D4-E5F6"
+                />
+              </label>
+              <button className="button full" disabled={busy}>
+                {t('افتح الطلب')}
+              </button>
+            </form>
+          </details>
+        )}
+        {error && (
+          <p role="alert" className="error">
+            {error}
+          </p>
+        )}
         {shop === undefined && error && (
-          <button className="button" onClick={() => { setError(''); setRetry(value => value + 1); }}>
+          <button
+            className="button"
+            onClick={() => {
+              setError('');
+              setRetry((value) => value + 1);
+            }}
+          >
             {t('عاود المحاولة')}
           </button>
         )}
@@ -135,4 +194,3 @@ export default function CounterTicket({ branch }) {
     </main>
   );
 }
-

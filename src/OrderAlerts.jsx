@@ -1,4 +1,4 @@
-import { t as bippoT, language } from "./i18n.js";
+import { t as bippoT, language } from './i18n.js';
 import React, { useState, useEffect, useRef } from 'react';
 import { Bell, Check, Smartphone } from 'lucide-react';
 import { cloud, db } from './store';
@@ -13,43 +13,51 @@ async function pushRequest(route, body) {
     method: body ? 'POST' : 'GET',
     headers: {
       apikey: apiKey,
-      ...(body ? {
-        'Content-Type': 'application/json'
-      } : {})
+      ...(body
+        ? {
+            'Content-Type': 'application/json',
+          }
+        : {}),
     },
-    ...(body ? {
-      body: JSON.stringify(body)
-    } : {})
+    ...(body
+      ? {
+          body: JSON.stringify(body),
+        }
+      : {}),
   });
   const data = await res.json();
-  if (!res.ok) throw new Error(data.error || bippoT("تعذر تفعيل الإشعارات"));
+  if (!res.ok) throw new Error(data.error || bippoT('تعذر تفعيل الإشعارات'));
   return data;
 }
 function keyBytes(value) {
-  const str = atob(value.replace(/-/g, '+').replace(/_/g, '/').padEnd(Math.ceil(value.length / 4) * 4, '='));
-  return Uint8Array.from(str, c => c.charCodeAt(0));
+  const str = atob(
+    value
+      .replace(/-/g, '+')
+      .replace(/_/g, '/')
+      .padEnd(Math.ceil(value.length / 4) * 4, '='),
+  );
+  return Uint8Array.from(str, (c) => c.charCodeAt(0));
 }
 export async function retryPush(orderId, resend = false) {
-  if (!cloud) return {
-    sent: 0,
-    failed: 0
-  };
-  const {
-    data
-  } = await db.auth.getSession();
+  if (!cloud)
+    return {
+      sent: 0,
+      failed: 0,
+    };
+  const { data } = await db.auth.getSession();
   const res = await fetch(`${base}/functions/v1/order-alerts/${resend ? 'renotify' : 'notify'}`, {
     method: 'POST',
     headers: {
       apikey: apiKey,
       Authorization: `Bearer ${data.session?.access_token || ''}`,
-      'Content-Type': 'application/json'
+      'Content-Type': 'application/json',
     },
     body: JSON.stringify({
-      order_id: orderId
-    })
+      order_id: orderId,
+    }),
   });
   if (res.status === 429) throw new Error(bippoT('استنّى شوية قبل ما تعاود الرنّة.'));
-  if (!res.ok) throw new Error(bippoT("تعذر إعادة إرسال إشعار الخلفية. حالة الطلب محفوظة."));
+  if (!res.ok) throw new Error(bippoT('تعذر إعادة إرسال إشعار الخلفية. حالة الطلب محفوظة.'));
   return res.json();
 }
 export default function OrderAlerts({
@@ -61,7 +69,7 @@ export default function OrderAlerts({
   tone,
   onEnabled,
   onPushEnabled,
-  onAcknowledge
+  onAcknowledge,
 }) {
   const session = useRef(null),
     callbacks = useRef({});
@@ -69,13 +77,13 @@ export default function OrderAlerts({
     onRefresh,
     onEnabled,
     onPushEnabled,
-    onAcknowledge
+    onAcknowledge,
   };
   const [view, setView] = useState({
     armed: false,
     ringing: false,
     acknowledged: false,
-    pending: false
+    pending: false,
   });
   const [error, setError] = useState(''),
     [push, setPush] = useState('loading'),
@@ -89,19 +97,23 @@ export default function OrderAlerts({
     const audio = createOrderAudio(toneSource(tone));
     audio.loop = true;
     audio.volume = 1;
-    const vibration = createVibrationLoop(pattern => navigator.vibrate?.(pattern));
+    const vibration = createVibrationLoop((pattern) => navigator.vibrate?.(pattern));
     const current = createAlertSession({
       audio,
       vibration,
       acknowledged: sessionStorage.getItem(ackKey) === '1',
-      onChange: value => {
+      onChange: (value) => {
         setView(value);
         if (value.armed) sessionStorage.setItem('bippo-alert-armed-' + ticket, '1');
       },
-      onError: () => setError(bippoT("اضغط «شغّل الرنة» باش يرجع الصوت."))
+      onError: () => setError(bippoT('اضغط «شغّل الرنة» باش يرجع الصوت.')),
     });
     session.current = current;
-    if (sessionStorage.getItem('bippo-alert-armed-' + ticket) === '1' && sessionStorage.getItem(ackKey) !== '1') void current.arm();
+    if (
+      sessionStorage.getItem('bippo-alert-armed-' + ticket) === '1' &&
+      sessionStorage.getItem(ackKey) !== '1'
+    )
+      void current.arm();
     const resume = () => {
       if (document.visibilityState === 'visible') current.resume();
     };
@@ -125,38 +137,58 @@ export default function OrderAlerts({
       setPush('local');
       return;
     }
-    const ios = /iPad|iPhone|iPod/.test(navigator.userAgent) || navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1;
+    const ios =
+      /iPad|iPhone|iPod/.test(navigator.userAgent) ||
+      (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
     if (ios && !window.matchMedia('(display-mode: standalone)').matches && !navigator.standalone) {
       setPush('ios-install');
       return;
     }
-    if (!('serviceWorker' in navigator) || !('PushManager' in window) || !('Notification' in window)) {
+    if (
+      !('serviceWorker' in navigator) ||
+      !('PushManager' in window) ||
+      !('Notification' in window)
+    ) {
       setPush('unsupported');
       return;
     }
     let live = true;
-    Promise.all([navigator.serviceWorker.register('/push-sw.js?lang='+language, {
-      scope: '/'
-    }).then(() => navigator.serviceWorker.ready), pushRequest('public-key')]).then(async ([reg, key]) => {
-      if (!live) return;
-      setReady({
-        reg,
-        key: key.public_key
-      });
-      const subscription = await reg.pushManager.getSubscription();
-      if (subscription && Notification.permission === 'granted') {
-        await pushRequest('subscribe', {
-          ticket,
-          demo,
-          language,
-          subscription: subscription.toJSON()
+    Promise.all([
+      navigator.serviceWorker
+        .register('/push-sw.js?lang=' + language, {
+          scope: '/',
+        })
+        .then(() => navigator.serviceWorker.ready),
+      pushRequest('public-key'),
+    ])
+      .then(async ([reg, key]) => {
+        if (!live) return;
+        setReady({
+          reg,
+          key: key.public_key,
         });
-        if (live) setPush('enabled');
-      } else if (live) setPush(Notification.permission === 'denied' ? 'denied' : 'available');
-    }).catch(() => {
-      if (live) setPush('unavailable');
-    });
-    const message = e => handleReadyPush(e.data, ticket, true, () => session.current?.setReady(true), () => callbacks.current.onRefresh?.());
+        const subscription = await reg.pushManager.getSubscription();
+        if (subscription && Notification.permission === 'granted') {
+          await pushRequest('subscribe', {
+            ticket,
+            demo,
+            language,
+            subscription: subscription.toJSON(),
+          });
+          if (live) setPush('enabled');
+        } else if (live) setPush(Notification.permission === 'denied' ? 'denied' : 'available');
+      })
+      .catch(() => {
+        if (live) setPush('unavailable');
+      });
+    const message = (e) =>
+      handleReadyPush(
+        e.data,
+        ticket,
+        true,
+        () => session.current?.setReady(true),
+        () => callbacks.current.onRefresh?.(),
+      );
     navigator.serviceWorker.addEventListener('message', message);
     return () => {
       live = false;
@@ -169,25 +201,25 @@ export default function OrderAlerts({
     try {
       const subscription = await ready.reg.pushManager.subscribe({
         userVisibleOnly: true,
-        applicationServerKey: keyBytes(ready.key)
+        applicationServerKey: keyBytes(ready.key),
       });
       await pushRequest('subscribe', {
         ticket,
         demo,
         language,
-          subscription: subscription.toJSON()
+        subscription: subscription.toJSON(),
       });
       setPush('enabled');
     } catch {
       setPush(Notification.permission === 'denied' ? 'denied' : 'available');
-      setError(bippoT("ما تفعّلش إشعار الهاتف. عاود من إعدادات المتصفح."));
+      setError(bippoT('ما تفعّلش إشعار الهاتف. عاود من إعدادات المتصفح.'));
     } finally {
       setPushBusy(false);
     }
   }
   function enable() {
     setError('');
-    void session.current?.arm().then(ok => {
+    void session.current?.arm().then((ok) => {
       if (ok) callbacks.current.onEnabled?.();
     });
     if (push === 'available') void enablePush();
@@ -200,14 +232,92 @@ export default function OrderAlerts({
   }
   const isReady = status === 'ready' || view.ringing;
   if (status === 'collected') return null;
-  return <section className="order-alerts pager-alerts" aria-label={bippoT("تنبيهات الطلب")}>
-  {view.acknowledged ? <div className="pager-armed"><Check size={20} />{bippoT(" بلغناهم بلي راك جاي")}</div> : isReady ? <>
-   <button className="pager-action" onClick={acknowledge}><Check size={22} />{bippoT(" راني جاي 🏃")}</button>
-   {!view.armed && <button className="pager-retry" onClick={enable}>{bippoT("شغّل الرنة")}</button>}
-  </> : view.armed && (push === 'enabled' || push === 'local' || push === 'ios-install' || push === 'unsupported' || push === 'denied' || push === 'unavailable') ? <div className="pager-armed"><Bell size={21} />{bippoT(" التنبيه مفعّل، خلّي صوت الهاتف مسموع")}</div> : <button className="pager-action" disabled={view.pending || pushBusy} onClick={view.armed && push === 'available' ? enablePush : enable}><Bell size={22} />{view.pending || pushBusy ? bippoT("لحظة…") : view.armed && push === 'available' ? bippoT("اسمح بإشعار الهاتف") : bippoT("فعّل التنبيه")}</button>}
-  {!isReady && !view.armed && <p className="pager-hint">{bippoT("اضغط واسمح برسالة المتصفح باش ننبّهوك كي يوجد طلبك.")}</p>}
-  {(error || offline) && <p className="pager-alert-error" role="status">{error || bippoT("الاتصال راه يتعاود. حالة الطلب تبقى محفوظة.")}</p>}
-  {!isReady && ['denied', 'ios-install', 'unsupported', 'unavailable'].includes(push) && <details className="pager-help"><summary>{push === 'denied' ? bippoT("إشعار القفل محبوس — كيفاش نفعّلو؟") : push === 'ios-install' ? bippoT("التنبيه على iPhone") : bippoT("مساعدة التنبيه")}</summary><p>{push === 'denied' ? bippoT("من الرمز حدّ عنوان الموقع: الأذونات ← الإشعارات ← السماح، ثم عاود افتح الصفحة.") : push === 'ios-install' ? bippoT("أضف Bipilo للشاشة الرئيسية من المشاركة، وافتح الأيقونة وفعّل التنبيه.") : bippoT("الرنة متاحة في الصفحة. إشعار القفل يتبع دعم وإعدادات الهاتف.")}</p>{push === 'ios-install' && <button onClick={() => navigator.clipboard.writeText(location.href).then(() => setError(bippoT("تنسخ الرابط. الصقو بعد فتح الأيقونة."))).catch(() => setError(bippoT("انسخ رابط الطلب من شريط العنوان.")))}>{bippoT("انسخ رابط الطلب")}</button>}</details>}
- </section>;
+  return (
+    <section className="order-alerts pager-alerts" aria-label={bippoT('تنبيهات الطلب')}>
+      {view.acknowledged ? (
+        <div className="pager-armed">
+          <Check size={20} />
+          {bippoT(' بلغناهم بلي راك جاي')}
+        </div>
+      ) : isReady ? (
+        <>
+          <button className="pager-action" onClick={acknowledge}>
+            <Check size={22} />
+            {bippoT(' راني جاي 🏃')}
+          </button>
+          {!view.armed && (
+            <button className="pager-retry" onClick={enable}>
+              {bippoT('شغّل الرنة')}
+            </button>
+          )}
+        </>
+      ) : view.armed &&
+        (push === 'enabled' ||
+          push === 'local' ||
+          push === 'ios-install' ||
+          push === 'unsupported' ||
+          push === 'denied' ||
+          push === 'unavailable') ? (
+        <div className="pager-armed">
+          <Bell size={21} />
+          {bippoT(' التنبيه مفعّل، خلّي صوت الهاتف مسموع')}
+        </div>
+      ) : (
+        <button
+          className="pager-action"
+          disabled={view.pending || pushBusy}
+          onClick={view.armed && push === 'available' ? enablePush : enable}
+        >
+          <Bell size={22} />
+          {view.pending || pushBusy
+            ? bippoT('لحظة…')
+            : view.armed && push === 'available'
+              ? bippoT('اسمح بإشعار الهاتف')
+              : bippoT('فعّل التنبيه')}
+        </button>
+      )}
+      {!isReady && !view.armed && (
+        <p className="pager-hint">
+          {bippoT('اضغط واسمح برسالة المتصفح باش ننبّهوك كي يوجد طلبك.')}
+        </p>
+      )}
+      {(error || offline) && (
+        <p className="pager-alert-error" role="status">
+          {error || bippoT('الاتصال راه يتعاود. حالة الطلب تبقى محفوظة.')}
+        </p>
+      )}
+      {!isReady && ['denied', 'ios-install', 'unsupported', 'unavailable'].includes(push) && (
+        <details className="pager-help">
+          <summary>
+            {push === 'denied'
+              ? bippoT('إشعار القفل محبوس — كيفاش نفعّلو؟')
+              : push === 'ios-install'
+                ? bippoT('التنبيه على iPhone')
+                : bippoT('مساعدة التنبيه')}
+          </summary>
+          <p>
+            {push === 'denied'
+              ? bippoT(
+                  'من الرمز حدّ عنوان الموقع: الأذونات ← الإشعارات ← السماح، ثم عاود افتح الصفحة.',
+                )
+              : push === 'ios-install'
+                ? bippoT('أضف Bipilo للشاشة الرئيسية من المشاركة، وافتح الأيقونة وفعّل التنبيه.')
+                : bippoT('الرنة متاحة في الصفحة. إشعار القفل يتبع دعم وإعدادات الهاتف.')}
+          </p>
+          {push === 'ios-install' && (
+            <button
+              onClick={() =>
+                navigator.clipboard
+                  .writeText(location.href)
+                  .then(() => setError(bippoT('تنسخ الرابط. الصقو بعد فتح الأيقونة.')))
+                  .catch(() => setError(bippoT('انسخ رابط الطلب من شريط العنوان.')))
+              }
+            >
+              {bippoT('انسخ رابط الطلب')}
+            </button>
+          )}
+        </details>
+      )}
+    </section>
+  );
 }
-

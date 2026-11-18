@@ -1,4 +1,4 @@
-import { t as bippoT } from "./i18n.js";
+import { t as bippoT } from './i18n.js';
 import { cloud } from './store';
 import { demoSnapshot } from '../supabase/functions/order-alerts/demoRules.js';
 const base = import.meta.env.VITE_SUPABASE_URL,
@@ -14,25 +14,27 @@ export async function demoRequest(action, body = {}) {
           control,
           number: String(10 + Math.floor(Math.random() * 90)),
           status: 'preparing',
-          expires_at: new Date(Date.now() + 15 * 60000).toISOString()
+          expires_at: new Date(Date.now() + 15 * 60000).toISOString(),
         };
       rows[token] = value;
       localStorage.setItem('bippo-landing-demos', JSON.stringify(rows));
       return value;
     }
     const row = rows[body.ticket];
-    if (!row || Date.parse(row.expires_at) < Date.now()) throw new Error(bippoT("انتهت التجربة. أبدا تجربة جديدة."));
+    if (!row || Date.parse(row.expires_at) < Date.now())
+      throw new Error(bippoT('انتهت التجربة. أبدا تجربة جديدة.'));
     if (row.scheduled_at && Date.parse(row.scheduled_at) <= Date.now()) row.status = 'ready';
     if (action === 'ring') {
-      if (row.control !== body.control) throw new Error(bippoT("غير مسموح"));
-      if (row.status === 'ready' || row.scheduled_at) throw new Error(bippoT("أبدا تجربة جديدة"));
-      if (body.delay === 10) row.scheduled_at = new Date(Date.now() + 10000).toISOString();else row.status = 'ready';
+      if (row.control !== body.control) throw new Error(bippoT('غير مسموح'));
+      if (row.status === 'ready' || row.scheduled_at) throw new Error(bippoT('أبدا تجربة جديدة'));
+      if (body.delay === 10) row.scheduled_at = new Date(Date.now() + 10000).toISOString();
+      else row.status = 'ready';
     }
     if (action === 'progress') {
       const field = {
         opened: 'opened_at',
         sound: 'sound_at',
-        ack: 'acknowledged_at'
+        ack: 'acknowledged_at',
       }[body.stage];
       if (field) row[field] = new Date().toISOString();
     }
@@ -47,15 +49,16 @@ export async function demoRequest(action, body = {}) {
       signal: controller.signal,
       headers: {
         apikey: key,
-        'Content-Type': 'application/json'
+        'Content-Type': 'application/json',
       },
-      body: JSON.stringify(body)
+      body: JSON.stringify(body),
     });
     const data = await r.json();
-    if (!r.ok) throw new Error(bippoT(data.error || "تعذر إتمام التجربة"));
+    if (!r.ok) throw new Error(bippoT(data.error || 'تعذر إتمام التجربة'));
     return data;
-  } catch(error){
-    if(error.name==='AbortError'||error instanceof TypeError)throw new Error(bippoT("تعذر الاتصال. عاود جرّب."));
+  } catch (error) {
+    if (error.name === 'AbortError' || error instanceof TypeError)
+      throw new Error(bippoT('تعذر الاتصال. عاود جرّب.'));
     throw error;
   } finally {
     clearTimeout(timer);

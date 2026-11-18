@@ -1,4 +1,4 @@
-import { t as bippoT } from "./i18n.js";
+import { t as bippoT } from './i18n.js';
 import { createClient } from '@supabase/supabase-js';
 import { normalizeNumber, validTransition, active } from './domain';
 import { branchFetch } from './merchantBranches';
@@ -13,7 +13,7 @@ const seed = [101, 102, 103].map((number, i) => ({
   token: crypto.randomUUID(),
   number: String(number),
   status: i === 0 ? 'ready' : 'preparing',
-  created_at: new Date().toISOString()
+  created_at: new Date().toISOString(),
 }));
 const read = () => {
   const raw = localStorage.getItem(STORAGE);
@@ -23,49 +23,73 @@ const read = () => {
   }
   return JSON.parse(raw);
 };
-const save = orders => {
+const save = (orders) => {
   localStorage.setItem(STORAGE, JSON.stringify(orders));
   window.dispatchEvent(new Event('nawba-change'));
 };
 export async function listOrders() {
   if (!cloud) return read();
-  const {
-    data: shop,
-    error: shopError
-  } = await db.rpc('current_shop_id');
+  const { data: shop, error: shopError } = await db.rpc('current_shop_id');
   if (shopError) throw shopError;
   if (!shop) return [];
   const query = () => db.from('orders').select('*').eq('shop_id', shop);
   const [recent, restored] = await Promise.all([
     query().order('created_at', { ascending: false }).limit(200),
-    query().in('status', ['preparing', 'ready'])
+    query()
+      .in('status', ['preparing', 'ready'])
       .gte('restored_at', new Date(Date.now() - 86400000).toISOString())
-      .order('restored_at', { ascending: false }).limit(200)
+      .order('restored_at', { ascending: false })
+      .limit(200),
   ]);
   if (recent.error) throw recent.error;
   // During rolling deployment, the previous schema can still serve the existing board.
   if (restored.error && restored.error.code !== '42703') throw restored.error;
-  return [...new Map([...(restored.data || []), ...recent.data].map(order => [order.id, order])).values()];
+  return [
+    ...new Map(
+      [...(restored.data || []), ...recent.data].map((order) => [order.id, order]),
+    ).values(),
+  ];
 }
-export const counterScanRequired = () => bippoT('خلّي الزبون يمسح QR الثابت للطلب الحالي، أو ألغيه إذا الزبون ما راحش يمسح.');
+export const counterScanRequired = () =>
+  bippoT('خلّي الزبون يمسح QR الثابت للطلب الحالي، أو ألغيه إذا الزبون ما راحش يمسح.');
 
 export async function createOrder(value, { fixedCounter = false, invoiceRequestKey = null } = {}) {
   const number = normalizeNumber(value);
   if (!cloud) {
     const rows = read();
     if (invoiceRequestKey) {
-      const existing = rows.find(o => o.invoice_request_key === invoiceRequestKey);
-      if (existing?.number === number && existing.status !== 'cancelled' &&
-          Date.parse(existing.created_at) > Date.now() - 86400000) return existing;
-      const day = new Intl.DateTimeFormat('en-CA', { timeZone: 'Africa/Algiers', dateStyle: 'short' });
-      if (existing || rows.some(o => o.number === number && o.status !== 'cancelled' &&
-          (active(o) || day.format(new Date(o.created_at)) === day.format(new Date())))) return null;
-      if (rows.filter(o => o.invoice_request_key && Date.parse(o.created_at) > Date.now() - 60000).length >= 30) {
+      const existing = rows.find((o) => o.invoice_request_key === invoiceRequestKey);
+      if (
+        existing?.number === number &&
+        existing.status !== 'cancelled' &&
+        Date.parse(existing.created_at) > Date.now() - 86400000
+      )
+        return existing;
+      const day = new Intl.DateTimeFormat('en-CA', {
+        timeZone: 'Africa/Algiers',
+        dateStyle: 'short',
+      });
+      if (
+        existing ||
+        rows.some(
+          (o) =>
+            o.number === number &&
+            o.status !== 'cancelled' &&
+            (active(o) || day.format(new Date(o.created_at)) === day.format(new Date())),
+        )
+      )
+        return null;
+      if (
+        rows.filter((o) => o.invoice_request_key && Date.parse(o.created_at) > Date.now() - 60000)
+          .length >= 30
+      ) {
         return { error: 'rate_limit' };
       }
     }
-    if (fixedCounter && rows.some(o => o.counter_pending && active(o))) throw new Error(counterScanRequired());
-    if (rows.some(o => o.number === number && active(o))) throw new Error(bippoT("يوجد طلب نشط بهذا الرقم"));
+    if (fixedCounter && rows.some((o) => o.counter_pending && active(o)))
+      throw new Error(counterScanRequired());
+    if (rows.some((o) => o.number === number && active(o)))
+      throw new Error(bippoT('يوجد طلب نشط بهذا الرقم'));
     const o = {
       id: crypto.randomUUID(),
       token: crypto.randomUUID(),
@@ -73,88 +97,97 @@ export async function createOrder(value, { fixedCounter = false, invoiceRequestK
       status: 'preparing',
       counter_pending: fixedCounter,
       ...(invoiceRequestKey && { invoice_request_key: invoiceRequestKey }),
-      created_at: new Date().toISOString()
+      created_at: new Date().toISOString(),
     };
     save([o, ...rows]);
     return o;
   }
-  const {
-    data,
-    error
-  } = await db.from('orders').insert({
-    number
-  }).select().single();
-  if (error?.message === 'BIPILO_MONTHLY_TICKET_LIMIT') throw new Error(bippoT('وصلت للحد الشهري. تقدر تكمّل الطلبات المفتوحة أو تطلب تفعيل الاحترافية.'));
-  if (error?.code === '23505' && error.message.includes('orders_counter_pending')) throw new Error(counterScanRequired());
-  if (error) throw new Error(error.code === '23505' ? bippoT("يوجد طلب نشط بهذا الرقم") : error.message);
+  const { data, error } = await db
+    .from('orders')
+    .insert({
+      number,
+    })
+    .select()
+    .single();
+  if (error?.message === 'BIPILO_MONTHLY_TICKET_LIMIT')
+    throw new Error(
+      bippoT('وصلت للحد الشهري. تقدر تكمّل الطلبات المفتوحة أو تطلب تفعيل الاحترافية.'),
+    );
+  if (error?.code === '23505' && error.message.includes('orders_counter_pending'))
+    throw new Error(counterScanRequired());
+  if (error)
+    throw new Error(error.code === '23505' ? bippoT('يوجد طلب نشط بهذا الرقم') : error.message);
   return data;
 }
 export function claimLocalCounterTicket(requestKey) {
   const rows = read();
-  const recent = order => Date.parse(order.created_at) > Date.now() - 86400000;
-  const existing = rows.find(order => order.counter_claim_key === requestKey);
+  const recent = (order) => Date.parse(order.created_at) > Date.now() - 86400000;
+  const existing = rows.find((order) => order.counter_claim_key === requestKey);
   if (existing) return recent(existing) ? existing.token : null;
-  const pending = rows.find(order => order.counter_pending && active(order) && recent(order));
+  const pending = rows.find((order) => order.counter_pending && active(order) && recent(order));
   if (!pending) return null;
-  save(rows.map(order => order.id === pending.id
-    ? { ...order, counter_pending: false, counter_claim_key: requestKey }
-    : order));
+  save(
+    rows.map((order) =>
+      order.id === pending.id
+        ? { ...order, counter_pending: false, counter_claim_key: requestKey }
+        : order,
+    ),
+  );
   return pending.token;
 }
 export async function transition(order, status) {
-  if (!validTransition(order.status, status)) throw new Error(bippoT("تغيير الحالة غير مسموح"));
+  if (!validTransition(order.status, status)) throw new Error(bippoT('تغيير الحالة غير مسموح'));
   if (!cloud) {
     const rows = read();
-    const current = rows.find(o => o.id === order.id);
-    if (!current || current.status !== order.status) throw new Error(bippoT("تغيرت حالة الطلب، حدّث الصفحة"));
-    if (current.counter_pending && ['ready', 'collected'].includes(status)) throw new Error(counterScanRequired());
-    if (status === 'preparing' && rows.some(o => o.number === current.number && active(o))) {
-      throw new Error(bippoT("يوجد طلب نشط بهذا الرقم"));
+    const current = rows.find((o) => o.id === order.id);
+    if (!current || current.status !== order.status)
+      throw new Error(bippoT('تغيرت حالة الطلب، حدّث الصفحة'));
+    if (current.counter_pending && ['ready', 'collected'].includes(status))
+      throw new Error(counterScanRequired());
+    if (status === 'preparing' && rows.some((o) => o.number === current.number && active(o))) {
+      throw new Error(bippoT('يوجد طلب نشط بهذا الرقم'));
     }
     const now = new Date().toISOString();
     const timestamps = {
       ready: { ready_at: now },
       collected: { collected_at: now },
       cancelled: { counter_pending: current.counter_pending == null ? null : false },
-      preparing: { restored_at: now }
+      preparing: { restored_at: now },
     };
-    save(rows.map(o => o.id === current.id ? { ...o, status, ...timestamps[status] } : o));    return;
+    save(rows.map((o) => (o.id === current.id ? { ...o, status, ...timestamps[status] } : o)));
+    return;
   }
-  const {
-    data,
-    error
-  } = await db.from('orders').update({
-    status
-  }).eq('id', order.id).eq('status', order.status).select();
+  const { data, error } = await db
+    .from('orders')
+    .update({
+      status,
+    })
+    .eq('id', order.id)
+    .eq('status', order.status)
+    .select();
   if (error?.code === '23505') throw new Error(bippoT('يوجد طلب نشط بهذا الرقم'));
   if (error?.message === 'BIPILO_COUNTER_SCAN_REQUIRED') throw new Error(counterScanRequired());
   if (error) throw error;
-  if (!data.length) throw new Error(bippoT("تغيرت حالة الطلب، حدّث الصفحة"));
+  if (!data.length) throw new Error(bippoT('تغيرت حالة الطلب، حدّث الصفحة'));
 }
 export async function track(token) {
-  if (!cloud) return read().find(o => o.token === token) || null;
-  const {
-    data,
-    error
-  } = await db.rpc('track_order', {
-    ticket: token
+  if (!cloud) return read().find((o) => o.token === token) || null;
+  const { data, error } = await db.rpc('track_order', {
+    ticket: token,
   });
   if (error) throw error;
   return data?.[0] || null;
 }
 export async function display(token) {
-  if (!cloud) return read().filter(active).map(({
-    number,
-    status
-  }) => ({
-    number,
-    status
-  }));
-  const {
-    data,
-    error
-  } = await db.rpc('display_orders', {
-    ticket: token
+  if (!cloud)
+    return read()
+      .filter(active)
+      .map(({ number, status }) => ({
+        number,
+        status,
+      }));
+  const { data, error } = await db.rpc('display_orders', {
+    ticket: token,
   });
   if (error) throw error;
   return data;
@@ -163,11 +196,18 @@ export function subscribe(fn) {
   window.addEventListener('storage', fn);
   window.addEventListener('nawba-change', fn);
   const timer = setInterval(fn, 2000);
-  const channel = db?.channel('staff-orders').on('postgres_changes', {
-    event: '*',
-    schema: 'public',
-    table: 'orders'
-  }, fn).subscribe();
+  const channel = db
+    ?.channel('staff-orders')
+    .on(
+      'postgres_changes',
+      {
+        event: '*',
+        schema: 'public',
+        table: 'orders',
+      },
+      fn,
+    )
+    .subscribe();
   return () => {
     clearInterval(timer);
     window.removeEventListener('storage', fn);
@@ -179,7 +219,5 @@ export function subscribe(fn) {
 export const integrations = {
   pos: null,
   payments: null,
-  notifications: null
+  notifications: null,
 };
-
-

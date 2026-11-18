@@ -2,10 +2,10 @@ export const alertTones = {
   pager: 'بيجر',
   marimba: 'ماريمبا',
   crystal: 'كريستال',
-  classic: 'كلاسيك'
+  classic: 'كلاسيك',
 };
 
-export const toneKey = key => Object.hasOwn(alertTones, key) ? key : 'pager';
+export const toneKey = (key) => (Object.hasOwn(alertTones, key) ? key : 'pager');
 const sounds = { pager: '/order-alert-v2.wav', classic: '/order-chime.wav' };
 const generated = {};
 
@@ -17,8 +17,13 @@ export function toneSource(key) {
   const rate = 16000;
   const samples = Math.floor(rate * 1.22);
   const wav = new DataView(new ArrayBuffer(44 + samples * 2));
-  for (const [offset, text] of [[0, 'RIFF'], [8, 'WAVEfmt '], [36, 'data']]) {
-    for (let index = 0; index < text.length; index++) wav.setUint8(offset + index, text.charCodeAt(index));
+  for (const [offset, text] of [
+    [0, 'RIFF'],
+    [8, 'WAVEfmt '],
+    [36, 'data'],
+  ]) {
+    for (let index = 0; index < text.length; index++)
+      wav.setUint8(offset + index, text.charCodeAt(index));
   }
   wav.setUint32(4, 36 + samples * 2, true);
   wav.setUint32(16, 16, true);
@@ -34,11 +39,12 @@ export function toneSource(key) {
   for (let i = 0; i < samples; i++) {
     const time = i / rate;
     const signal = notes.reduce((sum, pitch, index) => {
-      const age = time - index * (marimba ? .17 : .21);
-      if (age < 0 || age >= .48) return sum;
+      const age = time - index * (marimba ? 0.17 : 0.21);
+      if (age < 0 || age >= 0.48) return sum;
       const angle = 2 * Math.PI * pitch * age;
-      const envelope = Math.min(1, age / .012, (.48 - age) / .06) * Math.exp(-age * (marimba ? 10 : 6));
-      return sum + envelope * (Math.sin(angle) + .18 * Math.sin(angle * (marimba ? 3 : 2.7)));
+      const envelope =
+        Math.min(1, age / 0.012, (0.48 - age) / 0.06) * Math.exp(-age * (marimba ? 10 : 6));
+      return sum + envelope * (Math.sin(angle) + 0.18 * Math.sin(angle * (marimba ? 3 : 2.7)));
     }, 0);
     wav.setInt16(44 + i * 2, Math.max(-32768, Math.min(32767, Math.round(signal * 14000))), true);
   }

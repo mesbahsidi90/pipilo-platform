@@ -6,5 +6,5 @@ export const defaultPlanCatalog = {
   standard_price: 14900,
   launch_branches: 20,
   free_ticket_limit: 100,
-  active: true
+  active: true,
 };

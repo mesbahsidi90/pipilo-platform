@@ -5,11 +5,15 @@ function brandedTitle(label) {
 }
 
 export function useRouteTitle(title) {
-  useLayoutEffect(() => { document.title = title; }, [title]);
+  useLayoutEffect(() => {
+    document.title = title;
+  }, [title]);
 }
 
 export function usePanelTitle(label) {
-  useEffect(() => { document.title = brandedTitle(label); }, [label]);
+  useEffect(() => {
+    document.title = brandedTitle(label);
+  }, [label]);
 }
 
 export function printWithTitle(label) {

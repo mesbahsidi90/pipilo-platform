@@ -2,6 +2,8 @@ import { cloud, db, track } from './store';
 import { getSettings } from './shopSettings';
 const key = 'bippo-guest-signals';
 const feedbackKey = 'bipilo-demo-order-feedback';
+const ratingsKey = 'bipilo-demo-order-ratings';
+const readRatings = () => JSON.parse(localStorage.getItem(ratingsKey) || '{}');
 const readFeedback = () => JSON.parse(localStorage.getItem(feedbackKey) || '{}');
 const read = () => JSON.parse(localStorage.getItem(key) || '{}');
 export function demoSignals() {
@@ -48,6 +50,7 @@ export async function guestExtras(ticket) {
       private_feedback_enabled:
         o.status === 'collected' && Boolean(settings.private_feedback_enabled),
       feedback_sent: Boolean(readFeedback()[o.id]),
+      rating: readRatings()[o.id]?.stars || null,
     };
   }
   const { data, error } = await db.rpc('guest_order_extras', { ticket });
@@ -100,4 +103,42 @@ export async function staffSignals(ids = []) {
     .limit(200);
   if (error) throw error;
   return Object.fromEntries(data.map((s) => [s.order_id, s]));
+}
+
+export async function rateOrder(ticket, stars) {
+  if (!Number.isInteger(stars) || stars < 1 || stars > 5) return false;
+  if (!cloud) {
+    const order = await track(ticket);
+    if (order?.status !== 'collected') return false;
+    const ratings = readRatings();
+    ratings[order.id] ||= { stars, created_at: new Date().toISOString() };
+    localStorage.setItem(ratingsKey, JSON.stringify(ratings));
+    return true;
+  }
+  const { data, error } = await db.rpc('rate_order', { ticket, stars });
+  if (error) throw error;
+  return data;
+}
+
+// Ratings and alert reach for the current branch over a report period.
+export async function branchGuestInsights({ from, to }) {
+  if (!cloud) {
+    const values = Object.values(readRatings()).filter(
+      (r) => r.created_at >= from && r.created_at < to,
+    );
+    const stars = { 1: 0, 2: 0, 3: 0, 4: 0, 5: 0 };
+    values.forEach((r) => (stars[r.stars] += 1));
+    const total = values.reduce((sum, r) => sum + r.stars, 0);
+    return {
+      ratings: {
+        count: values.length,
+        average: values.length ? Math.round((total / values.length) * 100) / 100 : null,
+        stars,
+      },
+      alerts: null,
+    };
+  }
+  const { data, error } = await db.rpc('branch_guest_insights', { since: from, until: to });
+  if (error) throw error;
+  return data;
 }

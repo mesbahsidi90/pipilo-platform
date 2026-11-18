@@ -1,7 +1,10 @@
 import { t as bippoT, locale as bippoLocale, ticketLink } from './i18n.js';
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import {
   Plus,
+  Volume2,
+  VolumeX,
+  Hash,
   Settings,
   Clock,
   Check,
@@ -54,6 +57,10 @@ import { usePanelTitle } from './pageTitle';
 import { retryPush } from './OrderAlerts';
 import { staffSignals } from './guestApi';
 import GuestStatus from './GuestStatus';
+import { staffCues } from './staffCues';
+import { nextOrderNumber } from './orderNumbers';
+import { createOrderAudio } from './orderAudio';
+import { toneSource } from './alertTones';
 import './guest-experience.css';
 export default function Orders({ Share, workspace }) {
   const [orders, setOrders] = useState(null),
@@ -73,7 +80,10 @@ export default function Orders({ Share, workspace }) {
     [shopError, setShopError] = useState(''),
     [paidPlan, setPaidPlan] = useState(null),
     [workspaceData, setWorkspaceData] = useState(null),
-    [workspaceError, setWorkspaceError] = useState('');
+    [workspaceError, setWorkspaceError] = useState(''),
+    [staffSound, setStaffSound] = useState(false);
+  const cueState = useRef(null);
+  const cueAudio = useRef(null);
 
   async function refreshWorkspace() {
     if (!cloud) return;
@@ -146,6 +156,36 @@ export default function Orders({ Share, workspace }) {
       alive = false;
     };
   }, [tab]);
+
+  useEffect(() => {
+    if (!orders) return;
+    const result = staffCues(cueState.current, orders);
+    cueState.current = result.state;
+    if (!staffSound) return;
+    const messages = [
+      ...result.coming.map((n) => bippoT('الزبون {0} راه جاي.', [n])),
+      ...result.unreached.map((n) => bippoT('الطلب {0} جاهز والزبون ما شافوش بعد. ناديلو.', [n])),
+    ];
+    if (!messages.length) return;
+    setNotice(messages.join(' '));
+    cueAudio.current?.play().catch(() => setStaffSound(false));
+  }, [orders, staffSound]);
+
+  async function toggleStaffSound() {
+    if (staffSound) {
+      setStaffSound(false);
+      return;
+    }
+    cueAudio.current ??= createOrderAudio(toneSource('crystal'));
+    cueAudio.current.loop = false;
+    try {
+      // Browsers only allow sound after a click: play once now to unlock it.
+      await cueAudio.current.play();
+      setStaffSound(true);
+    } catch {
+      setNotice(bippoT('تعذر تشغيل الصوت. عاود المحاولة.'));
+    }
+  }
 
   async function mark(o, status) {
     setBusy(true);
@@ -777,12 +817,35 @@ export default function Orders({ Share, workspace }) {
                     required
                   />
                 </label>
+                <button
+                  type="button"
+                  className="button outline merchant-auto-number"
+                  title={bippoT('الرقم التلقائي')}
+                  aria-label={bippoT('الرقم التلقائي')}
+                  onClick={() => {
+                    const next = nextOrderNumber(rows);
+                    if (next) setNumber(next);
+                    document.getElementById('merchant-ticket-number')?.focus();
+                  }}
+                >
+                  <Hash size={17} />
+                </button>
                 <button className="button" disabled={busy || !shop}>
                   <Plus size={18} />
                   {activity.foodService ? bippoT(' زيد الطلب') : bippoT(' زيد التيكي')}
                 </button>
               </form>
             )}
+            <button
+              type="button"
+              className={'merchant-sound-toggle' + (staffSound ? ' enabled' : '')}
+              aria-pressed={staffSound}
+              onClick={toggleStaffSound}
+              title={bippoT('صوت كي يقول الزبون «راني جاي» ولا كي ما يوصلوش التنبيه.')}
+            >
+              {staffSound ? <Volume2 size={16} /> : <VolumeX size={16} />}
+              {staffSound ? bippoT('التنبيه الصوتي مفعّل') : bippoT('نبّهني بصوت')}
+            </button>
             {pendingCounterOrder && (
               <p role="status" className="notice">
                 {bippoT('الطلب {0} يستنّى مسح QR الثابت باش تقدر تزيد طلب جديد.', [

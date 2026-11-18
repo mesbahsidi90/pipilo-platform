@@ -6,6 +6,7 @@ import { loadReportOrders } from './reportOrders';
 import { statuses } from './domain';
 import { summarize, secondsBetween, duration, orderCSV } from './reporting';
 import ReportCharts from './ReportCharts';
+import { branchGuestInsights } from './guestApi';
 function rollingPeriod(days) {
   const now = Date.now();
   return { from: new Date(now - days * 86400000).toISOString(), to: new Date(now).toISOString() };
@@ -23,7 +24,8 @@ export default function Reports({ clinic = false, initialPeriod = null }) {
     [orders, setOrders] = useState(null),
     [loading, setLoading] = useState(false),
     [error, setError] = useState(''),
-    [revision, setRevision] = useState(0);
+    [revision, setRevision] = useState(0),
+    [insights, setInsights] = useState(null);
   const [period, setPeriod] = useState(() => initialPeriod || rollingPeriod(30));
 
   function selectPeriod(value) {
@@ -57,6 +59,11 @@ export default function Reports({ clinic = false, initialPeriod = null }) {
       }
     }
     load();
+    // Ratings and alert reach are optional extras: the report still shows without them.
+    setInsights(null);
+    branchGuestInsights(period)
+      .then((value) => live && setInsights(value))
+      .catch(() => {});
     return () => {
       live = false;
     };
@@ -231,7 +238,13 @@ export default function Reports({ clinic = false, initialPeriod = null }) {
               </article>
             ))}
           </div>
-          <ReportCharts report={report} period={period} zone={zone} clinic={clinic} />
+          <ReportCharts
+            report={report}
+            period={period}
+            zone={zone}
+            clinic={clinic}
+            insights={insights}
+          />
           <p className="report-coverage">
             {bippoT(
               'أوقات الجاهزية والاستلام تتسجّل من بعد التحديث فقط. الطلبات القديمة اللي ما عندهاش هاذ الأوقات تبقى في السجل، وما تدخلش في متوسط التحضير والانتظار. ما نقدّروش نخمّنولها أوقات.',

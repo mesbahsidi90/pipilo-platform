@@ -1278,5 +1278,20 @@
   "مطاعم، مغاسل، خياطين وعيادات: كل نشاط يتبع الانتظار بالطريقة اللي تناسبو.": "Restaurants, laveries, retoucheurs et cliniques : chaque activité gère l’attente à sa façon.",
   "8 أنشطة": "8 activités",
   "واش يدير Bipilo": "Ce que fait Bipilo",
-  "بلا bipeur": "Sans bipeur"
+  "بلا bipeur": "Sans bipeur",
+  "الزبون {0} راه جاي.": "Le client {0} arrive.",
+  "الطلب {0} جاهز والزبون ما شافوش بعد. ناديلو.": "La commande {0} est prête mais le client ne l’a pas encore vue. Appelez-le.",
+  "الرقم التلقائي": "Numéro automatique",
+  "صوت كي يقول الزبون «راني جاي» ولا كي ما يوصلوش التنبيه.": "Un son quand le client répond « J’arrive » ou quand l’alerte ne lui parvient pas.",
+  "التنبيه الصوتي مفعّل": "Alerte sonore activée",
+  "نبّهني بصوت": "M’alerter par un son",
+  "تعذّر حفظ التقييم. عاود المحاولة.": "Impossible d’enregistrer la note. Réessayez.",
+  "قيّم الخدمة من 1 إلى 5": "Notez le service de 1 à 5",
+  "{0} من 5": "{0} sur 5",
+  "شكرًا على تقييمك!": "Merci pour votre note !",
+  "مازال ما كاش تقييمات في هذي الفترة.": "Aucune note sur cette période.",
+  "من 5 · {0} تقييم": "sur 5 · {0} notes",
+  "مازال ما كاش طلبات جاهزة في هذي الفترة.": "Aucune commande prête sur cette période.",
+  "الصفحة مفتوحة فقط": "Page ouverte uniquement",
+  "من الزبائن شافو طلبهم جاهز ولا قالو «راني جاي»": "des clients ont vu leur commande prête ou ont répondu « J’arrive »"
 }

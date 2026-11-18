@@ -1,9 +1,10 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { Maximize2, Minimize2, Volume2, VolumeX } from 'lucide-react';
-import { t } from './i18n';
+import { t, language } from './i18n';
 import DotNumber from './DotNumber';
 import { createOrderAudio } from './orderAudio';
 import { toneSource } from './alertTones';
+import { newlyReady, speakCalls } from './announce';
 import './waiting-board.css';
 
 function BoardColumn({ title, orders, ready, empty }) {
@@ -32,6 +33,7 @@ export default function WaitingBoard({ orders, error }) {
   const [fullscreen, setFullscreen] = useState(Boolean(document.fullscreenElement));
   const player = useRef(null);
   const previousReady = useRef(null);
+  const speechTimer = useRef(null);
   const labels = new URLSearchParams(location.search);
   const clinic = labels.get('queue') === '1';
   const name = labels.get('venue')?.trim().slice(0, 100) || 'Bipilo';
@@ -57,20 +59,41 @@ export default function WaitingBoard({ orders, error }) {
     );
     const previous = previousReady.current;
     previousReady.current = current;
-    if (sound && previous && [...current].some((number) => !previous.has(number))) {
-      player.current?.play().catch(() => {
-        setSound(false);
-        setSoundError(true);
-      });
+    const called = newlyReady(previous, current);
+    if (sound && called.length) {
+      player.current
+        ?.play()
+        .then(() => {
+          // Let the chime finish, then say the number(s).
+          speechTimer.current = setTimeout(
+            () => speakCalls(called, { lang: language, clinic }),
+            1300,
+          );
+        })
+        .catch(() => {
+          setSound(false);
+          setSoundError(true);
+        });
     }
-  }, [orders, error, sound]);
+  }, [orders, error, sound, clinic]);
+
+  useEffect(
+    () => () => {
+      clearTimeout(speechTimer.current);
+      globalThis.speechSynthesis?.cancel();
+    },
+    [],
+  );
 
   async function toggleSound() {
     if (sound) {
       player.current?.pause();
+      globalThis.speechSynthesis?.cancel();
       setSound(false);
       return;
     }
+    // TV browsers only allow speech after a tap; warm it up with this click.
+    globalThis.speechSynthesis?.getVoices();
     setSoundError(false);
     player.current ??= createOrderAudio(toneSource('classic'));
     player.current.loop = false;

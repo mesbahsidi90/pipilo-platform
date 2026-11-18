@@ -111,7 +111,70 @@ function PeakHours({ activity }) {
   );
 }
 
-export default function ReportCharts({ report, period, zone, clinic }) {
+function Ratings({ ratings }) {
+  if (!ratings?.count)
+    return <p className="analytics-empty">{t('مازال ما كاش تقييمات في هذي الفترة.')}</p>;
+  const max = Math.max(1, ...Object.values(ratings.stars));
+  return (
+    <div className="analytics-ratings">
+      <div className="analytics-ratings-score">
+        <strong dir="ltr">
+          {Number(ratings.average).toLocaleString(locale, { maximumFractionDigits: 1 })}
+        </strong>
+        <span>{t('من 5 · {0} تقييم', [ratings.count])}</span>
+      </div>
+      <ul>
+        {[5, 4, 3, 2, 1].map((value) => (
+          <li key={value}>
+            <span dir="ltr">{value}★</span>
+            <i>
+              <b style={{ width: (ratings.stars[value] / max) * 100 + '%' }} />
+            </i>
+            <small>{ratings.stars[value]}</small>
+          </li>
+        ))}
+      </ul>
+    </div>
+  );
+}
+
+const methodLabels = {
+  apple: 'iPhone / Safari',
+  chrome: 'Android / Chrome',
+  firefox: 'Firefox',
+  edge: 'Edge',
+  other: '—',
+};
+
+function AlertMethods({ alerts }) {
+  if (!alerts?.ready)
+    return <p className="analytics-empty">{t('مازال ما كاش طلبات جاهزة في هذي الفترة.')}</p>;
+  const rows = [
+    ...Object.entries(methodLabels).map(([key, label]) => [label, alerts.methods[key] || 0]),
+    [t('الصفحة مفتوحة فقط'), alerts.methods.page || 0],
+  ].filter(([, count]) => count > 0);
+  const reach = Math.round((alerts.reached / alerts.ready) * 100);
+  return (
+    <div className="analytics-methods">
+      <p className="analytics-reach">
+        <strong dir="ltr">{reach}%</strong>
+        {t('من الزبائن شافو طلبهم جاهز ولا قالو «راني جاي»')}
+      </p>
+      <ul>
+        {rows.map(([label, count]) => (
+          <li key={label}>
+            <span>{label}</span>
+            <b dir="ltr">
+              {count} · {Math.round((count / alerts.ready) * 100)}%
+            </b>
+          </li>
+        ))}
+      </ul>
+    </div>
+  );
+}
+
+export default function ReportCharts({ report, period, zone, clinic, insights }) {
   const maxPrep = Math.max(1, ...report.prepByHour);
   return (
     <div className="analytics-charts">
@@ -121,7 +184,7 @@ export default function ReportCharts({ report, period, zone, clinic }) {
       </article>
       <article className="panel">
         <h3>{t('التقييمات')}</h3>
-        <p className="analytics-empty">{t('بيانات تقييمات الزبائن غير متاحة حاليًا.')}</p>
+        <Ratings ratings={insights?.ratings} />
       </article>
       <article className="panel">
         <h3>{t('ساعات الذروة')}</h3>
@@ -148,7 +211,7 @@ export default function ReportCharts({ report, period, zone, clinic }) {
         </article>
         <article className="panel">
           <h3>{t('طريقة التنبيه')}</h3>
-          <p className="analytics-empty">{t('بيانات طرق التنبيه غير متاحة حاليًا.')}</p>
+          <AlertMethods alerts={insights?.alerts} />
         </article>
       </div>
     </div>

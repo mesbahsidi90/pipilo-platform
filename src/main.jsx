@@ -528,6 +528,7 @@ function Customer({ token }) {
             ticket={token}
             allowFeedback={o.private_feedback_enabled}
             alreadySent={o.feedback_sent}
+            initialRating={o.rating}
           />
         ) : confirmError ? (
           <p className="guest-confirm-error" role="status">

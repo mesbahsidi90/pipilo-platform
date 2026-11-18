@@ -1,4 +1,3 @@
-begin;
 
 alter table public.shop_settings drop constraint shop_settings_tracking_mode_check;
 alter table public.shop_settings add constraint shop_settings_tracking_mode_check
@@ -55,5 +54,3 @@ end;
 $$;
 revoke all on function public.invoice_ticket(uuid, text, uuid) from public;
 grant execute on function public.invoice_ticket(uuid, text, uuid) to anon, authenticated;
-
-commit;

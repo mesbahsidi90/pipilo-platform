@@ -15,7 +15,7 @@
 
 ## الخادم والحماية
 
-- SQL: supabase/landing_demo.sql، يُطبّق بعد order_alerts_reports.sql.
+- SQL: supabase/migrations/20261107200846_landing_phone_demo.sql، يُطبّق بعد order_alerts_reports.sql.
 - demo_tickets وdemo_push_subscriptions منفصلان تمامًا عن orders، لا يظهران في حسابات المحلات أو التقارير.
 - RLS على الجدولين مع منع anon وauthenticated من أي وصول مباشر؛ الوصول من دالة Edge فقط.
 - رمز الزبون UUID مختلف عن مفتاح التحكم. QR لا يحتوي مفتاح التحكم. يُحفظ تجزئة SHA-256 للمفتاح في القاعدة، ولا يعيده demo-track.

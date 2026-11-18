@@ -1,5 +1,3 @@
-begin;
-
 create or replace function merchant_workspace_private.admin_order_activity()
 returns jsonb
 language plpgsql stable security definer set search_path = ''
@@ -60,4 +58,3 @@ revoke all on function public.admin_order_activity() from public, anon;
 grant execute on function public.admin_order_activity() to authenticated;
 
 notify pgrst, 'reload schema';
-commit;

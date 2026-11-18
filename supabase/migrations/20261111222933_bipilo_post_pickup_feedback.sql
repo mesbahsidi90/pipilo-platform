@@ -1,5 +1,4 @@
 -- Apply after order_cancellation.sql and lifetime_plans.sql.
-begin;
 
 alter table public.shop_settings add column private_feedback_enabled boolean not null default false;
 
@@ -70,5 +69,3 @@ language sql stable security definer set search_path = '' as $$
 $$;
 revoke all on function public.branch_order_feedback() from public, anon;
 grant execute on function public.branch_order_feedback() to authenticated;
-
-commit;

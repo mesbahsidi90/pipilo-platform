@@ -11,7 +11,7 @@
 
 ## تركيب قاعدة البيانات
 
-بعد المخطط الموجود، طبّق `supabase/guest_experience.sql` مرة واحدة. طُبق على المشروع المتصل باسم `guest_signals_google_reviews`.
+بعد المخطط الموجود، طبّق `supabase/migrations/20261108103333_guest_signals_google_reviews.sql` مرة واحدة. طُبق على المشروع المتصل باسم `guest_signals_google_reviews`.
 
 - `shop_settings.google_review_url`: اختيارية، HTTPS ونطاق Google معتمد فقط؛ تحقق مزدوج في الواجهة وقاعدة البيانات.
 - `order_guest_signals`: صف واحد لكل طلب، بدون اسم الزبون أو هاتفه. RLS يمنع القراءة المباشرة للضيف، والقراءة للمحل الحالي فقط. لا تعديل مباشر للمستخدمين.

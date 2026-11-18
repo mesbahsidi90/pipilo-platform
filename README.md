@@ -30,7 +30,7 @@ npm run dev -- --port 5189
 لم تُضف مفاتيح ولم تُغيّر أي قاعدة موجودة. المشاريع المتصلة أثناء التنفيذ كانت غير نشطة وغير مرتبطة بهذا التطبيق.
 
 1. جهّز مشروع Supabase جديدًا أو قاعدة فارغة مخصصة لهذا التطبيق.
-2. نفّذ `supabase/setup.sql` **مرة واحدة** في SQL Editor. ينشئ الجداول والسياسات والدوال واشتراك Realtime. ليس ترحيلًا آليًا لقاعدة قائمة.
+2. نفّذ `supabase/migrations/20261107160947_bippo_initial_schema.sql` **مرة واحدة** في SQL Editor. ينشئ الجداول والسياسات والدوال واشتراك Realtime. ليس ترحيلًا آليًا لقاعدة قائمة.
 3. أنشئ مستخدم صاحب المحل والموظفين من Authentication في لوحة Supabase. لا توجد شاشة تسجيل عام في هذا MVP.
 4. أنشئ محلًا واربط المستخدمين به من SQL Editor باستخدام UUID الفعلي لكل حساب:
 
@@ -85,7 +85,7 @@ npm run preview -- --port 5189
 - `src/style.css` و`src/redesign.css`: أنماط التطبيق والهوية الجديدة والاستجابة للشاشات وTailwind.
 - `src/store.js`: طبقة البيانات، Supabase/التجربة، ونقاط توصيل integrations المستقبلية.
 - `src/domain.js`: قواعد أرقام الطلبات ودورة حالتها.
-- `supabase/setup.sql`: مخطط قاعدة البيانات وصلاحياتها.
+- `supabase/migrations/20261107160947_bippo_initial_schema.sql`: مخطط قاعدة البيانات وصلاحياتها.
 - `tests/domain.test.js`: اختبارات قواعد الإدخال والانتقال.
 - `VERIFICATION.md`: ما تم فحصه وحدود التحقق.
 
@@ -94,3 +94,7 @@ npm run preview -- --port 5189
 ## تحديث هوية bippo
 
 ألوان خضراء بترولية ونعناعية مع لمسات مشمشية، ومحتوى قريب للدارجة الجزائرية. قسم كيفاش تخدم يستعمل عرض هاتف واحدًا ثابتًا داخل القسم، يتبدل حسب النص أثناء التمرير، ويتحرر عند نهاية القسم. على الهاتف يبقى العرض فوق الخطوات. احترام تفضيل تقليل الحركة مفعّل. الأنماط في src/bippo.css.
+
+## Database migrations
+
+`supabase/migrations/` holds every migration applied to production, named `<version>_<name>.sql` to match `supabase_migrations.schema_migrations`. Add new changes as a new file there (for example `npx supabase migration new <name>`) instead of editing existing ones.

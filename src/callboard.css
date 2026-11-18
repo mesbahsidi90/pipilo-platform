@@ -1,0 +1,366 @@
+/* Landing hero ("call board") and moment cards — Bipilo identity:
+   deep teal, mint, apricot and dot-matrix numerals. */
+.callboard-hero {
+  --cb-teal: #0c3e38;
+  --cb-night: #0b2523;
+  --cb-mint: #c9f2d9;
+  --cb-apricot: #ffb56c;
+  --cb-cream: #f6f1e7;
+  padding-top: 22px;
+}
+.callboard-hero-panel {
+  position: relative;
+  overflow: hidden;
+  display: grid;
+  grid-template-columns: 1.15fr 1fr;
+  gap: 48px;
+  align-items: center;
+  padding: 64px 56px;
+  border-radius: 34px;
+  background: var(--cb-teal);
+  color: var(--cb-cream);
+  isolation: isolate;
+}
+.callboard-hero-panel::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  background-image: radial-gradient(#ffffff14 1.2px, transparent 1.3px);
+  background-size: 18px 18px;
+  mask-image: linear-gradient(to left, #000 10%, transparent 75%);
+}
+.callboard-kicker {
+  display: inline-block;
+  padding: 7px 14px;
+  border-radius: 30px;
+  background: #ffffff14;
+  color: var(--cb-mint);
+  font-size: 0.9rem;
+}
+.callboard-copy h1 {
+  margin: 22px 0 18px;
+  font-size: clamp(2.7rem, 6.4vw, 5.6rem);
+  line-height: 1.15;
+  font-weight: 800;
+  letter-spacing: -1.5px;
+  color: var(--cb-cream);
+}
+.callboard-copy h1 em {
+  font-style: normal;
+  color: var(--cb-apricot);
+}
+.callboard-copy > p {
+  max-width: 520px;
+  font-size: 1.12rem;
+  line-height: 2;
+  color: #cfe2da;
+}
+.callboard-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 14px 22px;
+  margin-top: 28px;
+}
+.callboard-hero .callboard-primary {
+  background: var(--cb-apricot);
+  border-color: var(--cb-apricot);
+  color: #3b2410;
+  font-weight: 700;
+  padding: 15px 30px;
+  box-shadow: 0 8px 24px #ffb56c33;
+}
+.callboard-hero .callboard-primary:hover {
+  background: #ffc68a;
+  border-color: #ffc68a;
+}
+.callboard-secondary {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--cb-cream);
+  font-weight: 600;
+  text-decoration: underline;
+  text-underline-offset: 5px;
+  text-decoration-color: #ffffff55;
+}
+.callboard-secondary:hover {
+  text-decoration-color: var(--cb-apricot);
+}
+.callboard-facts {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px 28px;
+  margin: 36px 0 0;
+  padding: 0;
+  list-style: none;
+  color: #a9c7bb;
+  font-size: 0.92rem;
+}
+.callboard-facts li {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+}
+.callboard-facts b {
+  font:
+    800 1.9rem/1 Arial,
+    sans-serif;
+  color: var(--cb-mint);
+}
+
+/* The board itself */
+.callboard {
+  position: relative;
+  padding: 20px 20px 16px;
+  border-radius: 26px;
+  background: var(--cb-night);
+  border: 1px solid #ffffff18;
+  box-shadow:
+    inset 0 0 0 6px #ffffff06,
+    0 30px 60px #0007;
+  transform: rotate(-1.5deg);
+}
+.callboard-head {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  padding-bottom: 14px;
+  margin-bottom: 16px;
+  border-bottom: 1px dashed #ffffff22;
+  color: #a9c7bb;
+  font-size: 0.85rem;
+}
+.callboard-shop {
+  margin-inline-start: auto;
+  color: var(--cb-cream);
+  font-weight: 600;
+}
+.callboard-live {
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  background: #5ee39a;
+  box-shadow: 0 0 0 4px #5ee39a26;
+  animation: cb-live 1.6s ease-in-out infinite;
+}
+.callboard-cols {
+  display: grid;
+  grid-template-columns: 1.25fr 1fr;
+  gap: 18px;
+}
+.callboard-cols h3 {
+  margin: 0 0 12px;
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: #a9c7bb;
+}
+.callboard-ready h3 {
+  color: var(--cb-apricot);
+}
+.callboard-call {
+  padding: 16px 12px;
+  border-radius: 16px;
+  background: #ffb56c14;
+  border: 1px solid #ffb56c40;
+  color: var(--cb-apricot);
+  animation: cb-call 0.9s ease-out;
+}
+.callboard-call .dot-number {
+  display: block;
+  width: 100%;
+  height: auto;
+  max-height: 110px;
+  filter: drop-shadow(0 0 14px #ffad5c55);
+}
+.callboard-list {
+  display: grid;
+  gap: 10px;
+  margin-top: 12px;
+}
+.callboard-list .dot-number {
+  height: 30px;
+  width: auto;
+  justify-self: start;
+}
+.callboard-ready .callboard-list {
+  color: #ffd2a3;
+  opacity: 0.75;
+}
+.callboard-prep .callboard-list {
+  color: var(--cb-mint);
+  opacity: 0.5;
+}
+.callboard-note {
+  margin: 14px 0 0;
+  font-size: 0.72rem;
+  color: #6f948a;
+  text-align: end;
+}
+.callboard-footnote {
+  margin: 12px 8px 0;
+  font-size: 0.8rem;
+  color: var(--bippo-muted);
+}
+
+@keyframes cb-live {
+  50% {
+    opacity: 0.35;
+  }
+}
+@keyframes cb-call {
+  0% {
+    transform: scale(0.94);
+    background: #ffb56c40;
+  }
+  100% {
+    transform: none;
+  }
+}
+
+/* Moment cards */
+.moments {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 16px;
+  padding-top: 22px;
+  padding-bottom: 30px;
+}
+.moment {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  min-height: 330px;
+  padding: 22px 22px 20px;
+  border-radius: 26px;
+  overflow: hidden;
+}
+.moment-leds {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 26px;
+}
+.moment-leds i {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: currentColor;
+  opacity: 0.18;
+}
+.moment-leds i:nth-child(3n + 1) {
+  opacity: 0.55;
+}
+.moment .dot-glyph {
+  width: 92px;
+  height: 92px;
+  margin-bottom: auto;
+}
+.moment h3 {
+  margin: 26px 0 8px;
+  font-size: 1.45rem;
+  font-weight: 800;
+  letter-spacing: -0.3px;
+}
+.moment p {
+  margin: 0 0 18px;
+  font-size: 0.95rem;
+  line-height: 1.9;
+  opacity: 0.85;
+}
+.moment-tag {
+  align-self: flex-start;
+  padding: 5px 12px;
+  border-radius: 30px;
+  font-size: 0.8rem;
+  font-weight: 600;
+  background: #ffffff26;
+}
+.moment-teal {
+  background: #0c3e38;
+  color: #f6f1e7;
+}
+.moment-teal .dot-glyph {
+  color: #c9f2d9;
+}
+.moment-apricot {
+  background: #ffb56c;
+  color: #3b2410;
+}
+.moment-apricot .moment-tag {
+  background: #3b24101a;
+}
+.moment-mint {
+  background: #c9f2d9;
+  color: #0b352f;
+}
+.moment-mint .moment-tag {
+  background: #0b352f14;
+}
+.moment-ink {
+  background: #121a19;
+  color: #f6f1e7;
+}
+.moment-ink .dot-glyph {
+  color: #ffb56c;
+}
+
+@media (max-width: 1000px) {
+  .callboard-hero-panel {
+    grid-template-columns: 1fr;
+    padding: 44px 32px;
+    gap: 36px;
+  }
+  .callboard {
+    transform: none;
+    max-width: 520px;
+  }
+  .moments {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+@media (max-width: 640px) {
+  .callboard-hero {
+    padding-top: 12px;
+  }
+  .callboard-hero-panel {
+    padding: 32px 20px 24px;
+    border-radius: 26px;
+  }
+  .callboard-copy > p {
+    font-size: 1rem;
+  }
+  .callboard-facts {
+    gap: 8px 18px;
+  }
+  .callboard-facts b {
+    font-size: 1.5rem;
+  }
+  .callboard {
+    padding: 16px 14px 12px;
+  }
+  .moments {
+    display: flex;
+    overflow-x: auto;
+    scroll-snap-type: x mandatory;
+    gap: 12px;
+    padding-bottom: 18px;
+    scrollbar-width: none;
+  }
+  .moment {
+    flex: 0 0 78%;
+    min-height: 300px;
+    scroll-snap-align: start;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .callboard-live,
+  .callboard-call {
+    animation: none;
+  }
+}
+
+html[lang='fr'] .callboard-copy h1 {
+  font-size: clamp(2.4rem, 4.6vw, 4.1rem);
+  letter-spacing: -1px;
+}

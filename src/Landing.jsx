@@ -21,6 +21,7 @@ import {
 import { QRCodeSVG } from 'qrcode.react';
 import DotNumber from './DotNumber';
 import LiveDemo from './LiveDemo';
+import { CallboardHero, Moments } from './Callboard';
 import './landing-scan.css';
 export { default as Brand } from './Brand';
 const jump = (id) => (e) => {
@@ -310,68 +311,8 @@ export default function Landing() {
         </div>
       </header>
       <main>
-        <section className="center-hero wrap">
-          <span className="hero-tag">
-            <ChefHat size={15} />
-            {bippoT(' نظّم الطابور والانتظار')}
-          </span>
-          <h1 className="landing-headline">
-            {bippoT('سيّر طلبات مطعمك بلا أجهزة bipeur،')}
-            <br />
-            {bippoT('بلا فوضة قدّام الكاونتر.')}
-          </h1>
-          <p>
-            {bippoT('يمسح الكود، يفعّل التنبيه، ويستنى على راحتو. بلا حساب وبلا تطبيق للزبون.')}
-          </p>
-          <div className="hero-buttons">
-            <a className="button" href="/signup">
-              {bippoT('إنشاء حساب مجاني')}
-            </a>
-            <a className="button outline" href="#try" onClick={jump('try')}>
-              {bippoT('شوف كيفاش تخدم ')}
-              <ArrowLeft size={17} />
-            </a>
-          </div>
-          <div className="hero-checks">
-            <span>
-              <Check />
-              {bippoT(' بديل لأجهزة النداء (البيجر)')}
-            </span>
-            <span>
-              <Check />
-              {bippoT(' بلا حساب للزبون')}
-            </span>
-            <span>
-              <Check />
-              {bippoT(' تنبيه حتى والشاشة مقفولة*')}
-            </span>
-          </div>
-          <div className="hero-context">
-            <span className="context-icon">
-              <ScanLine />
-            </span>
-            <span>
-              {bippoT('* إشعار القفل يحتاج جهاز يدعمو وإذن الإشعارات.')}
-              <b>{bippoT(' على iPhone زيد الصفحة للشاشة الرئيسية.')}</b>
-            </span>
-          </div>
-        </section>
-        <section className="cinema wrap" aria-label={bippoT('عرض توضيحي للطلب الجاهز')}>
-          <div className="cinema-grid" />
-          <span className="cinema-label">
-            <span />
-            {bippoT(' هذه معاينة توضيحية لصفحة مفتوحة')}
-          </span>
-          <div className="cinema-glow" />
-          <Phone ready />
-          <div className="cinema-caption">
-            <DotNumber value="57" />
-            <span>
-              {bippoT('واجد للاستلام.')}
-              <small>{bippoT('والزبون يعرف، من صفحته.')}</small>
-            </span>
-          </div>
-        </section>
+        <CallboardHero onTry={jump('try')} />
+        <Moments />
         <HowItWorks />
         <section id="features" className="feature-area">
           <div className="wrap">

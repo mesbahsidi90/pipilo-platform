@@ -18,6 +18,7 @@ export default function CustomerPager({
   loading = false,
   children,
   extra,
+  loyalty = null,
 }) {
   const lang = previewLanguage || language;
   const bippoT = (text) => translate(text, lang);
@@ -135,6 +136,7 @@ export default function CustomerPager({
           </p>
         )}
       </Ticket>
+      {!calling && number && loyalty}
       {finished && extra && <aside className="pager-extra">{extra}</aside>}
       {waitingGame &&
         (preview ? (

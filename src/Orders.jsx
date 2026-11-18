@@ -2,6 +2,7 @@ import { t as bippoT, locale as bippoLocale, ticketLink } from './i18n.js';
 import React, { useState, useEffect, useRef } from 'react';
 import {
   Plus,
+  Gift,
   Volume2,
   VolumeX,
   Hash,
@@ -61,6 +62,8 @@ import { staffCues } from './staffCues';
 import { nextOrderNumber } from './orderNumbers';
 import { createOrderAudio } from './orderAudio';
 import { toneSource } from './alertTones';
+import { branchLoyalty, redeemLoyalty } from './loyalty';
+import './loyalty-card.css';
 import './guest-experience.css';
 export default function Orders({ Share, workspace }) {
   const [orders, setOrders] = useState(null),
@@ -122,11 +125,18 @@ export default function Orders({ Share, workspace }) {
         } catch {
           unavailable = true;
         }
+        let cards = {};
+        try {
+          cards = await branchLoyalty(rows.filter(active).map((o) => o.id));
+        } catch {
+          // The stamp card is an extra: orders still load without it.
+        }
         if (alive) {
           setOrders(
             rows.map((o) => ({
               ...o,
               guest: signals[o.id] || null,
+              loyalty: cards[o.id] || null,
             })),
           );
           setSignalsUnavailable(unavailable);
@@ -185,6 +195,25 @@ export default function Orders({ Share, workspace }) {
       setStaffSound(true);
     } catch {
       setNotice(bippoT('تعذر تشغيل الصوت. عاود المحاولة.'));
+    }
+  }
+
+  async function redeem(order) {
+    setBusy(true);
+    try {
+      const result = await redeemLoyalty(order.id);
+      setNotice(
+        result?.redeemed
+          ? bippoT('تسجّلت المكافأة للطلب {0}. البطاقة بدات من جديد.', [order.number])
+          : bippoT('البطاقة مازالت ما كملتش.'),
+      );
+      setOrders((list) =>
+        list?.map((o) => (o.id === order.id ? { ...o, loyalty: { ...o.loyalty, ...result } } : o)),
+      );
+    } catch (e) {
+      setNotice(e.message);
+    } finally {
+      setBusy(false);
     }
   }
 
@@ -372,6 +401,29 @@ export default function Orders({ Share, workspace }) {
             </time>
             <GuestStatus order={order} unavailable={signalsUnavailable} />
             {order.counter_pending && <small>{bippoT('يستنّى مسح QR')}</small>}
+            {order.loyalty?.redeemed ? (
+              <span className="merchant-loyalty done">
+                <Gift size={15} aria-hidden="true" />
+                {bippoT('المكافأة تصرفت على هذا الطلب')}
+              </span>
+            ) : order.loyalty?.complete ? (
+              <span className="merchant-loyalty">
+                <Gift size={15} aria-hidden="true" />
+                {bippoT('بطاقتو كاملة: عندو مكافأة')}
+                <button
+                  type="button"
+                  className="button small"
+                  disabled={busy}
+                  onClick={() => redeem(order)}
+                >
+                  {bippoT('صرفتها')}
+                </button>
+              </span>
+            ) : order.loyalty ? (
+              <small>
+                {bippoT('بطاقة الولاء: {0}/{1}', [order.loyalty.stamps, order.loyalty.goal])}
+              </small>
+            ) : null}
           </div>
         </div>
         <div className="merchant-order-actions">

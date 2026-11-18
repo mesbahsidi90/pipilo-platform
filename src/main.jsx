@@ -56,6 +56,8 @@ import { reviewUrl } from './guestExperience';
 import './guest-experience.css';
 import { printWithTitle, usePanelTitle, useRouteTitle } from './pageTitle';
 import { readRoute, dashboardDestination } from './routes';
+import LoyaltyCard from './LoyaltyCard';
+import { loyaltyCard } from './loyalty';
 const route = readRoute(location);
 if (
   route[0] === 'home' &&
@@ -438,7 +440,8 @@ function Share({ order, close }) {
 function Customer({ token }) {
   const [branding, setBranding] = useState(null),
     [ack, setAck] = useState(() => sessionStorage.getItem('bippo-alert-ack-' + token) === '1'),
-    [confirmError, setConfirmError] = useState('');
+    [confirmError, setConfirmError] = useState(''),
+    [card, setCard] = useState(null);
   useEffect(() => {
     let alive = true;
     ticketBranding(token)
@@ -464,6 +467,18 @@ function Customer({ token }) {
       ...extras,
     };
   }, [token]);
+  const status = o?.status;
+  useEffect(() => {
+    // Opening the order links it to this browser's card; a ready order is stamped.
+    if (!status || status === 'cancelled') return;
+    let alive = true;
+    loyaltyCard(token)
+      .then((value) => alive && setCard(value))
+      .catch(() => {});
+    return () => {
+      alive = false;
+    };
+  }, [token, status]);
   const report = (event) => signalGuest(token, event).catch(() => false);
   useEffect(() => {
     if (!o || o.status === 'collected') return;
@@ -520,6 +535,7 @@ function Customer({ token }) {
       acknowledged={ack || Boolean(o?.coming_at)}
       loading={!o && !last && !error}
       error={error || (!o && last ? bippoT('راجع موظف المحل باش يعطيك رابط الطلب.') : '')}
+      loyalty={<LoyaltyCard card={card} />}
       extra={
         o?.status === 'collected' ? (
           <ReviewCard

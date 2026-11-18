@@ -21,6 +21,10 @@ export const defaults = {
   customer_background_image: '',
   alert_tone: 'pager',
   alert_copy: {},
+  loyalty_enabled: false,
+  loyalty_goal: 9,
+  loyalty_reward: '',
+  loyalty_reward_fr: '',
 };
 export async function getSettings() {
   if (!cloud)
@@ -68,6 +72,16 @@ export async function saveSettings(value) {
     google_review_url: reviewUrl(value.google_review_url || ''),
     ...(typeof value.private_feedback_enabled === 'boolean' && {
       private_feedback_enabled: value.private_feedback_enabled,
+    }),
+    ...(typeof value.loyalty_enabled === 'boolean' && { loyalty_enabled: value.loyalty_enabled }),
+    ...([7, 9, 11, 13].includes(Number(value.loyalty_goal)) && {
+      loyalty_goal: Number(value.loyalty_goal),
+    }),
+    ...(typeof value.loyalty_reward === 'string' && {
+      loyalty_reward: value.loyalty_reward.trim().slice(0, 60),
+    }),
+    ...(typeof value.loyalty_reward_fr === 'string' && {
+      loyalty_reward_fr: value.loyalty_reward_fr.trim().slice(0, 60),
     }),
     waiting_mode: value.waiting_mode,
     tracking_mode: ['counter', 'invoice'].includes(value.tracking_mode)

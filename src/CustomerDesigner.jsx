@@ -204,6 +204,7 @@ export default function CustomerDesigner({ onSaved }) {
     ['banners', 'البانرات'],
     ['links', 'الروابط'],
     ['reviews', 'تقييمات Google'],
+    ['loyalty', 'بطاقة الولاء'],
     ['game', 'اللعبة'],
   ];
   const previewText = (value) => translate(value, previewLanguage);
@@ -384,6 +385,57 @@ export default function CustomerDesigner({ onSaved }) {
                   role="switch"
                   checked={Boolean(form.private_feedback_enabled)}
                   onChange={(e) => change('private_feedback_enabled', e.target.checked)}
+                />
+              </label>
+            </DesignerCard>
+            <DesignerCard id={id + 'loyalty'} title={t('بطاقة الولاء')}>
+              <p>
+                {t(
+                  'كل طلب يوجد يختم بطاقة الزبون في تليفونو، بلا حساب وبلا رقم. البطاقة تبدا بختمين هدية، وحتى 3 أختام في النهار. كي تكمل، المكافأة تبان على طلبو وتضغط «صرفتها».',
+                )}
+              </p>
+              <label className="designer-game">
+                <span>
+                  {t('فعّل بطاقة الولاء')}
+                  <small>{t('متاحة للفروع الاحترافية.')}</small>
+                </span>
+                <input
+                  type="checkbox"
+                  role="switch"
+                  checked={Boolean(form.loyalty_enabled)}
+                  onChange={(e) => change('loyalty_enabled', e.target.checked)}
+                />
+              </label>
+              <label>
+                {t('عدد الأختام')}
+                <select
+                  value={form.loyalty_goal || 9}
+                  onChange={(e) => change('loyalty_goal', Number(e.target.value))}
+                >
+                  {[7, 9, 11, 13].map((n) => (
+                    <option key={n} value={n}>
+                      {n}
+                    </option>
+                  ))}
+                </select>
+              </label>
+              <label>
+                {t('المكافأة بالعربية')}
+                <input
+                  maxLength={60}
+                  placeholder={t('مثلًا قهوة علينا')}
+                  value={form.loyalty_reward || ''}
+                  onChange={(e) => change('loyalty_reward', e.target.value)}
+                />
+              </label>
+              <label>
+                {t('المكافأة بالفرنسية')}
+                <input
+                  dir="ltr"
+                  maxLength={60}
+                  placeholder="Un café offert"
+                  value={form.loyalty_reward_fr || ''}
+                  onChange={(e) => change('loyalty_reward_fr', e.target.value)}
                 />
               </label>
             </DesignerCard>

@@ -13,6 +13,7 @@ import {
 import { getSettings, saveSettings } from './shopSettings';
 import { reviewUrl } from './guestExperience';
 import LoyaltyCard from './LoyaltyCard';
+import MenuEditor from './MenuEditor';
 import { LOYALTY_GOALS } from './loyaltyRules';
 import './merchant-features.css';
 
@@ -128,6 +129,47 @@ export default function MerchantFeatures({ paid = null, onOpen, onSaved }) {
           {error}
         </p>
       )}
+
+      <FeatureCard
+        icon={BookOpen}
+        title={bippoT('المنيو الإلكتروني')}
+        status={
+          <Status
+            on={settings.menu_enabled}
+            label={settings.menu_enabled ? bippoT('مفعّل') : bippoT('موقف')}
+          />
+        }
+        control={
+          <Switch
+            label={bippoT('فعّل المنيو الإلكتروني')}
+            checked={Boolean(settings.menu_enabled)}
+            disabled={busy === 'menu'}
+            onChange={(on) => save('menu', { menu_enabled: on })}
+          />
+        }
+      >
+        <p>
+          {bippoT(
+            'أصنافك وأسعارك على تليفون الزبون: يشوفها من صفحة طلبو وهو يستنّى، ولا من رابط المنيو تاعك.',
+          )}
+        </p>
+        <div className="feature-actions">
+          <button
+            type="button"
+            className="button outline small"
+            aria-expanded={editing === 'menu'}
+            onClick={() => edit('menu', {})}
+          >
+            {bippoT('ضبط المنيو')}
+          </button>
+        </div>
+        {editing === 'menu' && (
+          <MenuEditor
+            settings={settings}
+            onCurrency={(code) => save('menu', { menu_currency: code })}
+          />
+        )}
+      </FeatureCard>
 
       <FeatureCard
         icon={Gift}
@@ -369,13 +411,6 @@ export default function MerchantFeatures({ paid = null, onOpen, onSaved }) {
       </FeatureCard>
 
       <h2 className="feature-soon-title">{bippoT('قريبًا')}</h2>
-      <FeatureCard
-        icon={BookOpen}
-        title={bippoT('المنيو الإلكتروني')}
-        status={<Status label={bippoT('قريبًا')} />}
-      >
-        <p>{bippoT('أصنافك وأسعارك على تليفون الزبون.')}</p>
-      </FeatureCard>
       <FeatureCard
         icon={Smartphone}
         title={bippoT('الطلب من التليفون')}

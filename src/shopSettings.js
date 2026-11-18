@@ -25,6 +25,8 @@ export const defaults = {
   loyalty_goal: 9,
   loyalty_reward: '',
   loyalty_reward_fr: '',
+  menu_enabled: false,
+  menu_currency: 'DZD',
 };
 export async function getSettings() {
   if (!cloud)
@@ -82,6 +84,10 @@ export async function saveSettings(value) {
     }),
     ...(typeof value.loyalty_reward_fr === 'string' && {
       loyalty_reward_fr: value.loyalty_reward_fr.trim().slice(0, 60),
+    }),
+    ...(typeof value.menu_enabled === 'boolean' && { menu_enabled: value.menu_enabled }),
+    ...(['DZD', 'EUR', 'USD', 'MAD', 'TND'].includes(value.menu_currency) && {
+      menu_currency: value.menu_currency,
     }),
     waiting_mode: value.waiting_mode,
     tracking_mode: ['counter', 'invoice'].includes(value.tracking_mode)

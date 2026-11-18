@@ -1,0 +1,208 @@
+.menu-view {
+  display: grid;
+  gap: 18px;
+}
+.menu-jump {
+  display: flex;
+  gap: 8px;
+  overflow-x: auto;
+  padding-bottom: 4px;
+  scrollbar-width: none;
+}
+.menu-jump a {
+  flex: none;
+  padding: 8px 16px;
+  border-radius: 30px;
+  background: var(--bippo-primary-soft, #edf5f0);
+  color: var(--bippo-primary, #0c3e38);
+  font-weight: 700;
+  font-size: 0.9rem;
+  text-decoration: none;
+}
+.menu-section h2 {
+  margin: 0 0 8px;
+  font-size: 1.15rem;
+  color: var(--bippo-primary, #0c3e38);
+}
+.menu-section ul {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  border-radius: 18px;
+  background: #fff;
+  border: 1px solid var(--bippo-border, #e2e3dc);
+}
+.menu-section li {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 14px;
+  padding: 14px 16px;
+  border-bottom: 1px solid var(--bippo-border, #e2e3dc);
+}
+.menu-section li:last-child {
+  border-bottom: 0;
+}
+.menu-section li b {
+  display: block;
+  color: var(--bippo-text, #192a27);
+}
+.menu-section li small {
+  display: block;
+  margin-top: 2px;
+  font-size: 0.85rem;
+  line-height: 1.6;
+  color: var(--bippo-muted, #54645f);
+}
+.menu-price {
+  flex: none;
+  font-weight: 700;
+  color: var(--bippo-primary, #0c3e38);
+  white-space: nowrap;
+}
+.menu-sold-out b,
+.menu-sold-out small {
+  color: #9aa49f;
+  text-decoration: line-through;
+}
+.menu-sold-out .menu-price {
+  color: #a43326;
+}
+.menu-empty {
+  color: var(--bippo-muted, #54645f);
+}
+.menu-page {
+  max-width: 640px;
+  margin: 0 auto;
+  padding: 28px 16px 48px;
+  min-height: 100svh;
+  box-sizing: border-box;
+}
+.menu-page > header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 20px;
+}
+.menu-page > header h1 {
+  margin: 0;
+  font-size: 1.5rem;
+}
+.menu-page > header small {
+  display: block;
+  color: var(--bippo-muted, #54645f);
+}
+.menu-page footer {
+  margin-top: 30px;
+  text-align: center;
+  font-size: 0.85rem;
+  color: var(--bippo-muted, #54645f);
+}
+.pager-menu {
+  width: 100%;
+  max-width: 480px;
+  margin-top: 14px;
+}
+.pager-menu > summary {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 8px;
+  min-height: 48px;
+  border-radius: 30px;
+  background: #fff;
+  border: 1px solid var(--bippo-border, #e2e3dc);
+  color: var(--bippo-primary, #0c3e38);
+  font-weight: 700;
+  cursor: pointer;
+  list-style: none;
+}
+.pager-menu > summary::-webkit-details-marker {
+  display: none;
+}
+.pager-menu[open] > summary {
+  margin-bottom: 14px;
+}
+/* Staff editor */
+.menu-editor {
+  display: grid;
+  gap: 16px;
+}
+.menu-editor-top {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: end;
+  gap: 12px;
+}
+.menu-editor-top label {
+  display: grid;
+  gap: 4px;
+  font-size: 0.9rem;
+  color: var(--bippo-muted);
+}
+.menu-link {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  font-size: 0.85rem;
+}
+.menu-link code {
+  direction: ltr;
+  padding: 6px 10px;
+  border-radius: 8px;
+  background: var(--bippo-surface-muted);
+  overflow-wrap: anywhere;
+}
+.menu-editor-section {
+  border: 1px solid var(--bippo-border);
+  border-radius: 18px;
+  padding: 14px;
+  display: grid;
+  gap: 10px;
+}
+.menu-editor-section > header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.menu-editor-section > header input {
+  flex: 1;
+  font-weight: 700;
+}
+.menu-editor-item {
+  display: grid;
+  grid-template-columns: minmax(0, 2fr) minmax(90px, 1fr) auto auto;
+  align-items: center;
+  gap: 8px;
+}
+.menu-editor-item.sold input {
+  color: #9aa49f;
+}
+.menu-editor-item label {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.85rem;
+  white-space: nowrap;
+}
+.menu-editor-add {
+  display: grid;
+  grid-template-columns: minmax(0, 2fr) minmax(90px, 1fr) auto;
+  gap: 8px;
+}
+.menu-editor .icon-button {
+  min-width: 40px;
+  min-height: 40px;
+}
+@media (max-width: 560px) {
+  .menu-editor-item {
+    grid-template-columns: minmax(0, 1fr) 90px;
+  }
+  .menu-editor-add {
+    grid-template-columns: minmax(0, 1fr) 90px;
+  }
+  .menu-editor-add .button {
+    grid-column: 1 / -1;
+  }
+}

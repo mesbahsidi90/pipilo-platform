@@ -203,16 +203,14 @@ Deno.serve(async (req) => {
           );
         else
           check(
-            await db
-              .from(table)
-              .insert({
-                order_id: order.id,
-                endpoint: sub.endpoint,
-                p256dh: sub.keys.p256dh,
-                auth_key: sub.keys.auth,
-                language,
-                site_origin: origin,
-              }),
+            await db.from(table).insert({
+              order_id: order.id,
+              endpoint: sub.endpoint,
+              p256dh: sub.keys.p256dh,
+              auth_key: sub.keys.auth,
+              language,
+              site_origin: origin,
+            }),
           );
       } else if (!demo)
         check(

@@ -9,11 +9,13 @@ import {
   Monitor,
   BookOpen,
   Smartphone,
+  QrCode,
 } from 'lucide-react';
 import { getSettings, saveSettings } from './shopSettings';
 import { reviewUrl } from './guestExperience';
 import LoyaltyCard from './LoyaltyCard';
 import MenuEditor from './MenuEditor';
+import TableCodes from './TableCodes';
 import { LOYALTY_GOALS } from './loyaltyRules';
 import './merchant-features.css';
 
@@ -230,10 +232,24 @@ export default function MerchantFeatures({ paid = null, onOpen, onSaved }) {
             );
           })}
         </fieldset>
-        <small className="hint">
-          {bippoT('الزبون يطلب من رابط المنيو. لكود كل طاولة زيد في آخر الرابط:')}{' '}
-          <code dir="ltr">?mode=table&amp;table=5</code>
-        </small>
+        {!settings.ordering_enabled ? null : settings.ordering_modes?.includes('table') ? (
+          <>
+            <div className="feature-actions">
+              <button
+                type="button"
+                className="button outline small"
+                aria-expanded={editing === 'tables'}
+                onClick={() => edit('tables', {})}
+              >
+                <QrCode size={16} aria-hidden="true" />
+                {bippoT('أكواد الطاولات')}
+              </button>
+            </div>
+            {editing === 'tables' && <TableCodes settings={settings} />}
+          </>
+        ) : (
+          <small className="hint">{bippoT('فعّل «على الطاولة» باش تطبع كود لكل طاولة.')}</small>
+        )}
         {upgrade && <div className="feature-actions">{upgrade}</div>}
       </FeatureCard>
 

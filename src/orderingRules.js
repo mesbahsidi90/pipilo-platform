@@ -43,3 +43,21 @@ export function checkoutProblem(mode, { lines = [], note = '', table = '', plate
   if (mode === 'car' && !plate.trim()) return 'plate';
   return null;
 }
+
+export const MAX_TABLE_CODES = 60;
+
+// Table numbers for a printed QR sheet: whole numbers from..to, at most 60.
+export function tableRange(from, to) {
+  const start = Math.max(1, Math.floor(Number(from)) || 1);
+  const end = Math.min(9999, Math.floor(Number(to)) || start);
+  if (end < start) return [];
+  return Array.from({ length: Math.min(end - start + 1, MAX_TABLE_CODES) }, (_, i) => start + i);
+}
+
+// Menu link that opens with this table already chosen.
+export function tableMenuLink(base, table) {
+  const url = new URL(base);
+  url.searchParams.set('mode', 'table');
+  url.searchParams.set('table', String(table));
+  return url.href;
+}

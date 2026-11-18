@@ -80,7 +80,7 @@
   "ملغى": "Annulé",
   "منتهي الصلاحية": "Expiré",
   "نتيجة": "résultat(s)",
-  "المحل": "Établissement",
+  "المحل": "La boutique",
   "النشاط / المدينة": "Activité / ville",
   "الخطة / السعر الشهري": "Offre / prix mensuel",
   "حالة المحل": "Statut de l’établissement",
@@ -1387,7 +1387,6 @@
   "الزبون يختار من المنيو ولا يكتب طلبو ويبعثو من تليفونو. توصلك في «الطلبات»، تقبلها، وتخلّصو كي يستلم.": "Le client choisit dans le menu ou écrit sa commande et l’envoie depuis son téléphone. Elle arrive dans « Commandes », vous l’acceptez et il paie au retrait.",
   "فعّل المنيو الإلكتروني أولًا.": "Activez d’abord le menu numérique.",
   "طرق الاستلام": "Modes de retrait",
-  "الزبون يطلب من رابط المنيو. لكود كل طاولة زيد في آخر الرابط:": "Le client commande depuis le lien du menu. Pour le code de chaque table, ajoutez à la fin du lien :",
   "«{0}» نفد. نحّيه من الطلب وعاود.": "« {0} » est épuisé. Retirez-le et réessayez.",
   "ما قدرناش نبعثو الطلب. تأكد من الاتصال وعاود.": "Impossible d’envoyer la commande. Vérifiez la connexion et réessayez.",
   "كمّل طلبك": "Finaliser la commande",
@@ -1428,5 +1427,14 @@
   "اختار حاجة من المنيو ولا اكتب طلبك.": "Choisissez dans le menu ou écrivez votre commande.",
   "اكتب رقم الطاولة.": "Saisissez le numéro de table.",
   "اكتب رقم لوحة الطوموبيل.": "Saisissez la plaque d’immatriculation.",
-  "اختار كيفاش تستلم.": "Choisissez le mode de retrait."
+  "اختار كيفاش تستلم.": "Choisissez le mode de retrait.",
+  "أكواد الطاولات": "Codes des tables",
+  "فعّل «على الطاولة» باش تطبع كود لكل طاولة.": "Activez « À table » pour imprimer un code par table.",
+  "امسح الكود واطلب من تليفونك": "Scannez et commandez depuis votre téléphone",
+  "من طاولة": "De la table",
+  "حتى طاولة": "À la table",
+  "اطبع {0} كود": "Imprimer {0} codes",
+  "كل كود يفتح المنيو والطاولة مختارة. حطّو على الطاولة باش الزبون يطلب ويستلم في بلاصتو.": "Chaque code ouvre le menu avec la table déjà choisie. Posez-le sur la table : le client commande et est servi à sa place.",
+  "اكتب أرقام طاولات صحيحة.": "Saisissez des numéros de table valides.",
+  "الحد {0} طاولة في المرة.": "Maximum {0} tables à la fois."
 }

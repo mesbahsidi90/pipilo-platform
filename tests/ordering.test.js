@@ -37,3 +37,16 @@ test('each mode asks for what it needs', () => {
   assert.equal(checkoutProblem('car', { lines }), 'plate');
   assert.equal(checkoutProblem('boat', { lines }), 'mode');
 });
+
+test('table QR range and links', async () => {
+  const { tableRange, tableMenuLink, MAX_TABLE_CODES } = await import('../src/orderingRules.js');
+  assert.deepEqual(tableRange(1, 4), [1, 2, 3, 4]);
+  assert.deepEqual(tableRange('3', '3'), [3]);
+  assert.deepEqual(tableRange(5, 2), []);
+  assert.deepEqual(tableRange(0, 2), [1, 2]);
+  assert.equal(tableRange(1, 500).length, MAX_TABLE_CODES);
+  assert.equal(
+    tableMenuLink('https://bipilo.app/menu/abc', 7),
+    'https://bipilo.app/menu/abc?mode=table&table=7',
+  );
+});

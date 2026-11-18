@@ -38,7 +38,7 @@ export default function AcceptInvite({ token }) {
       }
       await workspaceAction('accept', { invite: token });
       rememberBranch(null);
-      location.replace('#dashboard');
+      location.replace('/dashboard');
     } catch {
       setError(t('الدعوة غير متاحة لهذا الحساب.'));
     } finally {

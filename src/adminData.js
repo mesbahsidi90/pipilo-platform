@@ -1,7 +1,11 @@
 import { t as bippoT } from "./i18n.js";
 import { cloud, db } from './store';
+import { defaultPlanCatalog, demoAdminKey, professionalPlanId } from './planConfig';
 export { expired, operating } from './adminDomain';
-const KEY = 'bippo-admin-demo-v1';
+const KEY = demoAdminKey;
+const demoProfessional = {
+  ...defaultPlanCatalog, id: professionalPlanId, name: 'احترافية · دفعة واحدة', currency: 'DZD', monthly_price: null
+};
 export { shopTypes } from './shopActivities';
 export const subStates = {
   trial: bippoT("تجريبي"),
@@ -11,7 +15,11 @@ export const subStates = {
 };
 function read() {
   const stored = localStorage.getItem(KEY);
-  if (stored) return JSON.parse(stored);
+  if (stored) {
+    const data = JSON.parse(stored);
+    if (!data.plans.some(plan => plan.id === professionalPlanId)) data.plans.push(demoProfessional);
+    return data;
+  }
   const plan = crypto.randomUUID(),
     shop = crypto.randomUUID();
   const data = {
@@ -30,7 +38,7 @@ function read() {
       monthly_price: 0,
       currency: 'DZD',
       active: true
-    }],
+    }, demoProfessional],
     subscriptions: [{
       shop_id: shop,
       plan_id: plan,
@@ -80,10 +88,30 @@ export async function loadAdmin() {
     audit
   };
 }
+export async function loadOrderActivity() {
+  if (cloud) return check(await db.rpc('admin_order_activity'));
+  const today = new Intl.DateTimeFormat('en-CA', {
+    timeZone: 'Africa/Algiers', year: 'numeric', month: '2-digit', day: '2-digit'
+  }).format(new Date());
+  return { today, shops: read().shops.map(shop => ({ ...shop, daily: {}, branch_ids: [] })) };
+}
+
+export async function loadDailyOrders(branchIds, day, page) {
+  if (!cloud || !branchIds.length) return { orders: [], more: false };
+  const start = new Date(day + 'T00:00:00+01:00');
+  const end = new Date(start.getTime() + 86400000);
+  const offset = page * 50;
+  const orders = check(await db.from('orders').select('id,shop_id,number,status,created_at,shops(name)')
+    .in('shop_id', branchIds).gte('created_at', start.toISOString()).lt('created_at', end.toISOString())
+    .order('created_at', { ascending: false }).order('id', { ascending: false }).range(offset, offset + 50));
+  return { orders: orders.slice(0, 50), more: orders.length > 50 };
+}
 export async function saveShop(form) {
   if (!form.name.trim()) throw new Error(bippoT("دخل اسم المحل"));
   if (!form.plan_id) throw new Error(bippoT("اختار خطة الاشتراك"));
-  const ends = form.period_end ? new Date(form.period_end + 'T23:59:59Z').toISOString() : null;
+  const ends = form.period_end && form.plan_id !== professionalPlanId
+    ? new Date(form.period_end + 'T23:59:59Z').toISOString()
+    : null;
   if (!cloud) {
     const d = read(),
       id = form.id || crypto.randomUUID();
@@ -127,6 +155,21 @@ export async function savePlan(form) {
     currency: form.currency,
     active: form.active
   };
+  if (form.id === professionalPlanId) {
+    const purchasePrice = Number(form.purchase_price);
+    const standardPrice = Number(form.standard_price);
+    const launchBranches = Number(form.launch_branches);
+    const freeTicketLimit = Number(form.free_ticket_limit);
+    if (![purchasePrice, standardPrice].every(value => Number.isFinite(value) && value > 0 && value < 1e10) ||
+      !Number.isInteger(launchBranches) || launchBranches < 0 || launchBranches > 100000 ||
+      !Number.isInteger(freeTicketLimit) || freeTicketLimit < 1 || freeTicketLimit > 100000) {
+      throw new Error(bippoT('راجع أسعار الباقة وحدودها.'));
+    }
+    Object.assign(item, {
+      purchase_price: purchasePrice, standard_price: standardPrice, launch_branches: launchBranches,
+      free_ticket_limit: freeTicketLimit, monthly_price: null, currency: 'DZD'
+    });
+  }
   if (!cloud) {
     const d = read(),
       id = form.id || crypto.randomUUID();

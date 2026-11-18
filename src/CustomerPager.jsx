@@ -21,19 +21,20 @@ export default function CustomerPager({
 }) {
   const lang = previewLanguage || language;
   const bippoT = text => translate(text, lang);
+  const clinic = branding?.kind === 'clinic';
   const pickup = branding?.pickup_message;
-  const pickupMessage = !pickup || pickup === 'تقدر تجي تديه من الكونتوار.'
+  const pickupMessage = clinic ? bippoT('توجّه للاستقبال.') : !pickup || pickup === 'تقدر تجي تديه من الكونتوار.'
     ? bippoT('تقدر تجي تديه من الكونتوار.') : pickup;
   const calling = status === 'ready' && !acknowledged,
     finished = status === 'collected';
-  const title = loading ? bippoT("نوجدو طلبك…") : !number ? bippoT("الرابط غير متاح") : finished ? bippoT("بالصحة والراحة!") : calling ? bippoT("طلبك راه واجد!") : status === 'ready' ? bippoT("طلبك واجد للاستلام") : bippoT("طلبك راه يتحضّر");
+  const title = loading ? bippoT("نوجدو طلبك…") : !number ? bippoT("الرابط غير متاح") : status === 'cancelled' ? bippoT("الطلب تلغى") : finished ? bippoT(clinic ? "انتهى دورك" : "بالصحة والراحة!") : calling ? bippoT(clinic ? "جا دورك!" : "طلبك راه واجد!") : status === 'ready' ? bippoT(clinic ? "جا دورك!" : "طلبك واجد للاستلام") : bippoT(clinic ? "راك في الانتظار" : "طلبك راه يتحضّر");
   const Ticket = preview ? 'section' : 'main';
   const Heading = preview ? 'h3' : 'h1';
   const theme = customerPalette(branding);
   const background = branding?.customer_background_image;
   const safeBackground = typeof background === 'string' && background.length <= 180000 &&
     /^data:image\/webp;base64,[A-Za-z0-9+/]+={0,2}$/.test(background);
-  const waitingGame = number && status === 'preparing' && !error && theme.game !== false;
+  const waitingGame = !clinic && number && status === 'preparing' && !error && theme.game !== false;
   const Link = preview ? 'span' : 'a';
   const linkProps = href => preview ? {} : { href, target: '_blank', rel: 'noopener noreferrer' };
   return <div className={'pager-page ' + (calling ? 'pager-calling' : '')} dir={lang === 'fr' ? 'ltr' : 'rtl'} lang={lang} style={{
@@ -48,15 +49,16 @@ export default function CustomerPager({
   }}>
   <header className="pager-shop"><span className="pager-shop-logo" aria-hidden="true">{branding?.logo ? <img src={branding.logo} alt="" /> : Array.from({
           length: 9
-        }, (_, i) => <i key={i} />)}</span><div><b>{branding?.name || (demo ? bippoT("مقهى bippo") : bippoT("طلبك في bippo"))}</b><span>{branding?.city || (demo ? bippoT("فرع التجربة") : bippoT("نمرة وحدة. وراحة أكثر."))}</span></div></header>
+        }, (_, i) => <i key={i} />)}</span><div><b>{branding?.name || (demo ? bippoT("مقهى Bipilo") : bippoT("طلبك في Bipilo"))}</b><span>{branding?.city || (demo ? bippoT("فرع التجربة") : bippoT("نمرة وحدة. وراحة أكثر."))}</span></div></header>
   <Ticket className="pager-ticket">
-   <div className="pager-display" aria-label={bippoT("رقم الطلب")}>{number ? <DotNumber value={number} /> : <span className="pager-loading">…</span>}{status === 'preparing' && <div className="pager-waiting-dots" aria-hidden="true">{Array.from({
+   <div className="pager-display" aria-label={bippoT(clinic ? "رقم الدور" : "رقم الطلب")}>{number ? <DotNumber value={number} /> : <span className="pager-loading">…</span>}{status === 'preparing' && <div className="pager-waiting-dots" aria-hidden="true">{Array.from({
             length: 12
           }, (_, i) => <i key={i} />)}</div>}</div>
-   <div className="pager-status-copy" aria-live="polite"><Heading>{title}</Heading>{number && <p>{finished ? bippoT("يعطيك الصحة على الزيارة.") : status === 'ready' ? pickupMessage : bippoT("ننبّهوك كي يوجد، اقعد مرتاح.")}</p>}</div>
+   <div className="pager-status-copy" aria-live="polite"><Heading>{title}</Heading>{number && <p>{status === 'cancelled' ? bippoT("تواصل مع المحل إذا تحتاج مساعدة.") : finished ? bippoT("يعطيك الصحة على الزيارة.") : status === 'ready' ? pickupMessage : bippoT(clinic ? "ننبّهوك كي يجي دورك." : "ننبّهوك كي يوجد، اقعد مرتاح.")}</p>}</div>
    {acknowledged && status === 'ready' ? <div className="pager-confirmed"><Check size={22} />{bippoT(" راني جاي، الرنة حبست")}</div> : children}
    {error && <p className="pager-connection" role="status">{number ? bippoT("الاتصال راه يتعاود…") : error}</p>}
   </Ticket>
+  {finished && extra && <aside className="pager-extra">{extra}</aside>}
   {waitingGame && (preview ? <div className="pager-links"><span><Layers size={16} />{bippoT('طلّع قهوتك')}</span></div> : <Suspense fallback={null}><WaitingGame key={number}/></Suspense>)}
   {!calling && number && (branding?.banner_text || branding?.banner_image) &&
     <aside className={'pager-banner' + (theme.bannerMode === 'offer' ? ' pager-offer' : '')}>
@@ -68,7 +70,8 @@ export default function CustomerPager({
   {!calling && number && theme.links && <nav className="pager-links" aria-label={bippoT('الروابط')}>
     {Object.entries(theme.links).map(([key, url]) => <Link key={key} {...linkProps(url)}>{bippoT(customerLinkLabels[key])}</Link>)}
   </nav>}
-  {!calling && extra && <aside className="pager-extra">{extra}</aside>}
+  {!calling && !finished && extra && <aside className="pager-extra">{extra}</aside>}
   {!calling && <footer className="pager-powered">{bippoT("ساهلة مع ")}<Brand linked={!preview} />{demo && <small>{bippoT("تجربة بلا حساب")}</small>}</footer>}
  </div>;
 }
+

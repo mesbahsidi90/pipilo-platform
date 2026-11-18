@@ -9,3 +9,9 @@ function worker(matchAll){const handlers={},shown=[];const self={location:{origi
 test('declarative payload has an audible fallback and retains compatibility with installed workers',()=>{const p=orderPayload({token:ticket,number:'57'});assert.equal(p.web_push,8030);assert.equal(p.notification.navigate,p.url);assert.equal(p.notification.silent,false);assert.equal(p.notification.title,p.title);assert.equal(p.notification.body,p.body);assert.equal(p.notification.data.url,p.url);});
 test('push is audible even when the order page is visible and foreground audio is not enabled',async()=>{const messages=[];const p=orderPayload({token:ticket,number:'57'});const w=worker(async()=>[{url:p.url,visibilityState:'visible',postMessage:m=>messages.push(m)}]);await w.dispatch(p);assert.equal(w.shown.length,1);assert.equal(w.shown[0][1].silent,false);assert.equal(w.shown[0][1].renotify,true);assert.equal(messages.length,1);});
 test('notification does not depend on successful window discovery; cross-origin URLs are rejected',async()=>{const w=worker(async()=>{throw new Error('No active browser windows')});const p=orderPayload({token:ticket,number:'57'});await w.dispatch(p);assert.equal(w.shown.length,1);await w.dispatch({...p,url:'https://attacker.example/#track/'+ticket});await w.dispatch({...p,url:'https://bippo-platform.pages.dev/#track/other'});assert.equal(w.shown.length,1);});
+
+test('clinic notifications call the queue number in both languages', () => {
+  const order = { number: '12', token: 'ticket', shops: { kind: 'clinic' } };
+  assert.match(orderPayload(order, 'track', 'ar').title, /جا دورك/);
+  assert.match(orderPayload(order, 'track', 'fr').body, /Ticket 12/);
+});

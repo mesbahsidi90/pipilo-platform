@@ -10,7 +10,7 @@ export async function sendDemo(db:any,order:any,cfg:any){
  const rows=take(await db.from('demo_push_subscriptions').select('*').eq('ticket',order.token).is('sent_at',null).limit(3));let sent=0,failed=0;
  for(const sub of rows){if(!validEndpoint(sub.endpoint)){failed++;continue;}
   const claim=take(await db.from('demo_push_subscriptions').update({sent_at:new Date().toISOString()}).eq('id',sub.id).is('sent_at',null).select('id'));if(!claim.length)continue;
-  try{await webpush.sendNotification({endpoint:sub.endpoint,keys:{p256dh:sub.p256dh,auth:sub.auth_key}},JSON.stringify(orderPayload(order,'demo')),{TTL:120,urgency:'high',timeout:8000,vapidDetails:{subject:cfg.subject,publicKey:cfg.public_key,privateKey:cfg.private_key}});sent++;}
+  try{await webpush.sendNotification({endpoint:sub.endpoint,keys:{p256dh:sub.p256dh,auth:sub.auth_key}},JSON.stringify(orderPayload(order,'demo',undefined,undefined,sub.site_origin)),{TTL:120,urgency:'high',timeout:8000,vapidDetails:{subject:cfg.subject,publicKey:cfg.public_key,privateKey:cfg.private_key}});sent++;}
   catch(err:any){failed++;if([404,410].includes(err.statusCode))await db.from('demo_push_subscriptions').delete().eq('id',sub.id);else await db.from('demo_push_subscriptions').update({sent_at:null}).eq('id',sub.id);}
  }return {sent,failed};
 }

@@ -1,14 +1,18 @@
+import { printWithTitle } from './pageTitle';
 import React, { useEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { QRCodeSVG } from 'qrcode.react';
 import Brand from './Brand';
+import { clinicRoute } from './ClinicQueue';
 import { t, ticketLink } from './i18n.js';
-import { counterRoute, counterTicket, normalizeTrackingCode } from './counterAccess.js';
+import { claimCounterTicket, counterRoute, counterTicket, invoiceRoute, normalizeTrackingCode } from './counterAccess.js';
 import './counter-ticket.css';
 
-export function CounterPoster({ shop }) {
+export function CounterPoster({ shop, clinic = false, enabled = true }) {
   const preview = useRef(null);
-  const url = ticketLink(counterRoute(shop.shop_id));
+  const invoice = !clinic && shop.tracking_mode === 'invoice';
+  const route = clinic ? clinicRoute : invoice ? invoiceRoute : counterRoute;
+  const url = ticketLink(route(shop.shop_id));
   function downloadCode() {
     const svg = preview.current?.querySelector('svg');
     if (!svg) return;
@@ -23,20 +27,22 @@ export function CounterPoster({ shop }) {
   const poster = (
     <article className="counter-poster">
       <h3>{shop.name}</h3>
-      <p>{t('امسح الرمز وتابع طلبك')}</p>
+      <p>{t(clinic ? 'امسح الكود وخذ رقم دورك.' : 'امسح الرمز وتابع طلبك')}</p>
       <QRCodeSVG value={url} size={200} marginSize={4} />
-      <p>{t('دخل كود المتابعة اللي عطاهولك الكاشير وفعّل التنبيه.')}</p>
+      <p>{t(clinic ? 'فعّل التنبيه باش تعرف كي يجي دورك.' : invoice
+        ? 'دخل رقم الطلب اللي في الفاتورة وفعّل التنبيه.'
+        : 'امسح بعد ما يسجّل الكاشير طلبك، وفعّل التنبيه.')}</p>
       <Brand linked={false} />
     </article>
   );
   return (
     <section className="counter-settings">
       <div ref={preview}>{poster}</div>
-      <button type="button" className="button outline" onClick={() => window.print()}>
+      <button type="button" className="button outline" disabled={!enabled} onClick={() => printWithTitle(t('اطبع الكود'))}>
         {t('طباعة ملصق الكونتوار')}
       </button>
-      <button type="button" className="button outline" onClick={downloadCode}>{t('تحميل QR بصيغة SVG')}</button>
-      {createPortal(<div className="receipt-print-root counter-print">{poster}</div>, document.body)}
+      <button type="button" className="button outline" disabled={!enabled} onClick={downloadCode}>{t('تحميل QR بصيغة SVG')}</button>
+      {enabled && createPortal(<div className="receipt-print-root counter-print">{poster}</div>, document.body)}
     </section>
   );
 }
@@ -47,11 +53,27 @@ export default function CounterTicket({ branch }) {
   const [error, setError] = useState('');
   const [busy, setBusy] = useState(false);
   const [retry, setRetry] = useState(0);
+  const requestKey = useRef(null);
 
   useEffect(() => {
     let active = true;
-    counterTicket(branch)
-      .then(result => { if (active) setShop(result); })
+    const storageKey = 'bipilo-counter-claim/' + branch;
+    try {
+      requestKey.current ||= sessionStorage.getItem(storageKey) || crypto.randomUUID();
+      sessionStorage.setItem(storageKey, requestKey.current);
+    } catch {
+      requestKey.current ||= crypto.randomUUID();
+    }
+    claimCounterTicket(branch, requestKey.current)
+      .then(result => {
+        if (!active) return;
+        if (result?.token) {
+          try { sessionStorage.removeItem(storageKey); } catch {}
+          location.replace('#track/' + result.token);
+        } else {
+          setShop(result);
+        }
+      })
       .catch(() => {
         if (active) setError(t('تعذر الاتصال. عاود المحاولة.'));
       });
@@ -85,7 +107,14 @@ export default function CounterTicket({ branch }) {
         <h1>{shop?.name || t('تابع طلبك')}</h1>
         {shop === undefined && !error && <p role="status">{t('جارٍ الاتصال…')}</p>}
         {shop === null && <p>{t('متابعة الطلبات بهذا الرمز غير متاحة. اسأل الكاشير.')}</p>}
-        {shop && (
+        {shop && Object.hasOwn(shop, 'token') && <>
+          <p role="status">{t('ما كاش طلب ينتظر المسح. خلي الكاشير يسجّل طلبك ومن بعد عاود.')}</p>
+          <button className="button full" type="button" onClick={() => {
+            setShop(undefined); setError(''); setRetry(value => value + 1);
+          }}>{t('عاود المحاولة')}</button>
+        </>}
+        {shop && <details open={!Object.hasOwn(shop, 'token')}>
+          <summary>{t('عندك كود متابعة مكتوب؟')}</summary>
           <form onSubmit={submit}>
             <label>
               {t('كود المتابعة')}
@@ -95,7 +124,7 @@ export default function CounterTicket({ branch }) {
             </label>
             <button className="button full" disabled={busy}>{t('افتح الطلب')}</button>
           </form>
-        )}
+        </details>}
         {error && <p role="alert" className="error">{error}</p>}
         {shop === undefined && error && (
           <button className="button" onClick={() => { setError(''); setRetry(value => value + 1); }}>
@@ -106,3 +135,4 @@ export default function CounterTicket({ branch }) {
     </main>
   );
 }
+

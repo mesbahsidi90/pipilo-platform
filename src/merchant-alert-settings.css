@@ -7,4 +7,4 @@
 .merchant-alert-card h3 { margin: 0 0 7px; font-size: 1.05rem; }
 .merchant-alert-card p { margin: 0 0 10px; font-size: .86rem; color: #49645a; }
 .merchant-alert-tones { display: flex; flex-wrap: wrap; gap: 7px; }
-.merchant-alert-tones button[aria-pressed=true] { color: #fff; background: #10423a; border-color: #10423a; }
+.merchant-alert-tones button[aria-pressed=true] { color: #fff; background: #0b352f; border-color: #0b352f; }

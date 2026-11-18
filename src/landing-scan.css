@@ -1,0 +1,67 @@
+.sticky-phone .reference-phone.scan-phone {
+  height: 100%;
+  min-height: 0;
+  width: min(294px, 75vw);
+  padding: 0;
+  overflow: hidden;
+  background: radial-gradient(ellipse at 50% 75%, #35271e 0%, #151819 48%, #0c1010 85%);
+}
+
+.scan-poster {
+  display: grid;
+  justify-items: center;
+  gap: 4px;
+  width: 74%;
+  margin: 42px auto 0;
+  padding: 10px 6px 8px;
+  border-radius: 13px;
+  background: white;
+  color: #161817;
+  font-size: .65rem;
+  font-weight: 700;
+  transform: rotate(-3deg);
+}
+
+.scan-poster .brand-mark { width: 19px; height: 19px; border-radius: 5px; }
+.scan-poster .brand > b { font-size: .8rem; letter-spacing: 0; }
+.scan-target { position: relative; width: min(82%, 128px); }
+.scan-target > svg { display: block; width: 100%; height: auto; }
+.scan-corners { position: absolute; inset: 0; }
+.scan-corners > i { position: absolute; width: 15%; height: 15%; border: 2px solid #d98120; }
+.scan-corners > i:nth-child(1) { top: 0; left: 0; border-width: 2px 0 0 2px; border-radius: 6px 0 0; }
+.scan-corners > i:nth-child(2) { top: 0; right: 0; border-width: 2px 2px 0 0; border-radius: 0 6px 0 0; }
+.scan-corners > i:nth-child(3) { bottom: 0; left: 0; border-width: 0 0 2px 2px; border-radius: 0 0 0 6px; }
+.scan-corners > i:nth-child(4) { bottom: 0; right: 0; border-width: 0 2px 2px 0; border-radius: 0 0 6px; }
+
+.scan-result {
+  position: absolute;
+  inset: auto 5% 14px;
+  display: grid;
+  gap: 8px;
+  padding: 10px;
+  border-radius: 17px;
+  background: white;
+  color: #161817;
+  font-size: .72rem;
+}
+
+.scan-result-shop { display: flex; align-items: center; gap: 7px; }
+.scan-result-shop small { display: block; color: #4d5652; font-size: .62rem; }
+.scan-shop-icon { display: grid; place-items: center; width: 28px; height: 28px; border-radius: 8px; background: #965027; color: white; }
+.scan-open { border-radius: 99px; padding: 4px 10px; text-align: center; background: #173732; color: white; }
+
+@media (max-width: 700px) {
+  .sticky-phone .reference-phone.scan-phone { width: 170px; }
+  .scan-poster { margin-top: 22px; padding: 4px; gap: 2px; font-size: .55rem; }
+  .scan-target { width: min(80%, 83px); }
+  .scan-result { gap: 3px; padding: 5px 7px; }
+  .scan-shop-icon { width: 20px; height: 20px; }
+  .scan-shop-icon svg { width: 12px; }
+  .scan-open { padding-block: 1px; }
+}
+
+.marketing .center-hero h1.landing-headline {
+  font-size: clamp(1.8rem, 5.2vw, 4.5rem);
+  line-height: 1.35;
+  letter-spacing: normal;
+}

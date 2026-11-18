@@ -15,9 +15,9 @@
   width: min(100%, 360px);
   padding: 20px;
   margin-inline: auto;
-  border: 1px solid #dce7dd;
+  border: 1px solid var(--bippo-border);
   border-radius: 20px;
-  color: #153c38;
+  color: var(--bippo-primary-deep);
   background: #fff;
   text-align: center;
 }

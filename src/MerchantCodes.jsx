@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { ChefHat, ChevronDown, Copy, Monitor, Plus, Printer, RefreshCw, Tablet } from 'lucide-react';
 import { QRCodeSVG } from 'qrcode.react';
 import { t, ticketLink } from './i18n.js';
@@ -10,7 +10,7 @@ import ShopSettings from './ShopSettings.jsx';
 import './merchant-codes.css';
 
 function screenLink(screen, shopId) {
-  const link = new URL(ticketLink('dashboard/' + screen));
+  const link = new URL('/dashboard/' + screen, location.origin);
   if (shopId) link.searchParams.set('branch', shopId);
   return link.href;
 }
@@ -32,8 +32,17 @@ function ScreenActions({ link, showField = false }) {
   </>;
 }
 
-function WaitingScreen({ canManage }) {
-  const [link, setLink] = useState(cloud ? null : ticketLink('display/local'));
+function waitingDisplayLink(token, venue, branch, clinic) {
+  const url = new URL(ticketLink('display/' + token));
+  if (clinic) url.searchParams.set('queue', '1');
+  if (venue) url.searchParams.set('venue', venue);
+  if (branch && branch !== venue) url.searchParams.set('venueBranch', branch);
+  return url.href;
+}
+
+function WaitingScreen({ canManage, venue, branch, clinic }) {
+  const [token, setToken] = useState(cloud ? null : 'local');
+  const link = token ? waitingDisplayLink(token, venue, branch, clinic) : null;
   const [error, setError] = useState('');
   const [busy, setBusy] = useState(false);
 
@@ -43,7 +52,7 @@ function WaitingScreen({ canManage }) {
     db.rpc('waiting_screen_link').then(({ data, error }) => {
       if (!active) return;
       if (error || !data) setError(t('تعذر تحميل رابط شاشة الانتظار.'));
-      else setLink(ticketLink('display/' + data));
+      else setToken(data);
     });
     return () => { active = false; };
   }, []);
@@ -55,7 +64,7 @@ function WaitingScreen({ canManage }) {
     try {
       const { data, error } = await db.rpc('waiting_screen_link', { rotate: true });
       if (error || !data) throw error || new Error();
-      setLink(ticketLink('display/' + data));
+      setToken(data);
     } catch { setError(t('تعذر تغيير رابط شاشة الانتظار.')); }
     finally { setBusy(false); }
   }
@@ -72,26 +81,35 @@ function WaitingScreen({ canManage }) {
   </article>;
 }
 
-function BranchTools({ shop, canManage, onOrders, onSaved, foodService }) {
-  const fixed = shop.tracking_mode === 'counter';
+function BranchTools({ shop, canManage, onSaved, foodService, venue }) {
+  const clinic = shop.kind === 'clinic';
+  const fixed = ['counter', 'invoice'].includes(shop.tracking_mode);
   const customer = screenLink('customer-screen', shop.shop_id);
   const [settingsOpen, setSettingsOpen] = useState(false);
+  const settingsSummary = useRef(null);
+  const posterEnabled = clinic || fixed;
   return <div className="branch-tools">
     <header><h2>{t('كيفاش يمسح الزبون الكود؟')}</h2><p>{t('اختار الطريقة المناسبة للفرع.')}</p></header>
     <div className="merchant-code-grid">
       <article className="branch-code-card">
         <h3><Printer size={19} />{t('الكود المطبوع')}</h3>
-        {fixed ? <CounterPoster shop={shop} /> : <>
-          <p>{t('افتح رمز المتابعة من بطاقة الطلب، أو أنشئ طلبًا جديدًا.')}</p>
-          <button type="button" className="button small" onClick={onOrders}>{t('مساحة العمل')}</button>
+        <CounterPoster shop={shop} clinic={clinic} enabled={posterEnabled} />
+        {!posterEnabled && <>
+          <p>{t('معاينة فقط. فعّل QR ثابت في إعدادات الفرع باش تقدر تطبعه وتستعمله.')}</p>
+          {canManage && <button type="button" className="button outline small" onClick={() => {
+            setSettingsOpen(true);
+            settingsSummary.current?.focus();
+          }}>
+            {t('افتح إعدادات الفرع')}
+          </button>}
         </>}
       </article>
-      <article className="branch-code-card">
+      {!clinic && <article className="branch-code-card">
         <h3><Tablet size={19} />{t('شاشة الزبون (تابلت)')}</h3>
         <p>{t('امسح هذا الرمز بالتابلت باش تفتح شاشة مشاركة الأكواد.')}</p>
         <div className="branch-screen-qr"><QRCodeSVG value={customer} size={126} marginSize={4} /></div>
         <ScreenActions key={customer} link={customer} />
-      </article>
+      </article>}
     </div>
     <h2>{t('شاشات إضافية (اختياري)')}</h2>
     <div className="merchant-code-grid">
@@ -100,17 +118,16 @@ function BranchTools({ shop, canManage, onOrders, onSaved, foodService }) {
         <p>{t('من التابلت في المطبخ، علّم الطلب جاهز باش يتحدّث عند الزبون.')}</p>
         <ScreenActions link={screenLink('kitchen', shop.shop_id)} showField />
       </article>}
-      <WaitingScreen key={shop.shop_id} canManage={canManage} />
+      <WaitingScreen key={shop.shop_id} canManage={canManage} venue={venue || shop.name} branch={shop.name} clinic={clinic} />
     </div>
-    {canManage && <details className="branch-settings" onToggle={event => setSettingsOpen(event.currentTarget.open)}>
-      <summary>{t('إعدادات الفرع')}<ChevronDown size={17} /></summary>
+    {canManage && <details className="branch-settings" open={settingsOpen} onToggle={event => setSettingsOpen(event.currentTarget.open)}>
+      <summary ref={settingsSummary}>{t('إعدادات الفرع')}<ChevronDown size={17} /></summary>
       {settingsOpen && <ShopSettings branchOnly onSaved={onSaved} />}
     </details>}
   </div>;
 }
 
-export default function MerchantCodes({ shop, error, workspace, refresh, onOrders, onSaved, canManage, foodService }) {
-  const [adding, setAdding] = useState(false);
+export default function MerchantCodes({ shop, error, workspace, refresh, onSaved, canManage, foodService, adding, setAdding }) {
   const [name, setName] = useState('');
   const [busy, setBusy] = useState(false);
   const [failure, setFailure] = useState('');
@@ -133,15 +150,15 @@ export default function MerchantCodes({ shop, error, workspace, refresh, onOrder
 
   function select(id) {
     rememberBranch(id);
-    location.hash = 'dashboard/codes';
-    location.reload();
+    if (location.pathname === '/dashboard/codes' && !location.hash) location.reload();
+    else location.assign('/dashboard/codes');
   }
 
   return <div className="merchant-branches-codes">
     {workspace?.manager && <div className="branch-add">
       <button type="button" className="button small" aria-expanded={adding} onClick={() => setAdding(value => !value)}><Plus size={17} />{t('فرع جديد')}</button>
       {adding && <form className="panel" onSubmit={create}>
-        <label>{t('اسم الفرع')}<input value={name} maxLength={100} required onChange={event => setName(event.target.value)} /></label>
+        <label>{t('اسم الفرع')}<input autoFocus value={name} maxLength={100} required onChange={event => setName(event.target.value)} /></label>
         <button className="button small" disabled={busy || !name.trim()}>{t('زيد فرع')}</button>
       </form>}
       {failure && <p role="alert" className="error">{failure}</p>}
@@ -156,10 +173,13 @@ export default function MerchantCodes({ shop, error, workspace, refresh, onOrder
         <summary>{title}</summary>
         {error && <p role="alert" className="error">{error}</p>}
         {shop && <BranchTools key={shop.shop_id} shop={shop} onSaved={onSaved} canManage={canManage}
-          onOrders={onOrders} foodService={foodService} />}
+          foodService={foodService} venue={branches.find(item => item.id === workspace?.home)?.name} />}
       </details> : <section className="branch-block" key={branch.id}>
         <button type="button" className="branch-switch" onClick={() => select(branch.id)}>{title}</button>
       </section>;
     })}
   </div>;
 }
+
+
+

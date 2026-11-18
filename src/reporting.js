@@ -23,17 +23,29 @@ export function summarize(rows, timezone = 'Africa/Algiers') {
     wait = rows.map(o => secondsBetween(o.ready_at, o.collected_at)).filter(v => v !== null);
   const hours = {},
     days = {};
+  const activity = Array.from({ length: 7 }, () => Array(24).fill(0));
+  const hourlyPrep = Array.from({ length: 24 }, () => ({ sum: 0, count: 0 }));
+  const hourFormat = new Intl.DateTimeFormat('en-GB', {
+    timeZone: timezone,
+    hour: '2-digit',
+    hourCycle: 'h23'
+  });
+
   for (const row of rows) {
-    const h = Number(new Intl.DateTimeFormat('en-GB', {
-      timeZone: timezone,
-      hour: '2-digit',
-      hourCycle: 'h23'
-    }).format(new Date(row.created_at)));
+    const h = Number(hourFormat.format(new Date(row.created_at)));
     hours[h] = (hours[h] || 0) + 1;
     const d = localDate(row.created_at, timezone);
     days[d] = (days[d] || 0) + 1;
+    activity[new Date(d + 'T00:00:00Z').getUTCDay()][h]++;
+    const prepSeconds = secondsBetween(row.created_at, row.ready_at);
+    if (prepSeconds !== null) {
+      hourlyPrep[h].sum += prepSeconds;
+      hourlyPrep[h].count++;
+    }
   }
   return {
+    activity,
+    prepByHour: hourlyPrep.map(({ sum, count }) => count ? sum / count : null),
     totals: {
       total: rows.length,
       collected: rows.filter(o => o.status === 'collected').length,
@@ -63,3 +75,4 @@ export function orderCSV(rows) {
   const header = [bippoT("رقم الطلب"), bippoT("الحالة"), bippoT("وقت الإنشاء UTC"), bippoT("وقت الجاهزية UTC"), bippoT("وقت الاستلام UTC"), bippoT("مدة التحضير بالثواني"), bippoT("انتظار الاستلام بالثواني")];
   return '\uFEFF' + [header, ...rows.map(o => [o.number, o.status, o.created_at, o.ready_at || '', o.collected_at || '', secondsBetween(o.created_at, o.ready_at) ?? '', secondsBetween(o.ready_at, o.collected_at) ?? ''])].map(r => r.map(csvCell).join(',')).join('\r\n');
 }
+

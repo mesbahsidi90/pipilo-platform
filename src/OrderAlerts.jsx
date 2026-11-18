@@ -29,7 +29,7 @@ function keyBytes(value) {
   const str = atob(value.replace(/-/g, '+').replace(/_/g, '/').padEnd(Math.ceil(value.length / 4) * 4, '='));
   return Uint8Array.from(str, c => c.charCodeAt(0));
 }
-export async function retryPush(orderId) {
+export async function retryPush(orderId, resend = false) {
   if (!cloud) return {
     sent: 0,
     failed: 0
@@ -37,7 +37,7 @@ export async function retryPush(orderId) {
   const {
     data
   } = await db.auth.getSession();
-  const res = await fetch(`${base}/functions/v1/order-alerts/notify`, {
+  const res = await fetch(`${base}/functions/v1/order-alerts/${resend ? 'renotify' : 'notify'}`, {
     method: 'POST',
     headers: {
       apikey: apiKey,
@@ -48,6 +48,7 @@ export async function retryPush(orderId) {
       order_id: orderId
     })
   });
+  if (res.status === 429) throw new Error(bippoT('استنّى شوية قبل ما تعاود الرنّة.'));
   if (!res.ok) throw new Error(bippoT("تعذر إعادة إرسال إشعار الخلفية. حالة الطلب محفوظة."));
   return res.json();
 }
@@ -206,6 +207,7 @@ export default function OrderAlerts({
   </> : view.armed && (push === 'enabled' || push === 'local' || push === 'ios-install' || push === 'unsupported' || push === 'denied' || push === 'unavailable') ? <div className="pager-armed"><Bell size={21} />{bippoT(" التنبيه مفعّل، خلّي صوت الهاتف مسموع")}</div> : <button className="pager-action" disabled={view.pending || pushBusy} onClick={view.armed && push === 'available' ? enablePush : enable}><Bell size={22} />{view.pending || pushBusy ? bippoT("لحظة…") : view.armed && push === 'available' ? bippoT("اسمح بإشعار الهاتف") : bippoT("فعّل التنبيه")}</button>}
   {!isReady && !view.armed && <p className="pager-hint">{bippoT("اضغط واسمح برسالة المتصفح باش ننبّهوك كي يوجد طلبك.")}</p>}
   {(error || offline) && <p className="pager-alert-error" role="status">{error || bippoT("الاتصال راه يتعاود. حالة الطلب تبقى محفوظة.")}</p>}
-  {!isReady && ['denied', 'ios-install', 'unsupported', 'unavailable'].includes(push) && <details className="pager-help"><summary>{push === 'denied' ? bippoT("إشعار القفل محبوس — كيفاش نفعّلو؟") : push === 'ios-install' ? bippoT("التنبيه على iPhone") : bippoT("مساعدة التنبيه")}</summary><p>{push === 'denied' ? bippoT("من الرمز حدّ عنوان الموقع: الأذونات ← الإشعارات ← السماح، ثم عاود افتح الصفحة.") : push === 'ios-install' ? bippoT("أضف bippo للشاشة الرئيسية من المشاركة، وافتح الأيقونة وفعّل التنبيه.") : bippoT("الرنة متاحة في الصفحة. إشعار القفل يتبع دعم وإعدادات الهاتف.")}</p>{push === 'ios-install' && <button onClick={() => navigator.clipboard.writeText(location.href).then(() => setError(bippoT("تنسخ الرابط. الصقو بعد فتح الأيقونة."))).catch(() => setError(bippoT("انسخ رابط الطلب من شريط العنوان.")))}>{bippoT("انسخ رابط الطلب")}</button>}</details>}
+  {!isReady && ['denied', 'ios-install', 'unsupported', 'unavailable'].includes(push) && <details className="pager-help"><summary>{push === 'denied' ? bippoT("إشعار القفل محبوس — كيفاش نفعّلو؟") : push === 'ios-install' ? bippoT("التنبيه على iPhone") : bippoT("مساعدة التنبيه")}</summary><p>{push === 'denied' ? bippoT("من الرمز حدّ عنوان الموقع: الأذونات ← الإشعارات ← السماح، ثم عاود افتح الصفحة.") : push === 'ios-install' ? bippoT("أضف Bipilo للشاشة الرئيسية من المشاركة، وافتح الأيقونة وفعّل التنبيه.") : bippoT("الرنة متاحة في الصفحة. إشعار القفل يتبع دعم وإعدادات الهاتف.")}</p>{push === 'ios-install' && <button onClick={() => navigator.clipboard.writeText(location.href).then(() => setError(bippoT("تنسخ الرابط. الصقو بعد فتح الأيقونة."))).catch(() => setError(bippoT("انسخ رابط الطلب من شريط العنوان.")))}>{bippoT("انسخ رابط الطلب")}</button>}</details>}
  </section>;
 }
+

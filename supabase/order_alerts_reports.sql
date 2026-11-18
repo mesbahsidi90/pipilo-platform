@@ -65,4 +65,3 @@ begin
 end; $$;
 revoke all on function private.queue_order_ready_push() from public,anon,authenticated;
 create trigger order_ready_push after update of status on public.orders for each row execute function private.queue_order_ready_push();
-

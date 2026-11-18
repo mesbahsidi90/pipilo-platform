@@ -1,0 +1,11 @@
+.private-feedback { margin-top: 16px; text-align: start; }
+.private-feedback summary { cursor: pointer; font-weight: 700; }
+.private-feedback form { display: grid; justify-items: start; gap: 9px; margin-top: 12px; }
+.private-feedback label, .private-feedback textarea { display: block; width: 100%; }
+.private-feedback textarea { margin-top: 5px; resize: vertical; }
+.merchant-feedback { padding: 18px; }
+.merchant-feedback header { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+.merchant-feedback ul { display: grid; gap: 10px; padding: 0; list-style: none; }
+.merchant-feedback li { padding: 12px; border: 1px solid var(--bippo-border); border-radius: 12px; }
+.merchant-feedback time { margin-inline-start: 12px; color: var(--bippo-muted); font-size: .8rem; }
+.merchant-feedback li p { margin-top: 6px; white-space: pre-wrap; overflow-wrap: anywhere; }

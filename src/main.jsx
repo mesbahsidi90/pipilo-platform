@@ -1,8 +1,8 @@
-import { t as bippoT, locale as bippoLocale, ticketLink } from "./i18n.js";
+import { t as bippoT, language, ticketLink } from "./i18n.js";
 import React, { useState, useEffect } from 'react';
 import { createRoot } from 'react-dom/client';
 import { QRCodeSVG } from 'qrcode.react';
-import { ArrowUpLeft, Check, Plus, Monitor, ExternalLink, Copy, Clock, CheckCheck, Radio, LogOut, ChefHat, ScanLine, ArrowLeft, Menu, X, Printer, Star } from 'lucide-react';
+import { ArrowUpLeft, Plus, Monitor, ExternalLink, Copy, CheckCheck, Radio, LogOut, ChefHat, ScanLine, ArrowLeft, Menu, X, Printer, Star } from 'lucide-react';
 import { cloud, db, listOrders, createOrder, transition, track, display, subscribe } from './store';
 import { statuses } from './domain';
 import './style.css';
@@ -11,11 +11,12 @@ import Landing, { Brand } from './Landing';
 import Account from './Account';
 import Signup from './Signup';
 import PublicPages from './PublicPages';
-import { publicRoutes } from './publicContent';
+import { publicRoutes, pageInfo } from './publicContent';
 import ResetPassword from './ResetPassword';
 import Admin from './Admin';
 import { ticketBranding } from './shopSettings';
-import DotNumber from './DotNumber';
+import WaitingBoard from './WaitingBoard';
+import ClinicQueue from './ClinicQueue';
 import Orders from './Orders';
 import OrderAlerts from './OrderAlerts';
 import FollowTicket from './FollowTicket';
@@ -30,31 +31,53 @@ import AcceptInvite from './AcceptInvite';
 import { rememberBranch } from './merchantBranches';
 import { shopActivity, shopTypes } from './shopActivities';
 import CounterTicket from './CounterTicket';
-import { trackingCode } from './counterAccess.js';
+import InvoiceTicket from './InvoiceTicket';
+import { counterRoute, trackingCode } from './counterAccess.js';
 import ReviewCard from './ReviewCard';
 import { getSettings } from './shopSettings';
 import { signalGuest, guestExtras } from './guestApi';
 import { reviewUrl } from './guestExperience';
 import './guest-experience.css';
-const route = location.hash.slice(1).split('/');
-if (!route[0] && !location.search.includes('setup=1') && (window.matchMedia('(display-mode: standalone)').matches || navigator.standalone)) {
+import { printWithTitle, usePanelTitle, useRouteTitle } from './pageTitle';
+import { readRoute, dashboardDestination } from './routes';
+const route = readRoute(location);
+if (route[0] === 'home' && !location.hash && (window.matchMedia('(display-mode: standalone)').matches || navigator.standalone)) {
   const ticket = localStorage.getItem('bippo-last-ticket');
   if (ticket) route.splice(0, 2, localStorage.getItem('bippo-last-ticket-route') === 'demo' ? 'demo' : 'track', ticket);else route.splice(0, 2, 'follow', '');
 }
 const link = path => ticketLink(path);
+const homeTitle = language === 'fr' ? 'Bipilo | Gestion des files et appel des clients' : 'Bipilo | تنظيم الطابور ونداء الزبائن';
+const routeTitles = {
+  queue: bippoT('خذ رقم دور'),
+  account: bippoT('الحساب'),
+  admin: bippoT('إدارة المنصة'),
+  invoice: bippoT('تتبّع الطلب'),
+  counter: bippoT('تتبّع الطلب'),
+  login: bippoT('تسجيل الدخول'),
+  dashboard: bippoT('لوحة التحكم'),
+  demo: bippoT('تجربة Bipilo'),
+  display: bippoT('شاشة الانتظار'),
+  follow: bippoT('تتبّع الطلب'),
+  invite: bippoT('قبول الدعوة'),
+  reset: bippoT('استرجاع كلمة المرور'),
+  signup: bippoT('إنشاء حساب'),
+  track: bippoT('تتبّع الطلب')
+};
 function App() {
-  const [page, setPage] = useState(route[0] && !route[0].includes('=') ? route[0] : location.search.includes('setup=1') ? 'account' : 'home');
+  const [page, setPage] = useState(route[0]);
   const [token, setToken] = useState(route[1] || '');
+  const title = Object.hasOwn(routeTitles, page) ? routeTitles[page] : publicRoutes.includes(page) ? pageInfo[page].tag : null;
+  useRouteTitle(title ? title + ' | Bipilo' : homeTitle);
   useEffect(() => {
     const change = () => {
-      const [p, t] = location.hash.slice(1).split('/');
-      setPage(p && !p.includes('=') ? p : location.search.includes('setup=1') ? 'account' : 'home');
+      const [p, t] = readRoute(location);
+      setPage(p);
       setToken(t || '');
     };
     addEventListener('hashchange', change);
     return () => removeEventListener('hashchange', change);
   }, []);
-  return publicRoutes.includes(page) ? <PublicPages key={page} page={page} /> : page === 'invite' ? <AcceptInvite key={token} token={token} /> : page === 'signup' ? <Signup key={token} initialKind={Object.hasOwn(shopTypes, token) ? token : 'cafe'} /> : page === 'demo' ? <DemoCustomer key={token} token={token} /> : page === 'counter' ? <CounterTicket key={token} branch={token} /> : page === 'follow' ? <FollowTicket /> : page === 'reset' ? <ResetPassword /> : page === 'admin' ? <Admin /> : page === 'account' ? <Account /> : page === 'track' ? <Customer key={token} token={token} /> : page === 'display' ? <Display token={token} /> : page === 'dashboard' ? <Dashboard key={token} workspace={token} /> : <Landing />;
+  return publicRoutes.includes(page) ? <PublicPages key={page} page={page} /> : page === 'invite' ? <AcceptInvite key={token} token={token} /> : page === 'signup' ? <Signup key={token} initialKind={Object.hasOwn(shopTypes, token) ? token : 'cafe'} /> : page === 'demo' ? <DemoCustomer key={token} token={token} /> : page === 'queue' ? <ClinicQueue key={token} branch={token} /> : page === 'invoice' ? <InvoiceTicket key={token} branch={token} /> : page === 'counter' ? <CounterTicket key={token} branch={token} /> : page === 'follow' ? <FollowTicket /> : page === 'reset' ? <ResetPassword /> : page === 'admin' ? <Admin /> : page === 'account' ? <Account /> : page === 'track' ? <Customer key={token} token={token} /> : page === 'display' ? <Display key={token} token={token} /> : page === 'login' ? <Dashboard loginPage /> : page === 'dashboard' ? <Dashboard key={token} workspace={token} /> : <Landing />;
 }
 function useLive(loader, deps = []) {
   const [data, setData] = useState(null),
@@ -87,7 +110,7 @@ function useLive(loader, deps = []) {
     last
   };
 }
-function Dashboard({ workspace }) {
+function Dashboard({ workspace, loginPage = false }) {
   const [session, setSession] = useState(null),
     [authReady, setAuthReady] = useState(!cloud);
   useEffect(() => {
@@ -106,11 +129,25 @@ function Dashboard({ workspace }) {
     });
     return () => data.subscription.unsubscribe();
   }, []);
+  useEffect(() => {
+    if (!authReady) return;
+    if (loginPage && (session || !cloud)) {
+      location.replace(dashboardDestination(location.search));
+    } else if (!loginPage && cloud && !session) {
+      const next = new URL('/dashboard' + (workspace ? '/' + workspace : ''), location.origin);
+      const branch = new URLSearchParams(location.search).get('branch');
+      if (branch) next.searchParams.set('branch', branch);
+      const target = dashboardDestination('?next=' + encodeURIComponent(next.pathname + next.search));
+      location.replace('/login?next=' + encodeURIComponent(target));
+    }
+  }, [authReady, loginPage, session, workspace]);
   if (!authReady) return <main className="merchant-login"><p role="status">{bippoT('جارٍ الاتصال…')}</p></main>;
-  return cloud && !session ? <Login /> : <Orders Share={Share} workspace={workspace} />;
+  if (loginPage) return cloud && !session ? <Login /> : null;
+  return cloud && !session ? null : <Orders Share={Share} workspace={workspace} />;
 }
 
 function Login() {
+  usePanelTitle(bippoT('تسجيل الدخول'));
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
@@ -154,8 +191,8 @@ function Login() {
           </button>
         </form>
         <div className="merchant-login-links">
-          <a href="#reset">{bippoT('نسيت كلمة المرور؟')}</a>
-          <a href="#signup">{bippoT('إنشاء حساب')}</a>
+          <a href="/forgot-password">{bippoT('نسيت كلمة المرور؟')}</a>
+          <a href="/signup">{bippoT('إنشاء حساب')}</a>
         </div>
       </div>
     </main>
@@ -172,7 +209,9 @@ function Share({
     [preview, setPreview] = useState(false),
     [printError, setPrintError] = useState('');
   const url = link('track/' + order.token);
-  const code = branding?.tracking_mode === 'counter' ? trackingCode(order) : '';
+  const fixed = branding?.kind !== 'clinic' && branding?.tracking_mode === 'counter';
+  const counterUrl = fixed && order.counter_pending ? link(counterRoute(branding.shop_id)) : null;
+  const code = fixed && order.counter_pending == null ? trackingCode(order) : '';
   useEffect(() => {
     let live = true;
     getSettings().then(v => live && setBranding(v)).catch(() => live && setPrintError(bippoT("تعذر تحميل بيانات التيكي. أغلق النافذة وعاود.")));
@@ -189,9 +228,9 @@ function Share({
       <p>{bippoT('الزبون يمسح QR الثابت ويدخل هذا الكود.')}</p>
       <strong className="counter-code" dir="ltr">{code}</strong>
     </> : <>
-      <p>{bippoT("ليفتح الزبون الرابط أو يمسح الرمز.")}</p>
-      <QRCodeSVG value={url} size={210} level="M" marginSize={3} />
-    </>}<div className="receipt-controls"><label className="comparison-sr-only" htmlFor="receipt-width">{bippoT("عرض التيكي")}</label><select id="receipt-width" aria-label={bippoT("عرض التيكي")} value={width} onChange={e => setWidth(e.target.value)}><option value="80">{bippoT("80 مم")}</option><option value="58">{bippoT("58 مم")}</option></select><button className="button" disabled={!branding} onClick={() => window.print()}><Printer size={17} />{bippoT(" طباعة التيكي")}</button></div><button className="button outline full" disabled={!branding} onClick={() => setPreview(true)}>{bippoT("معاينة التيكي")}</button>{printError && <p role="alert" className="error">{printError}</p>}<small>{bippoT("اختار نفس عرض الورق في نافذة الطباعة، مقياس 100٪، بلا هوامش ولا ترويسة. تقدر تحفظه PDF.")}</small><a className="button full" href={'#track/' + order.token} target="_blank" rel="noreferrer">{bippoT("افتح صفحة الزبون ")}<ExternalLink size={17} /></a><button className="button outline full" onClick={async () => {
+      <p>{bippoT(counterUrl ? 'خلّي الزبون يمسح QR الثابت هنا أو من ملصق الكونتوار.' : 'ليفتح الزبون الرابط أو يمسح الرمز.')}</p>
+      <QRCodeSVG value={counterUrl || url} size={210} level="M" marginSize={3} />
+    </>}<div className="receipt-controls"><label className="comparison-sr-only" htmlFor="receipt-width">{bippoT("عرض التيكي")}</label><select id="receipt-width" aria-label={bippoT("عرض التيكي")} value={width} onChange={e => setWidth(e.target.value)}><option value="80">{bippoT("80 مم")}</option><option value="58">{bippoT("58 مم")}</option></select><button className="button" disabled={!branding} onClick={() => printWithTitle(bippoT('طباعة التيكي'))}><Printer size={17} />{bippoT(" طباعة التيكي")}</button></div><button className="button outline full" disabled={!branding} onClick={() => setPreview(true)}>{bippoT("معاينة التيكي")}</button>{printError && <p role="alert" className="error">{printError}</p>}<small>{bippoT("اختار نفس عرض الورق في نافذة الطباعة، مقياس 100٪، بلا هوامش ولا ترويسة. تقدر تحفظه PDF.")}</small><a className="button full" href={'#track/' + order.token} target="_blank" rel="noreferrer">{bippoT("افتح صفحة الزبون ")}<ExternalLink size={17} /></a><button className="button outline full" onClick={async () => {
         try {
           await navigator.clipboard.writeText(url);
           setCopied(true);
@@ -264,18 +303,17 @@ function Customer({
   try {
     review = reviewUrl(o?.google_review_url || '');
   } catch {}
-  return <CustomerPager branding={branding} number={o?.number} status={o?.status} acknowledged={ack || Boolean(o?.coming_at)} loading={!o && !last && !error} error={error || (!o && last ? bippoT("راجع موظف المحل باش يعطيك رابط الطلب.") : '')} extra={o?.status === 'collected' ? <ReviewCard url={review} /> : confirmError ? <p className="guest-confirm-error" role="status">{confirmError}</p> : null}>{o && <OrderAlerts ticket={token} status={o.status} tone={branding?.alert_tone || 'pager'} offline={Boolean(error)} onEnabled={() => void report('sound_enabled')} onPushEnabled={() => void report('push_enabled')} onAcknowledge={acknowledge} onRefresh={() => window.dispatchEvent(new Event('nawba-change'))} />}</CustomerPager>;
+  return <CustomerPager branding={branding} number={o?.number} status={o?.status} acknowledged={ack || Boolean(o?.coming_at)} loading={!o && !last && !error} error={error || (!o && last ? bippoT("راجع موظف المحل باش يعطيك رابط الطلب.") : '')} extra={o?.status === 'collected' ? <ReviewCard key={token} url={review} ticket={token} allowFeedback={o.private_feedback_enabled} alreadySent={o.feedback_sent} /> : confirmError ? <p className="guest-confirm-error" role="status">{confirmError}</p> : null}>{o && o.status !== 'cancelled' && <OrderAlerts ticket={token} status={o.status} tone={branding?.alert_tone || 'pager'} offline={Boolean(error)} onEnabled={() => void report('sound_enabled')} onPushEnabled={() => void report('push_enabled')} onAcknowledge={acknowledge} onRefresh={() => window.dispatchEvent(new Event('nawba-change'))} />}</CustomerPager>;
 }
-function Display({
-  token
-}) {
-  const {
-    data,
-    error,
-    last
-  } = useLive(() => display(token), [token]);
-  const rows = error ? [] : data || [];
-  return <main className="display-page"><header><Brand /><div className="actions"><span className="live"><span className="dot" />{error ? bippoT("الاتصال منقطع") : bippoT("تحديث تلقائي")}</span><button className="button outline small" onClick={() => document.fullscreenElement ? document.exitFullscreen() : document.documentElement.requestFullscreen().catch(() => {})}>{bippoT("ملء الشاشة")}</button></div></header><div className="display-heading"><span className="eyebrow">{bippoT("لحظتك الحلوة وصلت")}</span><h1>{bippoT("واجد للاستلام")}</h1><p>{bippoT("طلبك واجد، تقدر تجي تديه عند ظهور رقمك")}</p></div>{error ? <p role="alert" className="error">{bippoT("تعذر تحديث الشاشة. نعيد الاتصال…")}</p> : <div className="ready-grid">{rows.filter(o => o.status === 'ready').map(o => <div key={o.number}><DotNumber value={o.number} /><Check size={28} /></div>)}</div>}{!error && last && !rows.some(o => o.status === 'ready') && <p className="display-empty">{bippoT("نحضّر طلباتكم بكل عناية…")}</p>}<div className="preparing-strip"><span><Clock size={20} />{bippoT(" راه يتحضّر")}</span>{rows.filter(o => o.status === 'preparing').map(o => <b key={o.number}>{o.number}</b>)}</div><footer>{!cloud ? bippoT("شاشة تجريبية · المتصفح نفسه") : bippoT("bippo · شاشة الطلبات")}<small>{bippoT("آخر اتصال: ")}{last?.toLocaleTimeString(bippoLocale) || bippoT("جارٍ الاتصال")}</small></footer></main>;
+function Display({ token }) {
+  const { data, error } = useLive(() => display(token), [token]);
+  return <WaitingBoard orders={data} error={error} />;
 }
 createRoot(document.getElementById('root')).render(<><App /><LanguageSwitcher /></>);
 import './bippo.css';
+import './platform-colors.css';
+
+
+
+
+

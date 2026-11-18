@@ -1,6 +1,8 @@
 import {cloud,db,track} from './store';
 import {getSettings} from './shopSettings';
 const key='bippo-guest-signals';
+const feedbackKey = 'bipilo-demo-order-feedback';
+const readFeedback = () => JSON.parse(localStorage.getItem(feedbackKey) || '{}');
 const read=()=>JSON.parse(localStorage.getItem(key)||'{}');
 export function demoSignals(){return read();}
 export async function signalGuest(ticket,event){
@@ -14,8 +16,38 @@ export async function signalGuest(ticket,event){
  const {data,error}=await db.rpc('guest_order_signal',{ticket,event_name:event});if(error)throw error;return data;
 }
 export async function guestExtras(ticket){
- if(!cloud){const o=await track(ticket);if(!o)return null;const settings=await getSettings();return {coming_at:read()[o.id]?.coming_at||null,google_review_url:o.status==='collected'?settings.google_review_url:''};}
+ if(!cloud){const o=await track(ticket);if(!o)return null;const settings=await getSettings();return {
+  coming_at:read()[o.id]?.coming_at||null,
+  google_review_url:o.status==='collected'?settings.google_review_url:'',
+  private_feedback_enabled: o.status === 'collected' && Boolean(settings.private_feedback_enabled),
+  feedback_sent: Boolean(readFeedback()[o.id])
+ };}
  const {data,error}=await db.rpc('guest_order_extras',{ticket});if(error)throw error;return data;
+}
+export async function submitOrderFeedback(ticket, message) {
+  const comment = message.trim();
+  if (!comment || Array.from(comment).length > 500) return false;
+  if (!cloud) {
+    const [order, settings] = await Promise.all([track(ticket), getSettings()]);
+    if (order?.status !== 'collected' || !settings.private_feedback_enabled) return false;
+    const feedback = readFeedback();
+    feedback[order.id] ||= {
+      order_id: order.id, number: order.number, comment, created_at: new Date().toISOString()
+    };
+    localStorage.setItem(feedbackKey, JSON.stringify(feedback));
+    return true;
+  }
+  const { data, error } = await db.rpc('submit_order_feedback', { ticket, message: comment });
+  if (error) throw error;
+  return data;
+}
+
+export async function branchOrderFeedback() {
+  if (!cloud) return Object.values(readFeedback())
+    .sort((a, b) => b.created_at.localeCompare(a.created_at)).slice(0, 100);
+  const { data, error } = await db.rpc('branch_order_feedback');
+  if (error) throw error;
+  return data || [];
 }
 // One bounded guest payload; no subscription addresses, staff identity or other orders.
 export async function staffSignals(ids=[]){

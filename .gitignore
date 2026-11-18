@@ -4,3 +4,6 @@ dist/
 .env.local
 *.log
 .wrangler/
+*.zip
+Bipilo-Instagram-*.png
+Bipilo-Instagram-v2/

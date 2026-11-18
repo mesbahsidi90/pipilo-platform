@@ -1,8 +1,8 @@
 import { t as bippoT, locale as bippoLocale, ticketLink } from "./i18n.js";
 import React, { useState, useEffect } from 'react';
-import { Plus, Settings, Clock, Check, CheckCheck, ScanLine, BarChart3, List, QrCode, Palette, MessageCircle, ChefHat, Sparkles, CreditCard, Users, LogOut } from 'lucide-react';
-import { cloud, db, listOrders, createOrder, transition, subscribe } from './store';
-import { statuses } from './domain';
+import { Plus, Settings, Clock, Check, CheckCheck, ScanLine, BarChart3, List, QrCode, Palette, MessageCircle, ChefHat, Sparkles, CreditCard, Users, LogOut, BellRing, RotateCcw, X } from 'lucide-react';
+import { cloud, db, listOrders, createOrder, transition, subscribe, counterScanRequired } from './store';
+import { active, statuses } from './domain';
 import DotNumber from './DotNumber';
 import Reports from './Reports';
 import ShopSettings from './ShopSettings.jsx';
@@ -16,9 +16,13 @@ import { counterRoute } from './counterAccess';
 import { supportPhone, supportWhatsApp } from './contactDetails';
 import MerchantCodes from './MerchantCodes';
 import MerchantSubscription from './MerchantSubscription';
+import MerchantFeedback from './MerchantFeedback';
+import MerchantAssistant from './MerchantAssistant';
 import MerchantTeam, { BranchSelector, workspaceAction } from './MerchantTeam';
 import { rememberBranch } from './merchantBranches';
 import './merchant-workspace.css';
+import { clinicAction } from './ClinicQueue';
+import { usePanelTitle } from './pageTitle';
 import { retryPush } from './OrderAlerts';
 import { staffSignals } from './guestApi';
 import GuestStatus from './GuestStatus';
@@ -33,11 +37,13 @@ export default function Orders({
     [busy, setBusy] = useState(false),
     [selected, setSelected] = useState(null),
     [tab, setTab] = useState(['kitchen', 'codes', 'customer-screen'].includes(workspace) ? workspace : 'orders'),
+    [assistantReportPeriod, setAssistantReportPeriod] = useState(null),
     [screenOrderId, setScreenOrderId] = useState(''),
-    [pushFailed, setPushFailed] = useState(null),
+    [addingBranch, setAddingBranch] = useState(false),
     [signalsUnavailable, setSignalsUnavailable] = useState(false),
     [shop, setShop] = useState(null),
     [shopError, setShopError] = useState(''),
+    [paidPlan, setPaidPlan] = useState(null),
     [workspaceData, setWorkspaceData] = useState(null),
     [workspaceError, setWorkspaceError] = useState('');
 
@@ -50,6 +56,14 @@ export default function Orders({
   }
 
   useEffect(() => { void refreshWorkspace(); }, []);
+  useEffect(() => {
+    if (!cloud || !shop?.shop_id) return;
+    let active = true;
+    db.rpc('current_branch_has_paid_plan').then(({ data, error }) => {
+      if (active && !error) setPaidPlan({ branch: shop.shop_id, enabled: data });
+    });
+    return () => { active = false; };
+  }, [shop?.shop_id]);
   const activity = shopActivity(shop?.kind);
   useEffect(() => {
     let alive = true;
@@ -97,16 +111,20 @@ export default function Orders({
     setBusy(true);
     try {
       await transition(o, status);
-      setNotice(status === 'collected' ? bippoT("الطلب {0} تسلّم وبقى محفوظ في السجل.", [o.number]) : bippoT("الطلب {0} راه واجد.", [o.number]));
+      const message = {
+        collected: bippoT(activity.clinic ? 'دخل المريض' : 'الطلب {0} تسلّم وبقى محفوظ في السجل.', [o.number]),
+        ready: bippoT(activity.clinic ? 'نادينا الرقم {0}.' : 'الطلب {0} راه واجد.', [o.number]),
+        cancelled: bippoT("الطلب تلغى وبقى محفوظ في السجل."),
+        preparing: bippoT("الطلب رجع لقيد التحضير.")
+      };
+      setNotice(message[status]);
       if (status === 'ready' && cloud) {
         try {
           const result = await retryPush(o.id);
           if (result.failed) {
-            setPushFailed(o);
             setNotice(bippoT("الطلب راه واجد. تعذر إرسال إشعار لبعض الأجهزة؛ تقدر تعاود."));
           }
         } catch {
-          setPushFailed(o);
           setNotice(bippoT("الطلب راه واجد وحالتو محفوظة. إشعار الخلفية غير متاح حاليًا؛ الرنة في الصفحة المفتوحة تبقى متاحة."));
         }
       }
@@ -116,21 +134,63 @@ export default function Orders({
       setBusy(false);
     }
   }
+  async function ringAgain(order) {
+    setBusy(true);
+    try {
+      const result = await retryPush(order.id, true);
+      setNotice(result.sent > 0
+        ? bippoT('أُرسل طلب الإشعار إلى {0} جهاز. هذا ما يثبتش أن الزبون سمعه.', [result.sent])
+        : result.failed ? bippoT('تعذر إرسال الإشعار. نادِ الزبون من المحل.')
+        : bippoT('ما كاش جهاز مفعّل لهذا الطلب.'));
+    } catch (e) {
+      setNotice(e.message);
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  async function manageQueue(operation) {
+    setBusy(true);
+    setNotice('');
+    try {
+      const ticket = await clinicAction(operation);
+      if (operation === 'add' && ticket) setSelected(ticket);
+      setNotice(ticket
+        ? bippoT(operation === 'next' ? 'نادينا الرقم {0}.' : 'تزاد رقم الدور {0}.', [ticket.number])
+        : bippoT(operation === 'next' ? 'ما كاش مريض يستنّى.' : 'تعذر إضافة رقم دور.'));
+    } catch {
+      setNotice(bippoT('تعذر تحديث الطابور. عاود المحاولة.'));
+    } finally {
+      setBusy(false);
+    }
+  }
+
   const rows = orders || [];
+  const freeBranch = paidPlan?.branch === shop?.shop_id && paidPlan?.enabled === false;
+  const current = order => !activity.clinic || Date.parse(order.restored_at || order.created_at) > Date.now() - 86400000;
+  const laneLabels = activity.clinic
+    ? { preparing: bippoT('في الانتظار'), ready: bippoT('تم النداء') }
+    : statuses;
   const groups = {
-    preparing: rows.filter(order => order.status === 'preparing'),
-    ready: rows.filter(order => order.status === 'ready'),
-    collected: rows.filter(order => order.status === 'collected')
+    preparing: rows.filter(order => order.status === 'preparing' && current(order)),
+    ready: rows.filter(order => order.status === 'ready' && current(order)),
+    collected: rows.filter(order => order.status === 'collected'),
+    history: rows.filter(order => !active(order) && (!freeBranch ||
+      Date.parse(order.collected_at || order.ready_at || order.restored_at || order.created_at) >= Date.now() - 7 * 86400000))
   };
-  const prepTimes = rows.map(order => secondsBetween(order.created_at, order.ready_at))
+  if (activity.clinic) groups.preparing.sort((a, b) =>
+    (a.restored_at || a.created_at).localeCompare(b.restored_at || b.created_at) || a.id.localeCompare(b.id));
+  const prepTimes = rows.map(order => secondsBetween(activity.clinic ? order.restored_at || order.created_at : order.created_at, order.ready_at))
     .filter(value => value != null);
   const average = prepTimes.length
     ? duration(prepTimes.reduce((total, value) => total + value, 0) / prepTimes.length)
     : '—';
   const tabs = [
-    ['assistant', bippoT('دليل التجهيز'), Sparkles],
-    ['orders', activity.foodService ? bippoT('الطلبات') : bippoT('التيكيات'), List],
-    ['reports', bippoT('السجل والتقارير'), BarChart3],
+    ['assistant', bippoT('المساعد الذكي'), Sparkles],
+    ['orders', activity.clinic ? bippoT('الاستقبال') : activity.foodService ? bippoT('الطلبات') : bippoT('التيكيات'), List],
+    ['reports', bippoT('التحليلات'), BarChart3],
+    ...(!cloud || (workspaceData?.manager && paidPlan?.branch === shop?.shop_id && paidPlan?.enabled)
+      ? [['feedback', bippoT('ملاحظات الزبائن'), MessageCircle]] : []),
     ['codes', bippoT('الفروع والأكواد'), QrCode],
     ...(workspaceData?.manager ? [
       ['team', bippoT('الفريق'), Users]
@@ -141,15 +201,23 @@ export default function Orders({
   ];
   const kitchen = tab === 'kitchen' && Boolean(shop && activity.foodService);
   const activeTab = tabs.find(([id]) => id === tab);
+  const screenTitle = tab === 'customer-screen' ? bippoT('شاشة الزبون (تابلت)') : bippoT('شاشة المطبخ');
+  usePanelTitle(tab === 'orders' ? bippoT('لوحة التحكم') : activeTab?.[1] || screenTitle);
   const managerActions = !cloud || (workspaceData && !workspaceData.staff);
   const numberLabel = activity.foodService ? bippoT('رقم الطلب') : bippoT('رقم التيكي');
+  const fixedCounter = !activity.clinic && shop?.tracking_mode === 'counter';
+  const pendingCounterOrder = fixedCounter && rows.find(order => order.counter_pending && active(order));
 
   async function addOrder(event) {
     event.preventDefault();
+    if (pendingCounterOrder) {
+      setNotice(counterScanRequired());
+      return;
+    }
     setBusy(true);
     setNotice('');
     try {
-      const order = await createOrder(number);
+      const order = await createOrder(number, { fixedCounter });
       setSelected(order);
       setNumber('');
       setNotice(bippoT('تزاد الطلب ') + order.number);
@@ -170,24 +238,34 @@ export default function Orders({
               day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit'
             })}</time>
             <GuestStatus order={order} unavailable={signalsUnavailable} />
+            {order.counter_pending && <small>{bippoT('يستنّى مسح QR')}</small>}
           </div>
         </div>
         <div className="merchant-order-actions">
-          <button type="button" className="icon-button" aria-label={bippoT('رابط الطلب ') + order.number}
-            onClick={() => setSelected(order)}><ScanLine size={19} /></button>
-          {order.status === 'collected' ? <CheckCheck size={20} /> : (
-            <button className={'button small' + (order.status === 'ready' ? ' outline' : '')}
-              disabled={busy} onClick={() => mark(order, order.status === 'preparing' ? 'ready' : 'collected')}>
-              {order.status === 'preparing' ? bippoT('جاهز') : bippoT('تسلّم الطلب')}<Check size={15} />
+          {order.status === 'cancelled' ? <>
+            <span className="merchant-cancelled-label">{statuses.cancelled}</span>
+            <button type="button" className="button outline small" disabled={busy} onClick={() => mark(order, 'preparing')}>
+              <RotateCcw size={15} />{bippoT(activity.clinic ? 'رجّع للانتظار' : 'رجّع للتحضير')}
             </button>
-          )}
+          </> : order.status === 'collected' ? <><CheckCheck size={20} /><span>{activity.clinic ? bippoT('دخل المريض') : statuses.collected}</span></> : <>
+            <button type="button" className="icon-button" aria-label={bippoT('رابط الطلب ') + order.number}
+              onClick={() => setSelected(order)}><ScanLine size={19} /></button>
+            <button type="button" className="button small" disabled={busy || order.counter_pending} onClick={() => mark(order, order.status === 'preparing' ? 'ready' : 'collected')}>
+              {activity.clinic ? bippoT(order.status === 'preparing' ? 'نادِ' : 'دخل المريض') : bippoT(order.status === 'preparing' ? 'جاهز' : 'تسلّم الطلب')}<Check size={15} />
+            </button>
+            {order.status === 'ready' && cloud && <button type="button" className="button outline small" disabled={busy} onClick={() => ringAgain(order)}>
+              <BellRing size={16} />{bippoT('رنّ مرة ثانية')}
+            </button>}
+            {order.status === 'preparing' && <button type="button" className="button outline small merchant-cancel-order" disabled={busy}
+              onClick={() => mark(order, 'cancelled')}><X size={15} />{bippoT('إلغاء الطلب')}</button>}
+          </>}
         </div>
       </article>
     );
   }
 
   if (tab === 'customer-screen') {
-    const activeOrders = rows.filter(order => order.status !== 'collected');
+    const activeOrders = rows.filter(active);
     const selectedOrder = activeOrders.find(order => order.id === screenOrderId);
     const fixed = shop?.tracking_mode === 'counter';
     const url = fixed ? ticketLink(counterRoute(shop.shop_id)) : selectedOrder ? ticketLink('track/' + selectedOrder.token) : null;
@@ -204,10 +282,10 @@ export default function Orders({
       </label>}
       {url && <div className="branch-tablet-qr">
         <QRCodeSVG value={url} size={280} marginSize={4} />
-        <p>{fixed ? bippoT('دخل كود المتابعة اللي عطاهولك الكاشير وفعّل التنبيه.') : bippoT('امسح الرمز وتابع طلبك')}</p>
+        <p>{fixed ? bippoT('امسح بعد ما يسجّل الكاشير طلبك، وفعّل التنبيه.') : bippoT('امسح الرمز وتابع طلبك')}</p>
         {selectedOrder && <strong dir="ltr">{selectedOrder.number}</strong>}
       </div>}
-      <a className="button outline" href={ticketLink('dashboard/codes')}>{bippoT('الفروع والأكواد')}</a>
+      <a className="button outline" href="/dashboard/codes">{bippoT('الفروع والأكواد')}</a>
     </main>;
   }
 
@@ -215,14 +293,12 @@ export default function Orders({
     <div className="merchant-workspace">
       <aside className="merchant-sidebar">
         <Brand linked={false} />
-        <div className="merchant-identity">
-          {shop?.logo && <img src={shop.logo} alt="" />}
-          <div><strong>{shop?.name || bippoT('محلي')}</strong><small>{activity.label}</small></div>
-        </div>
-        <BranchSelector workspace={workspaceData} />
-        <nav aria-label={bippoT('مساحة العمل')}>
+        <BranchSelector workspace={workspaceData} shop={shop} activity={activity.label} demo={!cloud} onAdd={() => {
+          setAddingBranch(true);
+          setTab('codes');
+        }} />        <nav aria-label={bippoT('مساحة العمل')}>
           {tabs.map(([id, label, Icon]) => (
-            <button key={id} type="button" aria-current={tab === id ? 'page' : undefined} onClick={() => setTab(id)}>
+            <button key={id} type="button" aria-current={tab === id ? 'page' : undefined} onClick={() => { setAddingBranch(false); setAssistantReportPeriod(null); setTab(id); }}>
               <Icon size={18} /><span>{label}</span>
             </button>
           ))}
@@ -239,36 +315,48 @@ export default function Orders({
                 if (error) throw error;
               }
               rememberBranch(null);
-              if (!cloud) location.hash = '';
+              if (!cloud) location.assign('/');
             } catch { setWorkspaceError(bippoT('تعذر حفظ التغيير. عاود المحاولة.')); }
           }}><LogOut size={17} />{bippoT(' تسجيل الخروج')}</button>
         </div>
       </aside>
-      <main className="merchant-main">
-        <header className="merchant-heading">
+      <main className={tab === "orders" ? "merchant-main merchant-orders-main" : "merchant-main"}>
+        {(tab !== 'reports' || freeBranch) && <header className="merchant-heading">
           
           <h1>{activeTab?.[1] || bippoT('شاشة المطبخ')}</h1>
-          {tab === 'orders' && <p>{cloud ? bippoT('آخر 200 طلب · السجل الكامل والإحصاءات في التقارير') : bippoT('وضع تجريبي · البيانات في هذا المتصفح فقط')}</p>}
-        </header>
+          {tab === 'orders' && <p>{freeBranch ? bippoT('الباقة المجانية · سجل آخر 7 أيام') : cloud ? bippoT('آخر 200 طلب · السجل الكامل والإحصاءات في التقارير') : bippoT('وضع تجريبي · البيانات في هذا المتصفح فقط')}</p>}
+        </header>}
         {workspaceError && <p role="alert" className="error">{workspaceError}</p>}
         {tab === 'team' && <MerchantTeam workspace={workspaceData} refresh={refreshWorkspace} />}
-        {tab === 'reports' && <Reports />}
-        {tab === 'billing' && managerActions && <MerchantSubscription shopId={workspaceData?.home || shop?.shop_id} shopError={shopError} />}
-        {tab === 'assistant' && <section className="panel merchant-setup">
+        {tab === 'feedback' && activeTab && <MerchantFeedback key={shop?.shop_id} />}
+        {tab === 'reports' && (freeBranch
+          ? <div className="panel"><p>{bippoT('التحليلات وتصدير CSV ضمن الباقة الاحترافية.')}</p><a className="button small" href={supportWhatsApp} target="_blank" rel="noopener noreferrer">{bippoT('اطلب التفعيل عبر واتساب')}</a></div>
+          : <Reports clinic={activity.clinic} initialPeriod={assistantReportPeriod} />)}
+        {tab === 'billing' && managerActions && <MerchantSubscription shopId={workspaceData?.home || shop?.shop_id} shopError={shopError} branchCount={workspaceData?.branches?.length ?? (!cloud ? 1 : undefined)} />}
+        {tab === 'assistant' && <>
+          <MerchantAssistant key={shop?.shop_id || 'local'} shop={shop} clinic={activity.clinic}
+            insightsEnabled={!cloud || Boolean(workspaceData?.manager && paidPlan?.branch === shop?.shop_id && paidPlan?.enabled)}
+            feedbackEnabled={tabs.some(([id]) => id === 'feedback')}
+            navigate={(target, period) => {
+              setAssistantReportPeriod(period || null);
+              setTab(target);
+            }} />
+          <section className="panel merchant-setup">
           <h2>{bippoT('جهّز محلك')}</h2>
           <ol>
             {[
               ['codes', bippoT('حضّر طريقة مشاركة الرمز')],
               ...(managerActions ? [['customer', bippoT('خصّص صفحة الزبون')]] : []),
               ['orders', bippoT('جرّب أول تيكي')],
-              ['reports', bippoT('السجل والتقارير')]
+              ['reports', bippoT('التحليلات')]
             ].map(([id, label]) => (
               <li key={id}><span>{label}</span>
-                <button type="button" className="button outline small" onClick={() => setTab(id)}>{tabs.find(([key]) => key === id)?.[1]}</button>
+                <button type="button" className="button outline small" onClick={() => { setAddingBranch(false); setTab(id); }}>{tabs.find(([key]) => key === id)?.[1]}</button>
               </li>
             ))}
           </ol>
-        </section>}
+          </section>
+        </>}
         {tab === 'kitchen' && (
           <>
             {shopError && <p role="alert" className="error">{shopError}</p>}
@@ -297,7 +385,7 @@ export default function Orders({
         {managerActions && tab === 'settings' && <ShopSettings onSaved={setShop} />}
         {managerActions && tab === 'customer' && <CustomerDesigner onSaved={setShop} />}
         {tab === 'codes' && <MerchantCodes shop={shop} error={shopError} workspace={workspaceData} refresh={refreshWorkspace}
-          onOrders={() => setTab('orders')} onSaved={setShop} canManage={managerActions} foodService={activity.foodService} />}
+          onSaved={setShop} canManage={managerActions} foodService={activity.foodService} adding={addingBranch} setAdding={setAddingBranch} />}
         {tab === 'orders' && (
           <>
             <details className="panel merchant-setup" open={orders?.length === 0 || undefined}>
@@ -305,57 +393,61 @@ export default function Orders({
               <ol>
                 <li><span>{bippoT('حضّر طريقة مشاركة الرمز')}</span><button type="button" className="button outline small" onClick={() => setTab('codes')}>{bippoT('الفروع والأكواد')}</button></li>
                 {managerActions && <li><span>{bippoT('خصّص صفحة الزبون')}</span><button type="button" className="button outline small" onClick={() => setTab('customer')}>{bippoT('صفحة الزبون')}</button></li>}
-                <li><span>{bippoT('جرّب أول تيكي')}</span><button type="button" className="button outline small" onClick={() => document.getElementById('merchant-ticket-number')?.focus()}>{numberLabel}</button></li>
+                <li><span>{bippoT('جرّب أول تيكي')}</span><button type="button" className="button outline small" onClick={() => activity.clinic ? manageQueue('add') : document.getElementById('merchant-ticket-number')?.focus()}>{activity.clinic ? bippoT('أضف رقم دور') : numberLabel}</button></li>
               </ol>
             </details>
             <div className="merchant-metrics">
               {[
-                [bippoT('راه يتحضّر'), groups.preparing.length, Clock],
-                [bippoT('واجد للاستلام'), groups.ready.length, Check],
-                [bippoT('تسلّم وبقى في السجل'), groups.collected.length, CheckCheck],
-                [bippoT('متوسط التحضير'), average, BarChart3]
+                [laneLabels.preparing, groups.preparing.length, Clock],
+                [laneLabels.ready, groups.ready.length, Check],
+                [bippoT(activity.clinic ? 'اللي دخلوا' : 'تسلّم وبقى في السجل'), groups.collected.length, CheckCheck],
+                [bippoT(activity.clinic ? 'متوسط الانتظار قبل النداء' : 'متوسط التحضير'), average, BarChart3]
               ].map(([label, value, Icon]) => (
                 <article key={label}><Icon size={17} /><span>{label}</span><strong>{orders ? value : '—'}</strong></article>
               ))}
             </div>
-            <form className="merchant-entry panel" onSubmit={addOrder}>
+            {activity.clinic ? <div className="merchant-entry panel">
+              <button className="button" type="button" disabled={busy || !groups.preparing.length} onClick={() => manageQueue('next')}>
+                <BellRing size={18} />{bippoT('نادِ التالي')}
+              </button>
+              <button className="button outline" type="button" disabled={busy} onClick={() => manageQueue('add')}>
+                <Plus size={18} />{bippoT('أضف رقم دور')}
+              </button>
+            </div> : <form className="merchant-entry panel" onSubmit={addOrder}>
               <label>{numberLabel}<input id="merchant-ticket-number" placeholder={bippoT('مثلًا 104')} inputMode="numeric"
                 maxLength={4} value={number} onChange={e => setNumber(e.target.value)} required /></label>
-              <button className="button" disabled={busy}><Plus size={18} />{activity.foodService ? bippoT(' زيد الطلب') : bippoT(' زيد التيكي')}</button>
-            </form>
+              <button className="button" disabled={busy || !shop}><Plus size={18} />{activity.foodService ? bippoT(' زيد الطلب') : bippoT(' زيد التيكي')}</button>
+            </form>}
+            {pendingCounterOrder && <p role="status" className="notice">{bippoT('الطلب {0} يستنّى مسح QR الثابت باش تقدر تزيد طلب جديد.', [pendingCounterOrder.number])}</p>}
             {error && <p className="error" role="alert">{bippoT('تعذر التحديث: ')}{error}</p>}
             {!orders ? <p>{bippoT('نحمّلو الطلبات…')}</p> : (
               <>
                 <div className="merchant-board">
                   {['preparing', 'ready'].map(status => (
                     <section key={status} className={'merchant-lane ' + status}>
-                      <header><h2>{statuses[status]}</h2><span>{groups[status].length}</span></header>
+                      <header><h2>{laneLabels[status]}</h2><span>{groups[status].length}</span></header>
                       {groups[status].length ? groups[status].map(orderCard) : <p>{bippoT('ما كاش طلبات بهاذ الحالة')}</p>}
                     </section>
                   ))}
                 </div>
                 <details className="panel merchant-history">
-                  <summary>{bippoT('تسلّم وبقى في السجل')} · {groups.collected.length}</summary>
-                  {groups.collected.map(orderCard)}
+                  <summary>{bippoT('سجل الطلبات')} · {groups.history.length}</summary>
+                  {groups.history.map(orderCard)}
                 </details>
               </>
             )}
           </>
         )}
-        <p role="status" className="notice">{notice}</p>{pushFailed && rows.find(o => o.id === pushFailed.id)?.status === 'ready' && <button disabled={busy} className="retry-alert" onClick={async () => {
-      setBusy(true);
-      try {
-        const r = await retryPush(pushFailed.id);
-        setNotice(r.failed ? bippoT("بعض الأجهزة ما وصلهاش طلب الإشعار؛ نادِ الزبون من المحل.") : bippoT("أُرسل طلب الإشعار إلى {0} جهاز. هذا ما يثبتش أن الزبون سمعه.", [r.sent]));
-        if (!r.failed) setPushFailed(null);
-      } catch (e) {
-        setNotice(e.message);
-      } finally {
-        setBusy(false);
-      }
-    }}>{bippoT("عاود إرسال إشعار الطلب ")}{pushFailed.number}</button>}
-        {selected && <Share order={selected} close={() => setSelected(null)} />}
+        <p role="status" className="notice">{notice}</p>
+        {selected && <Share order={rows.find(order => order.id === selected.id) || selected} close={() => setSelected(null)} />}
       </main>
     </div>
   );
 }
+
+
+
+
+
+
+

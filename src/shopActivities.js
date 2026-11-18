@@ -7,6 +7,7 @@ export const shopTypes = {
   laundry: t('مغسلة ملابس'),
   car_wash: t('مغسلة سيارات'),
   tailor: t('خياط'),
+  clinic: t('عيادة أو مركز'),
   other: t('نشاط آخر')
 };
 
@@ -18,6 +19,7 @@ export function shopActivity(kind) {
   return {
     label: shopTypes[key],
     foodService,
+    clinic: key === 'clinic',
     trackingMode: foodService ? 'order' : 'counter'
   };
 }

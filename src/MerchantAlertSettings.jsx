@@ -9,11 +9,12 @@ export default function MerchantAlertSettings({ form, update, busy }) {
   const [error, setError] = useState('');
   useEffect(() => () => preview.current?.pause(), []);
   const copy = form.alert_copy;
+  const clinic = form.kind === 'clinic';
   const fields = [
-    ['ar_title', 'العنوان بالعربية', 'طلبك راه واجد!', 65, 'rtl'],
-    ['fr_title', 'العنوان بالفرنسية', 'Votre commande est prête !', 65, 'ltr'],
-    ['ar_body', 'النص بالعربية', 'الطلب {number} واجد. استلمه من {venue}.', 145, 'rtl'],
-    ['fr_body', 'النص بالفرنسية', 'Commande {number} · À retirer chez {venue}.', 145, 'ltr']
+    ['ar_title', 'العنوان بالعربية', clinic ? 'جا دورك!' : 'طلبك راه واجد!', 65, 'rtl'],
+    ['fr_title', 'العنوان بالفرنسية', clinic ? 'C’est votre tour !' : 'Votre commande est prête !', 65, 'ltr'],
+    ['ar_body', 'النص بالعربية', clinic ? 'رقم الدور {number} · توجّه للاستقبال.' : 'الطلب {number} واجد. استلمه من {venue}.', 145, 'rtl'],
+    ['fr_body', 'النص بالفرنسية', clinic ? 'Ticket {number} · Présentez-vous à l’accueil.' : 'Commande {number} · À retirer chez {venue}.', 145, 'ltr']
   ];
 
   function audition(tone) {

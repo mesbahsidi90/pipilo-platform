@@ -66,4 +66,3 @@ alter publication supabase_realtime add table public.orders;
 -- insert into public.memberships(user_id,shop_id) values ('AUTH_USER_UUID','SHOP_UUID');
 -- Add every authorized staff user to memberships with the same shop_id.
 -- Rotate a leaked display link: update public.shops set display_token=gen_random_uuid() where id='SHOP_UUID';
-

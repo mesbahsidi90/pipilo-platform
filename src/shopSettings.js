@@ -62,7 +62,11 @@ export async function saveSettings(value) {
       return text ? [[key, text.slice(0, key.endsWith('_title') ? 65 : 145)]] : [];
     })),
     google_review_url: reviewUrl(value.google_review_url || ''),
-    tracking_mode: value.tracking_mode === 'counter' ? 'counter' : 'order'
+    ...(typeof value.private_feedback_enabled === 'boolean' && {
+      private_feedback_enabled: value.private_feedback_enabled
+    }),
+    waiting_mode: value.waiting_mode,
+    tracking_mode: ['counter', 'invoice'].includes(value.tracking_mode) ? value.tracking_mode : 'order'
   };
   if (!data.name || data.name.length > 100) throw new Error(bippoT("دخل اسم المحل، حتى 100 حرف."));
   if (!cloud) {
@@ -112,3 +116,4 @@ async function readImage(file, dimension, maxLength) {
 
 export const readLogo = file => readImage(file, 320, 150000);
 export const readBanner = file => readImage(file, 720, 180000);
+

@@ -172,6 +172,10 @@ export default function CustomerDesigner({ onSaved }) {
           <p>{t('الزبون يلقى رابط التقييم كي تعلّم الطلب «تسلّم الطلب». نفس الدعوة تظهر لجميع الزبائن، بلا فرز حسب الرضا.')}</p>
           <label>{t('رابط تقييم محلك على Google')}<input type="url" dir="ltr" maxLength={2048}
             placeholder="https://g.page/r/…/review" value={form.google_review_url || ''} onChange={e => change('google_review_url', e.target.value)} /></label>
+          <label className="designer-game"><span>{t('ملاحظات خاصة بعد الاستلام')}<small>{t('متاحة للفروع الاحترافية وتظهر لصاحب المحل في اللوحة.')}</small></span>
+            <input type="checkbox" role="switch" checked={Boolean(form.private_feedback_enabled)}
+              onChange={e => change('private_feedback_enabled', e.target.checked)} />
+          </label>
         </DesignerCard>
         <DesignerCard id={id + 'game'} title={t('اللعبة')}>
           <label className="designer-game"><span>{t('طلّع قهوتك')}<small>{t('راك تستنّى؟ جرّب تلعب.')}</small></span>
@@ -195,7 +199,7 @@ export default function CustomerDesigner({ onSaved }) {
         </div>
       </div>
       <div className="merchant-phone">
-        <div className="designer-phone-top" aria-hidden="true" dir="ltr"><b>9:41</b><span>bippo</span></div>
+        <div className="designer-phone-top" aria-hidden="true" dir="ltr"><b>9:41</b><span>Bipilo</span></div>
         <CustomerPager branding={form} number="57" status={previewState} preview previewLanguage={previewLanguage}>
           <span className="pager-action"><Bell size={17} />{previewText(previewState === 'ready' ? 'راني جاي' : 'فعّل التنبيه')}</span>
         </CustomerPager>

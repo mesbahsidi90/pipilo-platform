@@ -15,7 +15,7 @@ export function translate(text,lang=language,values=[]){
  return prefix+translated.replace(/\{(\d+)\}/g,(match,index)=>values[index]===undefined?match:String(values[index]))+suffix;
 }
 export const t=(text,values=[])=>translate(text,language,values);
-export function ticketLink(path){return `${location.origin}${location.pathname}?lang=${language}#${path}`;}
+export function ticketLink(path){return `${location.origin}/?lang=${language}#${path}`;}
 export function switchLanguage(next){
  if(!['ar','fr'].includes(next)||next===language)return;
  try{localStorage.setItem('bippo-language',next);}catch{}
@@ -23,8 +23,8 @@ export function switchLanguage(next){
 }
 if(typeof document!=='undefined'){
  document.documentElement.lang=language;document.documentElement.dir=direction;
- document.title=language==='fr'?'bippo — Votre commande, au bon moment':'bippo — طلبك، على وقته';
  try{localStorage.setItem('bippo-language',language);}catch{}
 }
 
 export function pickupText(value){return normalizeText(value||'')==='تقدر تجي تديه من الكونتوار.'?t('تقدر تجي تديه من الكونتوار.'):value;}
+

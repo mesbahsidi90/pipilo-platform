@@ -1,3 +1,5 @@
+import { readRoute } from './routes';
+
 const storageKey = 'bippo-active-branch';
 export const isBranchId = value => /^[0-9a-f]{8}(?:-[0-9a-f]{4}){3}-[0-9a-f]{12}$/i.test(value || '');
 
@@ -9,7 +11,8 @@ export function rememberBranch(id) {
 export function branchFetch(base) {
   return (input, init) => {
     const url = new URL(typeof input === 'string' || input instanceof URL ? input : input.url);
-    const screen = /^#dashboard\/(kitchen|customer-screen)$/.test(location.hash);
+    const [page, detail] = readRoute(location);
+    const screen = page === 'dashboard' && ['kitchen', 'customer-screen'].includes(detail);
     const requested = screen ? new URLSearchParams(location.search).get('branch') : null;
     const branch = requested || sessionStorage.getItem(storageKey);
     if (url.origin !== new URL(base).origin || !url.pathname.startsWith('/rest/v1/') || !isBranchId(branch)) {

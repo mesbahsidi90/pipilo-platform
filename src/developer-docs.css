@@ -1,0 +1,12 @@
+.developer-docs { padding-block: 0 5rem; }
+.developer-docs > .public-note { margin-block: 0 1.25rem; }
+.developer-docs > h2 { margin-block: 2rem 1rem; }
+.developer-card { background: white; border: 1px solid #e5e7e4; border-radius: 1.25rem; padding: 1.25rem; margin-block-end: .75rem; }
+.developer-card ol { padding-inline-start: 1.4rem; list-style: decimal; }
+.developer-card p, .developer-card li { line-height: 1.8; }
+.developer-operation summary { cursor: pointer; }
+.developer-operation summary span { margin-inline: .4rem .8rem; font-weight: 700; }
+.developer-operation summary code { display: inline-block; max-width: 100%; overflow-wrap: anywhere; font-size: .9rem; }
+.developer-operation summary b { color: #17604e; }
+.developer-operation pre { background: #102b2b; color: white; border-radius: .75rem; padding: 1rem; overflow-x: auto; text-align: left; }
+.developer-operation h3 { margin-block: 1rem .45rem; font-size: .95rem; }

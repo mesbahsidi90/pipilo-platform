@@ -1,0 +1,14 @@
+.brand-mark.brand-image {
+  position: relative;
+  overflow: hidden;
+  flex: none;
+  transform: none;
+}
+
+.brand-image > img {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}

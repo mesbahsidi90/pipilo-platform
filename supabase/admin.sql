@@ -85,4 +85,3 @@ create trigger audit_subscriptions after insert or update on public.subscription
 create trigger audit_memberships after insert or update or delete on public.memberships for each row execute function private.audit_platform_change();
 
 create trigger audit_shop_notes after insert or update on public.shop_notes for each row execute function private.audit_platform_change();
-

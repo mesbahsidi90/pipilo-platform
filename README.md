@@ -1,44 +1,96 @@
-# bippo platform
+# bippo — MVP نداء العملاء
 
-Arabic RTL restaurant order calling MVP built with React, Vite, Tailwind and Supabase.
+تطبيق React + Vite + Tailwind بالعربية RTL. تصميم مستلهم من الصور المرجعية: خلفية فاتحة، عناوين سوداء كبيرة، أزرار حمراء، أرقام نقطية وعروض هاتف داكنة، مع اسم bippo ونصوص ومزايا النسخة الفعلية.
 
-Production: https://bippo-platform.pages.dev
+## التشغيل السريع
 
-## Local development
+يتطلب Node.js 22.12+ أو 24 و npm.
 
-Node.js 22.12+ or 24 is required.
-
-```
+```powershell
+cd outputs/nawba
 npm ci
-npm run dev
+npm run dev -- --port 5189
+```
+
+افتح http://127.0.0.1:5189 . إذا كنت داخل مجلد المشروع بالفعل، ابدأ من `npm ci`.
+
+لا تحتاج مفاتيح للوضع التجريبي. بيانات البداية 101 و102 و103. اختر «ابدأ التجربة»، أنشئ رقمًا، وافتح صفحة الزبون من نافذة المشاركة في تبويب آخر، ثم حوّل الطلب إلى جاهز وإلى تم الاستلام. افتح شاشة العرض من لوحة المحل.
+
+### الروابط
+
+- `/#` الصفحة التسويقية.
+- `/#dashboard` لوحة المحل.
+- `/#track/<token>` صفحة طلب واحد بلا حساب.
+- `/#display/<display_token>` شاشة أرقام الطلبات. في التجربة يكفي `/#display/`.
+
+الوضع التجريبي يستخدم localStorage وأحداث التخزين بين التبويبات، مع تحديث احتياطي كل ثانيتين. يعمل في **المتصفح نفسه وعلى الأصل نفسه فقط**. localhost و127.0.0.1 أصلان مختلفان. مسح QR بهاتف آخر لا ينقل بيانات التجربة، حتى مع وجود الأجهزة في الشبكة نفسها. لا تستخدم هذا الوضع لبيانات تشغيل حقيقية. يمسح حذف بيانات الموقع طلبات التجربة؛ لا يشمل التطبيق خادم مزامنة تجريبيًا.
+
+## تفعيل Supabase
+
+لم تُضف مفاتيح ولم تُغيّر أي قاعدة موجودة. المشاريع المتصلة أثناء التنفيذ كانت غير نشطة وغير مرتبطة بهذا التطبيق.
+
+1. جهّز مشروع Supabase جديدًا أو قاعدة فارغة مخصصة لهذا التطبيق.
+2. نفّذ `supabase/setup.sql` **مرة واحدة** في SQL Editor. ينشئ الجداول والسياسات والدوال واشتراك Realtime. ليس ترحيلًا آليًا لقاعدة قائمة.
+3. أنشئ مستخدم صاحب المحل والموظفين من Authentication في لوحة Supabase. لا توجد شاشة تسجيل عام في هذا MVP.
+4. أنشئ محلًا واربط المستخدمين به من SQL Editor باستخدام UUID الفعلي لكل حساب:
+
+```sql
+insert into public.shops(name) values ('مقهى الرواق') returning id;
+insert into public.memberships(user_id,shop_id)
+values ('AUTH_USER_UUID','SHOP_UUID');
+```
+
+كرّر إدخال العضوية لكل موظف. الحساب مرتبط بمحل واحد في هذه النسخة. صاحب المحل والموظف لهما صلاحيات تشغيل الطلبات نفسها؛ إدارة العضويات تبقى بيد مسؤول قاعدة البيانات.
+
+5. انسخ `.env.example` إلى `.env.local` وأضف:
+
+```dotenv
+VITE_SUPABASE_URL=https://YOUR_PROJECT.supabase.co
+VITE_SUPABASE_PUBLISHABLE_KEY=YOUR_PUBLISHABLE_KEY
+```
+
+لا تضع `service_role` أو أي مفتاح سري في متغيرات VITE. المفتاح publishable ظاهر للمتصفح عمدًا؛ الحماية من سياسات قاعدة البيانات. أعد تشغيل Vite بعد تغيير البيئة. عند وجود المتغيرين يتحول التطبيق إلى الوضع السحابي ولا يعود إلى التجربة عند أخطاء الاتصال.
+
+6. سجّل دخول الموظف. أنشئ طلبًا وجرّب الرابط على جهاز آخر. للهواتف يجب فتح الموقع من عنوان HTTPS منشور أو عنوان الجهاز الشبكي المتاح؛ رابط 127.0.0.1 على الهاتف يشير إلى الهاتف نفسه. أنشئ QR من عنوان الموقع الذي سيستخدمه الزبون.
+
+### الحماية والتحديث
+
+- RLS يفصل المحلات؛ عضويات يعيّنها المسؤول فقط. لا يستطيع الحساب تعديل عضويته أو المحل أو رمز الطلب من واجهة البيانات.
+- صلاحيات إدخال رقم الطلب فقط وتعديل الحالة فقط. قيد قاعدة البيانات يمنع تكرار رقم نشط، ومشغّل يمنع تخطي الحالات أو الرجوع للخلف.
+- لا يحصل الزبون على صلاحية قراءة جدول الطلبات. دالة `track_order` تعيد رقم الطلب وحالته ووقت إنشائه عند تقديم UUID سري مطابق، وتنتهي المتابعة بعد 24 ساعة.
+- شاشة العرض بدالة مستقلة تعرض الأرقام والحالات فقط، بحد 100 طلب نشط خلال 24 ساعة، ولا تكشف رموز متابعة الزبائن.
+- دالتا القراءة تستخدمان SECURITY DEFINER عمدًا لتوفير وصول محدود بالرمز دون منح قراءة عامة للجداول، مع search_path ثابت واستعلامات ثابتة وسحب منح PUBLIC الافتراضية. راجعهما مع سياسات مشروعك قبل الإطلاق العام.
+- رموز الروابط صلاحيات لحاملها: لا تشارك رابط الزبون خارج صاحبه. يمكن للمسؤول تدوير display_token كما هو موضح في SQL. الرموز في جزء hash من الرابط ولا تُرسل في طلب صفحة الاستضافة.
+- لوحة الموظف تستخدم Supabase Realtime، مع إعادة جلب احتياطية كل ثانيتين. صفحة الزبون وشاشة العرض تستخدمان قراءة تلقائية كل ثانيتين؛ ليستا اشتراك WebSocket عامًا يكشف جدول الطلبات.
+- عند فشل الاتصال تظهر رسالة ويستمر تكرار المحاولة. شاشة العرض تخفي أرقامًا قديمة عند فشل التحديث.
+- البيانات لا تتضمن أسماء الزبائن أو أرقام هواتفهم. يوجد اعتماد اختياري على Google Fonts للخط، مع Tahoma بديل عند عدم الاتصال.
+
+قبل استخدام عام واسع: نفّذ اختبارات RLS بين حسابين من محلين مختلفين، وطبّق حدود الطلبات على بوابة API، واضبط سياسة حذف الطلبات وسجلات المراقبة والنسخ الاحتياطية. لم تُنفّذ اختبارات قاعدة فعلية هنا لعدم وجود مشروع نشط مخصص. لا تُعتبر اختبارات الواجهة بديلًا عن ذلك.
+
+## البناء والنشر
+
+```powershell
 npm test
 npm run build
+npm run preview -- --port 5189
 ```
 
-The repository includes `.env.production` containing only the Supabase public URL and publishable key. Database RLS enforces access. No service-role key is used by the client. Local development runs the browser-only demo unless `.env.local` supplies Supabase settings. The local demo syncs tabs on the same browser origin, not separate devices.
+انشر محتويات `dist/` على استضافة ثابتة تدعم HTTPS. لا تحتاج إعادة كتابة روابط المسارات لأنها تستخدم hash. متغيرات VITE تُضمّن وقت البناء؛ أعد البناء بعد إضافة المفاتيح. لا تنشر خادم التطوير بوصفه خادم إنتاج. لا تفتح `dist/index.html` مباشرة عبر file://.
 
-## Production
+## بنية الملفات والتوسع
 
-Cloudflare Pages project `bippo-platform` serves `dist/`. Current deployment was uploaded from the dashboard. GitHub pushes do not automatically deploy yet. Future authenticated CLI deployment: run `npm run build` then `npx wrangler pages deploy dist --project-name bippo-platform`, or upload `dist/` through the Cloudflare Pages dashboard.
+- `src/main.jsx`: الواجهات ومساراتها.
+- `src/Landing.jsx`: الصفحة التسويقية والتجربة التفاعلية والأسئلة الشائعة.
+- `src/DotNumber.jsx`: رسم الأرقام النقطية كـ SVG مع تسميات وصول.
+- `src/style.css` و`src/redesign.css`: أنماط التطبيق والهوية الجديدة والاستجابة للشاشات وTailwind.
+- `src/store.js`: طبقة البيانات، Supabase/التجربة، ونقاط توصيل integrations المستقبلية.
+- `src/domain.js`: قواعد أرقام الطلبات ودورة حالتها.
+- `supabase/setup.sql`: مخطط قاعدة البيانات وصلاحياتها.
+- `tests/domain.test.js`: اختبارات قواعد الإدخال والانتقال.
+- `VERIFICATION.md`: ما تم فحصه وحدود التحقق.
 
-Supabase project: `kdvtqlqiervznhzbpjcx`. Initial schema `supabase/setup.sql` has already been applied to production. Do not rerun it on the live database. Staff accounts must be added to `memberships` by an administrator; public signup does not grant access. Each staff account belongs to one shop.
+مستبعد عمدًا: المدفوعات وPOS وSMS/WhatsApp وWeb Push وإشعارات الهاتف المقفل. صفحة الزبون يجب أن تظل مفتوحة لتحديثها. هيكل integrations جاهز لوضع محولات فعلية لاحقًا، لكنه لا يتضمن خدمات دفع أو تنبيه عاملة.
 
-Invitation emails redirect to `/?setup=1` to let the account owner set their own password. Never commit passwords or private keys.
+## تحديث هوية bippo
 
-## Data protection
-
-All application tables use RLS. Staff can insert only order numbers and update only order status. Anonymous visitors cannot list orders. Limited token-based RPCs expose only one ticket's public status, or active order numbers for a display. These two explicitly public bearer-token functions intentionally use SECURITY DEFINER and are flagged by the database advisor; they use fixed queries, empty search_path, limited output and 24-hour ticket validity.
-
-Customer and display pages refresh every two seconds; the staff dashboard also uses Supabase Realtime. QR links use non-enumerable UUIDs. Lock-screen push notifications, payments and POS integrations are outside this MVP.
-
-## Design
-
-bippo uses a teal, mint and apricot palette with Algerian Arabic copy. The how-it-works section pins a single phone visual while text steps scroll and change its state. Reduced-motion preferences are respected.
-
-## Platform administration
-
-Live admin console: https://bippo-platform.pages.dev/#admin
-
-The approved administration schema in `supabase/admin.sql` and explicit anonymous-function access restriction have been applied to production. The designated platform owner has been granted admin access. Sign in with the owner account; the staff dashboard shows an administration link only to authorized admins. Do not rerun the setup SQL on the live database.
-
-The console manages shops, manual subscriptions, plans/prices, existing Auth-user memberships and append-only administrative audit. It does not collect payments or create Auth users. Internal shop notes have their own admin-only RLS table. Suspended shops and expired/cancelled/past-due subscriptions cannot create new orders; existing orders can still be completed. Browser users cannot grant themselves admin roles. See `ADMIN-REVIEW.md` for verification details.
+ألوان خضراء بترولية ونعناعية مع لمسات مشمشية، ومحتوى قريب للدارجة الجزائرية. قسم كيفاش تخدم يستعمل عرض هاتف واحدًا ثابتًا داخل القسم، يتبدل حسب النص أثناء التمرير، ويتحرر عند نهاية القسم. على الهاتف يبقى العرض فوق الخطوات. احترام تفضيل تقليل الحركة مفعّل. الأنماط في src/bippo.css.

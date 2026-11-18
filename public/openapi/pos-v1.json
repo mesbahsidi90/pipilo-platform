@@ -1,0 +1,426 @@
+{
+  "openapi": "3.1.0",
+  "info": {
+    "title": "Bipilo POS API — Draft",
+    "version": "1.0.0-draft",
+    "description": "Proposed integration contract for restaurants and cafés. No live API is available. The .invalid server is a placeholder."
+  },
+  "servers": [
+    {
+      "url": "https://example.invalid"
+    }
+  ],
+  "security": [
+    {
+      "posKey": []
+    }
+  ],
+  "paths": {
+    "/api/v1/branches": {
+      "get": {
+        "operationId": "listBranches",
+        "summary": "Lister les succursales",
+        "x-summary-ar": "عرض الفروع",
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "branches"
+                  ],
+                  "properties": {
+                    "branches": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/Branch"
+                      }
+                    }
+                  }
+                },
+                "example": {
+                  "branches": [
+                    {
+                      "code": "ALGER-CENTRE",
+                      "name": "Alger Centre",
+                      "active": true
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Invalid or missing key"
+          },
+          "403": {
+            "description": "Branch or operation outside key scope"
+          },
+          "404": {
+            "description": "Resource not found"
+          },
+          "409": {
+            "description": "Conflict with current ticket state or existing reference"
+          },
+          "422": {
+            "description": "Invalid input"
+          }
+        }
+      }
+    },
+    "/api/v1/tickets": {
+      "post": {
+        "operationId": "createTicket",
+        "summary": "Créer un ticket",
+        "x-summary-ar": "إنشاء تيكي",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateTicket"
+              },
+              "example": {
+                "branchCode": "ALGER-CENTRE",
+                "number": "104",
+                "externalRef": "pos-2026-104"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Ticket created",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Ticket"
+                },
+                "example": {
+                  "id": "3dc94c4a-d87c-46c1-8628-8b4ac2060b89",
+                  "number": "104",
+                  "branchCode": "ALGER-CENTRE",
+                  "externalRef": "pos-2026-104",
+                  "status": "preparing",
+                  "trackingUrl": "https://example.invalid/?lang=ar#track/8de62742-1716-4f7d-a3f9-4a45b584be55"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Invalid or missing key"
+          },
+          "403": {
+            "description": "Branch or operation outside key scope"
+          },
+          "404": {
+            "description": "Resource not found"
+          },
+          "409": {
+            "description": "Conflict with current ticket state or existing reference"
+          },
+          "422": {
+            "description": "Invalid input"
+          }
+        }
+      }
+    },
+    "/api/v1/tickets/{id}": {
+      "get": {
+        "operationId": "getTicket",
+        "summary": "Consulter un ticket",
+        "x-summary-ar": "قراءة حالة التيكي",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/TicketId"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Ticket"
+                },
+                "example": {
+                  "id": "3dc94c4a-d87c-46c1-8628-8b4ac2060b89",
+                  "number": "104",
+                  "branchCode": "ALGER-CENTRE",
+                  "externalRef": "pos-2026-104",
+                  "status": "preparing",
+                  "trackingUrl": "https://example.invalid/?lang=ar#track/8de62742-1716-4f7d-a3f9-4a45b584be55"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Invalid or missing key"
+          },
+          "403": {
+            "description": "Branch or operation outside key scope"
+          },
+          "404": {
+            "description": "Resource not found"
+          },
+          "409": {
+            "description": "Conflict with current ticket state or existing reference"
+          },
+          "422": {
+            "description": "Invalid input"
+          }
+        }
+      }
+    },
+    "/api/v1/tickets/{id}/ready": {
+      "post": {
+        "operationId": "readyTicket",
+        "summary": "Signaler que le ticket est prêt",
+        "x-summary-ar": "تعليم الطلب واجد",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/TicketId"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Ticket"
+                },
+                "example": {
+                  "id": "3dc94c4a-d87c-46c1-8628-8b4ac2060b89",
+                  "number": "104",
+                  "branchCode": "ALGER-CENTRE",
+                  "externalRef": "pos-2026-104",
+                  "status": "ready",
+                  "trackingUrl": "https://example.invalid/?lang=ar#track/8de62742-1716-4f7d-a3f9-4a45b584be55"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Invalid or missing key"
+          },
+          "403": {
+            "description": "Branch or operation outside key scope"
+          },
+          "404": {
+            "description": "Resource not found"
+          },
+          "409": {
+            "description": "Conflict with current ticket state or existing reference"
+          },
+          "422": {
+            "description": "Invalid input"
+          }
+        }
+      }
+    },
+    "/api/v1/tickets/{id}/complete": {
+      "post": {
+        "operationId": "completeTicket",
+        "summary": "Confirmer la remise",
+        "x-summary-ar": "تأكيد تسليم الطلب",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/TicketId"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Ticket"
+                },
+                "example": {
+                  "id": "3dc94c4a-d87c-46c1-8628-8b4ac2060b89",
+                  "number": "104",
+                  "branchCode": "ALGER-CENTRE",
+                  "externalRef": "pos-2026-104",
+                  "status": "collected",
+                  "trackingUrl": "https://example.invalid/?lang=ar#track/8de62742-1716-4f7d-a3f9-4a45b584be55"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Invalid or missing key"
+          },
+          "403": {
+            "description": "Branch or operation outside key scope"
+          },
+          "404": {
+            "description": "Resource not found"
+          },
+          "409": {
+            "description": "Conflict with current ticket state or existing reference"
+          },
+          "422": {
+            "description": "Invalid input"
+          }
+        }
+      }
+    },
+    "/api/v1/tickets/{id}/cancel": {
+      "post": {
+        "operationId": "cancelTicket",
+        "summary": "Annuler le ticket",
+        "x-summary-ar": "إلغاء الطلب",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/TicketId"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Ticket"
+                },
+                "example": {
+                  "id": "3dc94c4a-d87c-46c1-8628-8b4ac2060b89",
+                  "number": "104",
+                  "branchCode": "ALGER-CENTRE",
+                  "externalRef": "pos-2026-104",
+                  "status": "cancelled",
+                  "trackingUrl": "https://example.invalid/?lang=ar#track/8de62742-1716-4f7d-a3f9-4a45b584be55"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Invalid or missing key"
+          },
+          "403": {
+            "description": "Branch or operation outside key scope"
+          },
+          "404": {
+            "description": "Resource not found"
+          },
+          "409": {
+            "description": "Conflict with current ticket state or existing reference"
+          },
+          "422": {
+            "description": "Invalid input"
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "securitySchemes": {
+      "posKey": {
+        "type": "http",
+        "scheme": "bearer",
+        "description": "Proposed server-side Bipilo integration key."
+      }
+    },
+    "parameters": {
+      "TicketId": {
+        "name": "id",
+        "in": "path",
+        "required": true,
+        "schema": {
+          "type": "string",
+          "format": "uuid"
+        }
+      }
+    },
+    "schemas": {
+      "Branch": {
+        "type": "object",
+        "required": [
+          "code",
+          "name",
+          "active"
+        ],
+        "properties": {
+          "code": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          },
+          "active": {
+            "type": "boolean"
+          }
+        }
+      },
+      "CreateTicket": {
+        "type": "object",
+        "required": [
+          "branchCode",
+          "number",
+          "externalRef"
+        ],
+        "properties": {
+          "branchCode": {
+            "type": "string",
+            "minLength": 1
+          },
+          "number": {
+            "type": "string",
+            "pattern": "^[1-9][0-9]{0,3}$"
+          },
+          "externalRef": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 128
+          }
+        }
+      },
+      "Ticket": {
+        "type": "object",
+        "required": [
+          "id",
+          "number",
+          "branchCode",
+          "externalRef",
+          "status",
+          "trackingUrl"
+        ],
+        "properties": {
+          "branchCode": {
+            "type": "string",
+            "minLength": 1
+          },
+          "number": {
+            "type": "string",
+            "pattern": "^[1-9][0-9]{0,3}$"
+          },
+          "externalRef": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 128
+          },
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "preparing",
+              "ready",
+              "collected",
+              "cancelled"
+            ]
+          },
+          "trackingUrl": {
+            "type": "string",
+            "format": "uri"
+          }
+        }
+      }
+    }
+  }
+}

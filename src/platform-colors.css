@@ -1,0 +1,37 @@
+:root {
+  --bippo-primary: #0c3e38;
+  --bippo-primary-hover: #15554c;
+  --bippo-primary-deep: #0b352f;
+  --bippo-primary-soft: #edf5f0;
+  --bippo-bg: #f7f7f3;
+  --bippo-surface: #fff;
+  --bippo-surface-muted: #f1f1ed;
+  --bippo-border: #e2e3dc;
+  --bippo-text: #192a27;
+  --bippo-muted: #54645f;
+  --bippo-danger: #a43326;
+  --bippo-dark: #121215;
+  --bippo-dark-surface: #1a1a1d;
+  --bippo-accent: #dbf7e6;
+}
+
+:root, body { background: var(--bippo-bg); color: var(--bippo-text); }
+.panel { background: var(--bippo-surface); border-color: var(--bippo-border); }
+.button:where(:not(.outline, .light)) {
+  background: var(--bippo-primary);
+  border-color: var(--bippo-primary);
+  color: var(--bippo-surface);
+}
+.button:where(:not(.outline, .light)):hover {
+  background: var(--bippo-primary-hover);
+  border-color: var(--bippo-primary-hover);
+}
+.button.outline { background: var(--bippo-surface); border-color: var(--bippo-border); color: var(--bippo-primary-deep); }
+.button.outline:hover { background: var(--bippo-primary-soft); border-color: var(--bippo-primary); }
+.brand-mark { background: var(--bippo-primary); }
+.brand-mark > span { background: var(--bippo-accent); }
+.merchant-main .panel, .admin-main .panel { background: var(--bippo-surface); border-color: var(--bippo-border); }
+.merchant-main input:not([type="color"], [type="checkbox"], [type="radio"]),
+.merchant-main select, .merchant-main textarea {
+  border-color: var(--bippo-border);
+}

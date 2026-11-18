@@ -32,3 +32,10 @@ test('demo notification opens the demo customer route without changing restauran
     'https://bippo-platform.pages.dev/#track/token',
   );
 });
+test('notification links stay on the custom domain the customer subscribed from', () => {
+  const order = { token: 'token', number: '42' };
+  assert.equal(
+    orderPayload(order, 'track', undefined, undefined, 'https://bipilo.app').notification.navigate,
+    'https://bipilo.app/#track/token',
+  );
+});

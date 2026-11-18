@@ -6,6 +6,8 @@ const db = createClient(Deno.env.get('SUPABASE_URL')!, Deno.env.get('SUPABASE_SE
   auth: { persistSession: false, autoRefreshToken: false },
 });
 const origins = new Set([
+  'https://bipilo.app',
+  'https://www.bipilo.app',
   'https://bipilo-platform.pages.dev',
   'https://bippo-platform.pages.dev',
   'http://127.0.0.1:5189',

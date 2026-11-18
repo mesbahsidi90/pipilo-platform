@@ -40,7 +40,10 @@ export function orderPayload(order, route = 'track', language, settings, siteOri
     210,
   );
   const origin = [
+    'https://bipilo.app',
+    'https://www.bipilo.app',
     'https://bipilo-platform.pages.dev',
+    'https://bippo-platform.pages.dev',
     'http://localhost:5189',
     'http://127.0.0.1:5189',
   ].includes(siteOrigin)

@@ -1,4 +1,7 @@
 import { t as bippoT } from './i18n.js';
+import { recordSignupSource, savedVisit } from './signupSource';
+import { SOURCE_ANSWERS, SOURCE_LABELS, guessAnswer } from './signupSourceRules';
+import './merchant-workspace.css';
 import React, { useState, useEffect } from 'react';
 import Brand from './Brand';
 import { Hourglass, MoveUpRight, Printer, Tablet } from 'lucide-react';
@@ -23,6 +26,8 @@ export default function Signup({ initialKind = 'cafe' }) {
   const tracking = activity.clinic
     ? 'counter'
     : qrChoice || (waiting === 'return' ? 'counter' : activity.trackingMode);
+
+  const [heardFrom, setHeardFrom] = useState(() => guessAnswer(savedVisit()));
 
   function selectKind(value) {
     setKind(value);
@@ -64,6 +69,7 @@ export default function Signup({ initialKind = 'cafe' }) {
             waiting_mode: waiting,
           }),
         );
+        await recordSignupSource(heardFrom);
         location.assign('/dashboard');
         return;
       }
@@ -89,6 +95,7 @@ export default function Signup({ initialKind = 'cafe' }) {
         waiting_preference: waiting,
       });
       if (error) throw error;
+      await recordSignupSource(heardFrom);
       location.assign('/dashboard');
     } catch (e) {
       setError(
@@ -205,6 +212,17 @@ export default function Signup({ initialKind = 'cafe' }) {
             value={city}
             onChange={(e) => setCity(e.target.value)}
           />
+        </label>
+        <label>
+          {bippoT('من وين عرفت Bipilo؟')}
+          <select value={heardFrom} onChange={(e) => setHeardFrom(e.target.value)}>
+            <option value="">{bippoT('اختار — اختياري')}</option>
+            {SOURCE_ANSWERS.map((value) => (
+              <option key={value} value={value}>
+                {bippoT(SOURCE_LABELS[value])}
+              </option>
+            ))}
+          </select>
         </label>
         {!session && (
           <>

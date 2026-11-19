@@ -303,7 +303,17 @@ export async function loadAdminExtras() {
       requests: d.requests || [],
       overview: {
         free_limit: 100,
-        shops: d.shops.map((s) => ({
+        shops: d.shops.map((s, index) => ({
+          source:
+            index === 0
+              ? (() => {
+                  try {
+                    return JSON.parse(localStorage.getItem('bipilo-demo-source') || 'null');
+                  } catch {
+                    return null;
+                  }
+                })()
+              : null,
           id: s.id,
           paid: false,
           orders_month: s.order_count || 0,

@@ -1,8 +1,18 @@
 import { t as bippoT, locale } from './i18n.js';
-import React from 'react';
-import { Bell, Mail, MessageCircle, Phone, Store } from 'lucide-react';
+import React, { useState } from 'react';
+import { Bell, Copy, Mail, MessageCircle, Phone, Store } from 'lucide-react';
 import { shopTypes, subStates } from './adminData';
 import { toCsv } from './adminDomain';
+import { SOURCE_ANSWERS, SOURCE_LABELS, trackingLink } from './signupSourceRules';
+
+// «فيسبوك · ramadan-cafes» from a shop's signup source.
+export function sourceText(source) {
+  if (!source) return bippoT('غير معروف');
+  const label = source.answer
+    ? bippoT(SOURCE_LABELS[source.answer])
+    : source.utm_source || source.ref || bippoT('غير معروف');
+  return [label, source.utm_campaign].filter(Boolean).join(' · ');
+}
 
 const dateText = (value) =>
   value ? new Date(value).toLocaleDateString(locale) : bippoT('بدون تاريخ');
@@ -142,6 +152,8 @@ export function ShopSheet({ shop, sub, plan, row, freeLimit, notes, branches, on
           <dd>
             <ContactLinks owner={row?.owner} />
           </dd>
+          <dt>{bippoT('عرفنا من')}</dt>
+          <dd>{sourceText(row?.source)}</dd>
           <dt>{bippoT('آخر دخول')}</dt>
           <dd>{dateTime(row?.owner?.last_sign_in_at)}</dd>
           <dt>{bippoT('الحسابات')}</dt>
@@ -264,6 +276,8 @@ export function StatsTab({ stats, overview, shops }) {
           label={(r) => short(r.week)}
         />
       </div>
+      <SourcesTable overview={overview} />
+      <LinkBuilder />
       <section className="panel admin-section">
         <div className="admin-section-title">
           <div>
@@ -308,6 +322,10 @@ export function exportShops({ shops, subFor, planFor, overview }) {
       'last_order_at',
       'owner_email',
       'owner_phone',
+      'source',
+      'ref',
+      'utm_source',
+      'utm_campaign',
     ],
   ];
   for (const s of shops) {
@@ -328,6 +346,10 @@ export function exportShops({ shops, subFor, planFor, overview }) {
       row.last_order_at,
       row.owner?.email,
       row.owner?.phone,
+      row.source?.answer,
+      row.source?.ref,
+      row.source?.utm_source,
+      row.source?.utm_campaign,
     ]);
   }
   const url = URL.createObjectURL(new Blob([toCsv(rows)], { type: 'text/csv;charset=utf-8' }));
@@ -336,4 +358,153 @@ export function exportShops({ shops, subFor, planFor, overview }) {
   link.download = 'bipilo-shops-' + new Date().toISOString().slice(0, 10) + '.csv';
   link.click();
   setTimeout(() => URL.revokeObjectURL(url), 1000);
+}
+
+// Signups per source, and how many became active (orders) and paid.
+function SourcesTable({ overview }) {
+  const roots = overview.filter((row) => !row.parent_id);
+  const keys = [...SOURCE_ANSWERS, ''];
+  const rows = keys
+    .map((key) => {
+      const shops = roots.filter((row) => (row.source?.answer || '') === key);
+      return {
+        key,
+        label: key ? bippoT(SOURCE_LABELS[key]) : bippoT('غير معروف'),
+        signups: shops.length,
+        active: shops.filter((row) => row.orders_total > 0).length,
+        paid: shops.filter((row) => row.paid).length,
+      };
+    })
+    .filter((row) => row.signups > 0);
+  const campaigns = new Map();
+  for (const row of roots) {
+    const name = row.source?.utm_campaign;
+    if (!name) continue;
+    const item = campaigns.get(name) || { signups: 0, paid: 0 };
+    item.signups++;
+    if (row.paid) item.paid++;
+    campaigns.set(name, item);
+  }
+  return (
+    <section className="panel admin-section">
+      <div className="admin-section-title">
+        <div>
+          <h2>{bippoT('مصادر التسجيل')}</h2>
+          <p>{bippoT('منين جاو المحلات، وشحال منهم خدمو وخلّصو.')}</p>
+        </div>
+      </div>
+      {rows.length ? (
+        <div className="admin-table-scroll">
+          <table className="admin-table">
+            <thead>
+              <tr>
+                <th>{bippoT('المصدر')}</th>
+                <th>{bippoT('تسجّلو')}</th>
+                <th>{bippoT('سجّلو طلبات')}</th>
+                <th>{bippoT('خلّصو')}</th>
+              </tr>
+            </thead>
+            <tbody>
+              {rows.map((row) => (
+                <tr key={row.key || 'unknown'}>
+                  <td>
+                    <b>{row.label}</b>
+                  </td>
+                  <td>{row.signups}</td>
+                  <td>{row.active}</td>
+                  <td>{row.paid}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      ) : (
+        <p className="admin-muted">{bippoT('مازال حتى تسجيل.')}</p>
+      )}
+      {campaigns.size > 0 && (
+        <>
+          <h3 className="admin-subtitle">{bippoT('الحملات')}</h3>
+          <ul className="admin-campaigns">
+            {[...campaigns].map(([name, item]) => (
+              <li key={name}>
+                <code dir="ltr">{name}</code>
+                <span>{bippoT('{0} تسجيل · {1} خلّصو', [item.signups, item.paid])}</span>
+              </li>
+            ))}
+          </ul>
+        </>
+      )}
+    </section>
+  );
+}
+
+// Builds the link to put in an ad, a post, a flyer QR or a referral message.
+function LinkBuilder() {
+  const [source, setSource] = useState('facebook');
+  const [campaign, setCampaign] = useState('');
+  const [page, setPage] = useState('/');
+  const [copied, setCopied] = useState('');
+  const link = trackingLink(location.origin, source, campaign, page);
+  return (
+    <section className="panel admin-section">
+      <div className="admin-section-title">
+        <div>
+          <h2>{bippoT('روابط الإعلانات')}</h2>
+          <p>
+            {bippoT(
+              'استعمل رابط خاص لكل إعلان، منشور ولا فلاير. المحل اللي يتسجّل منو يبان مصدرو هنا.',
+            )}
+          </p>
+        </div>
+      </div>
+      <div className="admin-link-builder">
+        <label>
+          {bippoT('المصدر')}
+          <select value={source} onChange={(e) => setSource(e.target.value)}>
+            {SOURCE_ANSWERS.filter((key) => key !== 'other').map((key) => (
+              <option key={key} value={key}>
+                {bippoT(SOURCE_LABELS[key])}
+              </option>
+            ))}
+          </select>
+        </label>
+        <label>
+          {bippoT('اسم الحملة — اختياري')}
+          <input
+            dir="ltr"
+            maxLength={60}
+            placeholder="cafes-alger-nov"
+            value={campaign}
+            onChange={(e) => setCampaign(e.target.value)}
+          />
+        </label>
+        <label>
+          {bippoT('الصفحة')}
+          <select value={page} onChange={(e) => setPage(e.target.value)}>
+            <option value="/">{bippoT('الصفحة الرئيسية')}</option>
+            <option value="/signup">{bippoT('التسجيل مباشرة')}</option>
+          </select>
+        </label>
+      </div>
+      <div className="admin-link-output">
+        <input dir="ltr" readOnly value={link} onFocus={(e) => e.target.select()} />
+        <button
+          type="button"
+          className="button small"
+          onClick={async () => {
+            try {
+              await navigator.clipboard.writeText(link);
+              setCopied(bippoT('نُسخ'));
+            } catch {
+              setCopied(bippoT('تعذر النسخ.'));
+            }
+          }}
+        >
+          <Copy size={15} />
+          {bippoT('نسخ الرابط')}
+        </button>
+        {copied && <small role="status">{copied}</small>}
+      </div>
+    </section>
+  );
 }

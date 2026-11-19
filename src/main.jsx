@@ -24,6 +24,9 @@ import { statuses } from './domain';
 import './style.css';
 import './redesign.css';
 import Landing, { Brand } from './Landing';
+
+// Remember which ad, post or flyer link brought this visitor (for signup).
+captureVisit();
 const Account = lazy(() => import('./Account'));
 const Signup = lazy(() => import('./Signup'));
 import PublicPages from './PublicPages';
@@ -33,6 +36,7 @@ const Admin = lazy(() => import('./Admin'));
 import { ticketBranding } from './shopSettings';
 import WaitingBoard from './WaitingBoard';
 import ClinicQueue, { QueuePlace } from './ClinicQueue';
+import { captureVisit } from './signupSource';
 const Orders = lazy(() => import('./Orders'));
 import OrderAlerts from './OrderAlerts';
 import FollowTicket from './FollowTicket';

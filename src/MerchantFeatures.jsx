@@ -17,6 +17,7 @@ import { reviewUrl } from './guestExperience';
 import LoyaltyCard from './LoyaltyCard';
 import MenuEditor from './MenuEditor';
 import { shopActivity } from './shopActivities';
+import { gameFor, gameThemes } from './gameThemes';
 import TableCodes from './TableCodes';
 import PosKeys from './PosKeys';
 import { LOYALTY_GOALS } from './loyaltyRules';
@@ -119,6 +120,7 @@ export default function MerchantFeatures({ paid = null, onOpen, onSaved }) {
     );
 
   const activity = shopActivity(settings.kind);
+  const game = gameFor(settings.kind);
   const options = settings.customer_options || {};
   const review = settings.google_review_url || '';
   const goal = draft.loyalty_goal || settings.loyalty_goal || 9;
@@ -379,7 +381,7 @@ export default function MerchantFeatures({ paid = null, onOpen, onSaved }) {
 
       <FeatureCard
         icon={MessageSquareText}
-        title={bippoT('ملاحظات خاصة بعد الاستلام')}
+        title={bippoT(activity.clinic ? 'ملاحظات خاصة بعد الزيارة' : 'ملاحظات خاصة بعد الاستلام')}
         pro
         status={
           <Status
@@ -389,14 +391,22 @@ export default function MerchantFeatures({ paid = null, onOpen, onSaved }) {
         }
         control={
           <Switch
-            label={bippoT('ملاحظات خاصة بعد الاستلام')}
+            label={bippoT(
+              activity.clinic ? 'ملاحظات خاصة بعد الزيارة' : 'ملاحظات خاصة بعد الاستلام',
+            )}
             checked={Boolean(settings.private_feedback_enabled)}
             disabled={locked || busy === 'feedback'}
             onChange={(on) => save('feedback', { private_feedback_enabled: on })}
           />
         }
       >
-        <p>{bippoT('الزبون يكتبلك ملاحظة بعد الاستلام، توصلك وحدك في «ملاحظات الزبائن».')}</p>
+        <p>
+          {bippoT(
+            activity.clinic
+              ? 'المريض يكتبلك ملاحظة بعد الزيارة، توصلك وحدك في «ملاحظات الزبائن».'
+              : 'الزبون يكتبلك ملاحظة بعد الاستلام، توصلك وحدك في «ملاحظات الزبائن».',
+          )}
+        </p>
         {upgrade && <div className="feature-actions">{upgrade}</div>}
       </FeatureCard>
 
@@ -405,7 +415,13 @@ export default function MerchantFeatures({ paid = null, onOpen, onSaved }) {
         title={bippoT('التقييم بالنجوم')}
         status={<Status on label={bippoT('مفعّل دائمًا')} />}
       >
-        <p>{bippoT('بعد الاستلام الزبون يقيّم الخدمة من 1 إلى 5، والمتوسط يبان في التحليلات.')}</p>
+        <p>
+          {bippoT(
+            activity.clinic
+              ? 'بعد الزيارة المريض يقيّم الخدمة من 1 إلى 5، والمتوسط يبان في التحليلات.'
+              : 'بعد الاستلام الزبون يقيّم الخدمة من 1 إلى 5، والمتوسط يبان في التحليلات.',
+          )}
+        </p>
         <div className="feature-actions">
           <button
             type="button"
@@ -422,7 +438,13 @@ export default function MerchantFeatures({ paid = null, onOpen, onSaved }) {
         title={bippoT('تقييمات Google')}
         status={<Status on={Boolean(review)} label={review ? bippoT('مفعّل') : bippoT('فاضي')} />}
       >
-        <p>{bippoT('بعد الاستلام نعرضو على كل زبون رابط تقييم محلك في Google.')}</p>
+        <p>
+          {bippoT(
+            activity.clinic
+              ? 'بعد الزيارة نعرضو على كل مريض رابط تقييم عيادتك في Google.'
+              : 'بعد الاستلام نعرضو على كل زبون رابط تقييم محلك في Google.',
+          )}
+        </p>
         <div className="feature-actions">
           <button
             type="button"
@@ -466,26 +488,32 @@ export default function MerchantFeatures({ paid = null, onOpen, onSaved }) {
         )}
       </FeatureCard>
 
-      <FeatureCard
-        icon={Gamepad2}
-        title={bippoT('لعبة الانتظار')}
-        status={
-          <Status
-            on={options.game !== false}
-            label={options.game !== false ? bippoT('مفعّلة') : bippoT('موقفة')}
-          />
-        }
-        control={
-          <Switch
-            label={bippoT('لعبة الانتظار')}
-            checked={options.game !== false}
-            disabled={busy === 'game'}
-            onChange={(on) => save('game', { customer_options: { ...options, game: on } })}
-          />
-        }
-      >
-        <p>{bippoT('«طلّع قهوتك»: لعبة صغيرة يلعبها الزبون وهو يستنّى طلبو.')}</p>
-      </FeatureCard>
+      {game && (
+        <FeatureCard
+          icon={Gamepad2}
+          title={bippoT('لعبة الانتظار')}
+          status={
+            <Status
+              on={options.game !== false}
+              label={options.game !== false ? bippoT('مفعّلة') : bippoT('موقفة')}
+            />
+          }
+          control={
+            <Switch
+              label={bippoT('لعبة الانتظار')}
+              checked={options.game !== false}
+              disabled={busy === 'game'}
+              onChange={(on) => save('game', { customer_options: { ...options, game: on } })}
+            />
+          }
+        >
+          <p>
+            {bippoT('«{0}»: لعبة صغيرة يلعبها الزبون وهو يستنّى.', [
+              bippoT(gameThemes[game].title),
+            ])}
+          </p>
+        </FeatureCard>
+      )}
 
       <FeatureCard
         icon={Monitor}

@@ -11,19 +11,24 @@ import {
   resumeCup,
   readCupBest,
   saveCupBest,
+  bestKey,
 } from './cupGame';
+import { gameFor, gameThemes } from './gameThemes';
 import './waiting-game.css';
 
-const readBest = () => {
+const readBest = (key) => {
   try {
-    return readCupBest(localStorage);
+    return readCupBest(localStorage, key);
   } catch {
     return 0;
   }
 };
-export default function WaitingGame() {
+export default function WaitingGame({ kind }) {
+  const name = gameFor(kind) || 'coffee';
+  const theme = gameThemes[name];
+  const key = bestKey(name);
   const [open, setOpen] = useState(false),
-    [best, setBest] = useState(readBest);
+    [best, setBest] = useState(() => readBest(key));
   return (
     <>
       <button type="button" className="waiting-game-card" onClick={() => setOpen(true)}>
@@ -31,7 +36,7 @@ export default function WaitingGame() {
           <Layers size={25} />
         </span>
         <span>
-          <b>{bippoT('طلّع قهوتك')}</b>
+          <b>{bippoT(theme.title)}</b>
           <small>{bippoT('راك تستنّى؟ جرّب تلعب.')}</small>
         </span>
         <span className="waiting-game-best">
@@ -40,12 +45,20 @@ export default function WaitingGame() {
         </span>
         <ArrowUpRight size={19} />
       </button>
-      {open && <CupGameModal best={best} onBest={setBest} onClose={() => setOpen(false)} />}
+      {open && (
+        <CupGameModal
+          theme={theme}
+          storeKey={key}
+          best={best}
+          onBest={setBest}
+          onClose={() => setOpen(false)}
+        />
+      )}
     </>
   );
 }
 
-function CupGameModal({ best, onBest, onClose }) {
+function CupGameModal({ theme, storeKey, best, onBest, onClose }) {
   const dialog = useRef(null),
     canvas = useRef(null),
     game = useRef(newCupGame()),
@@ -73,7 +86,7 @@ function CupGameModal({ best, onBest, onClose }) {
     if (next.score > best) {
       let score = next.score;
       try {
-        score = saveCupBest(localStorage, score);
+        score = saveCupBest(localStorage, score, storeKey);
       } catch {}
       onBest(score);
     }
@@ -125,11 +138,11 @@ function CupGameModal({ best, onBest, onClose }) {
         const dt = lastFrame.current === null ? 0 : (now - lastFrame.current) / 1000;
         lastFrame.current = now;
         game.current = moveCup(game.current, dt);
-        drawCup(ctx, game.current);
+        drawCup(ctx, game.current, theme);
         if (game.current.phase === 'playing') frame = requestAnimationFrame(paint);
       }
     };
-    drawCup(ctx, game.current);
+    drawCup(ctx, game.current, theme);
     if (view.phase === 'playing') frame = requestAnimationFrame(paint);
     return () => {
       alive = false;
@@ -154,7 +167,7 @@ function CupGameModal({ best, onBest, onClose }) {
       <div className="cup-game-panel">
         <header className="cup-game-header">
           <span className="cup-game-brand">
-            Bipilo <i /> {bippoT('وقت القهوة')}
+            Bipilo <i /> {bippoT(theme.brand)}
           </span>
           <button
             type="button"
@@ -167,13 +180,13 @@ function CupGameModal({ best, onBest, onClose }) {
           </button>
         </header>
         <div className="cup-game-title">
-          <span className="cup-game-kicker">{bippoT('ضغطة. طبقة. قهوة أطول.')}</span>
-          <h2 id="cup-game-title">{bippoT('طلّع قهوتك')}</h2>
-          <p>{bippoT('هبّط الطبقة فوق اللي تحتها. ركّز وطلّع أعلى كوب!')}</p>
+          <span className="cup-game-kicker">{bippoT(theme.kicker)}</span>
+          <h2 id="cup-game-title">{bippoT(theme.title)}</h2>
+          <p>{bippoT(theme.intro)}</p>
         </div>
         <div className="cup-game-stats">
           <div>
-            <span>{bippoT('طبقاتك')}</span>
+            <span>{bippoT(theme.unit)}</span>
             <strong aria-live="polite" aria-atomic="true">
               {view.score}
             </strong>
@@ -199,7 +212,7 @@ function CupGameModal({ best, onBest, onClose }) {
           />
           {playing && (
             <div className="cup-game-perfect" aria-live="polite">
-              {view.perfect ? bippoT('في بلاصتها! ✨') : bippoT('اضغط كي تتقابل الطبقات')}
+              {view.perfect ? bippoT('في بلاصتها! ✨') : bippoT('اضغط كي يتقابلو')}
             </div>
           )}
           {!playing && (
@@ -227,7 +240,7 @@ function CupGameModal({ best, onBest, onClose }) {
                   <>
                     <Trophy size={29} />
                     <h3>{bippoT('يعطيك الصحة!')}</h3>
-                    <p>{bippoT('طلّعت {0} طبقات. تقدر تطلّع أكثر؟', [view.score])}</p>
+                    <p>{bippoT(theme.over, [view.score])}</p>
                     <button className="button" onClick={start}>
                       <RotateCcw size={16} />
                       {bippoT('عاود العب')}
@@ -239,7 +252,7 @@ function CupGameModal({ best, onBest, onClose }) {
                       <Layers size={20} />
                     </span>
                     <h3>{bippoT('قدّاه تقدر تطلّع؟')}</h3>
-                    <p>{bippoT('الجزء اللي يخرج يتقصّ. إذا ما تلاقاوش الطبقات، تنتهي الجولة.')}</p>
+                    <p>{bippoT('الجزء اللي يخرج يتقصّ. إذا ما تلاقاوش، تنتهي الجولة.')}</p>
                     <button className="button" onClick={start}>
                       <Play size={17} />
                       {bippoT('ابدا اللعبة')}
@@ -253,7 +266,7 @@ function CupGameModal({ best, onBest, onClose }) {
         {playing && (
           <div className="cup-game-controls">
             <button type="button" className="cup-game-drop" onClick={drop}>
-              {bippoT('هبّط الطبقة')}
+              {bippoT(theme.drop)}
               <Layers size={18} />
             </button>
             <button
@@ -268,7 +281,7 @@ function CupGameModal({ best, onBest, onClose }) {
         )}
         <p className="cup-game-order-note">
           <span />
-          {bippoT('كي يوجد طلبك، اللعبة تحبس وننبّهوك.')}
+          {bippoT('كي يجي دورك، اللعبة تحبس وننبّهوك.')}
         </p>
         <footer className="cup-game-footer">
           {bippoT('أحسن نتيجة محفوظة في هذا الجهاز فقط. بلا حساب.')}
@@ -279,15 +292,15 @@ function CupGameModal({ best, onBest, onClose }) {
   );
 }
 
-function drawCup(ctx, g) {
+function drawCup(ctx, g, theme) {
   const W = 360,
     H = 390,
     round = (...args) =>
       typeof ctx.roundRect === 'function' ? ctx.roundRect(...args) : ctx.rect(...args.slice(0, 4));
   ctx.clearRect(0, 0, W, H);
   const gradient = ctx.createLinearGradient(0, 0, 0, H);
-  gradient.addColorStop(0, '#f8fbf2');
-  gradient.addColorStop(1, '#e3eee0');
+  gradient.addColorStop(0, theme.sky[0]);
+  gradient.addColorStop(1, theme.sky[1]);
   ctx.fillStyle = gradient;
   ctx.fillRect(0, 0, W, H);
   ctx.fillStyle = '#c8daca';
@@ -302,33 +315,8 @@ function drawCup(ctx, g) {
   const count = g.layers.length,
     offset = Math.max(0, count - 8) * 17,
     base = (g.phase === 'intro' || g.phase === 'over' ? 175 : 315) + offset;
-  ctx.fillStyle = '#bdd0bd';
-  ctx.beginPath();
-  ctx.ellipse(181, base + 30, 118, 17, 0, 0, Math.PI * 2);
-  ctx.fill();
-  ctx.fillStyle = '#fffdf5';
-  ctx.beginPath();
-  ctx.ellipse(178, base + 23, 110, 16, 0, 0, Math.PI * 2);
-  ctx.fill();
-  ctx.strokeStyle = '#175248';
-  ctx.lineWidth = 12;
-  ctx.beginPath();
-  ctx.ellipse(269, base - 17, 22, 23, 0, -Math.PI / 2, Math.PI / 2);
-  ctx.stroke();
-  ctx.fillStyle = '#125e51';
-  ctx.beginPath();
-  round(87, base - 47, 186, 67, [4, 4, 24, 24]);
-  ctx.fill();
-  ctx.fillStyle = '#d9edcf';
-  ctx.font = 'bold 17px Arial';
-  ctx.textAlign = 'center';
-  ctx.fillText('Bipilo', 180, base - 5);
-  const colors = [
-    ['#bb7843', '#d39a60'],
-    ['#e4c99b', '#f7dfb4'],
-    ['#8fb9a1', '#bedfc3'],
-    ['#5b8f78', '#91b69b'],
-  ];
+  drawBase(ctx, theme.base, base, round);
+  const colors = theme.colors;
   function layer(x, y, width, index, moving = false) {
     const c = colors[index % colors.length];
     ctx.save();
@@ -343,10 +331,24 @@ function drawCup(ctx, g) {
     ctx.fill();
     ctx.shadowBlur = 0;
     ctx.shadowOffsetY = 0;
-    ctx.fillStyle = c[1];
-    ctx.beginPath();
-    ctx.ellipse(x + width / 2, y + 2, Math.max(1, width / 2), 5, 0, 0, Math.PI * 2);
-    ctx.fill();
+    if (theme.layer === 'tire') {
+      // A lighter sidewall stripe and tread marks.
+      ctx.fillStyle = c[1];
+      ctx.fillRect(x + 4, y + 7, Math.max(0, width - 8), 3);
+      ctx.strokeStyle = '#1b1e21';
+      ctx.lineWidth = 1;
+      for (let tx = x + 8; tx < x + width - 4; tx += 9) {
+        ctx.beginPath();
+        ctx.moveTo(tx, y + 1);
+        ctx.lineTo(tx - 3, y + 6);
+        ctx.stroke();
+      }
+    } else {
+      ctx.fillStyle = c[1];
+      ctx.beginPath();
+      ctx.ellipse(x + width / 2, y + 2, Math.max(1, width / 2), 5, 0, 0, Math.PI * 2);
+      ctx.fill();
+    }
     ctx.restore();
   }
   // Retain only visible geometry in the draw loop; full score remains in the model.
@@ -370,4 +372,78 @@ function drawCup(ctx, g) {
     ctx.restore();
     layer(g.moving.x, y, g.moving.width, count, true);
   }
+}
+
+// What the pile stands on: a cup, a plate, a basket, a table or the floor.
+function drawBase(ctx, kind, base, round) {
+  ctx.fillStyle = '#00000014';
+  ctx.beginPath();
+  ctx.ellipse(181, base + 30, 118, 17, 0, 0, Math.PI * 2);
+  ctx.fill();
+  if (kind === 'cup') {
+    ctx.fillStyle = '#fffdf5';
+    ctx.beginPath();
+    ctx.ellipse(178, base + 23, 110, 16, 0, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.strokeStyle = '#175248';
+    ctx.lineWidth = 12;
+    ctx.beginPath();
+    ctx.ellipse(269, base - 17, 22, 23, 0, -Math.PI / 2, Math.PI / 2);
+    ctx.stroke();
+    ctx.fillStyle = '#125e51';
+    ctx.beginPath();
+    round(87, base - 47, 186, 67, [4, 4, 24, 24]);
+    ctx.fill();
+    label(ctx, base, '#d9edcf');
+  } else if (kind === 'plate') {
+    ctx.fillStyle = '#ffffff';
+    ctx.beginPath();
+    ctx.ellipse(180, base - 25, 140, 22, 0, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.strokeStyle = '#e6d9c6';
+    ctx.lineWidth = 3;
+    ctx.beginPath();
+    ctx.ellipse(180, base - 27, 110, 15, 0, 0, Math.PI * 2);
+    ctx.stroke();
+  } else if (kind === 'basket') {
+    ctx.fillStyle = '#c99a5b';
+    ctx.beginPath();
+    ctx.moveTo(70, base - 47);
+    ctx.lineTo(290, base - 47);
+    ctx.lineTo(270, base + 20);
+    ctx.lineTo(90, base + 20);
+    ctx.closePath();
+    ctx.fill();
+    ctx.strokeStyle = '#a97a40';
+    ctx.lineWidth = 2;
+    for (let y = base - 35; y < base + 18; y += 11) {
+      ctx.beginPath();
+      ctx.moveTo(78, y);
+      ctx.lineTo(282, y);
+      ctx.stroke();
+    }
+    label(ctx, base, '#fff4e0');
+  } else if (kind === 'table') {
+    ctx.fillStyle = '#8b5e3c';
+    ctx.beginPath();
+    round(40, base - 47, 280, 16, 4);
+    ctx.fill();
+    ctx.fillRect(70, base - 31, 12, 55);
+    ctx.fillRect(278, base - 31, 12, 55);
+  } else {
+    ctx.fillStyle = '#9aa7b1';
+    ctx.beginPath();
+    round(60, base - 47, 240, 60, [6, 6, 14, 14]);
+    ctx.fill();
+    ctx.fillStyle = '#b8c3cb';
+    ctx.fillRect(60, base - 47, 240, 8);
+    label(ctx, base, '#eef2f5');
+  }
+}
+
+function label(ctx, base, color) {
+  ctx.fillStyle = color;
+  ctx.font = 'bold 17px Arial';
+  ctx.textAlign = 'center';
+  ctx.fillText('Bipilo', 180, base - 5);
 }

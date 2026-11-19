@@ -6,6 +6,8 @@ import DotNumber from './DotNumber';
 import { contrastInk, customerLinkLabels, customerPalette } from './customerThemes';
 import './customer-pager.css';
 const WaitingGame = lazy(() => import('./WaitingGame'));
+import { gameFor, gameThemes } from './gameThemes';
+import { activityCopy, defaultPickups } from './activityCopy';
 export default function CustomerPager({
   branding,
   number,
@@ -23,27 +25,25 @@ export default function CustomerPager({
   const lang = previewLanguage || language;
   const bippoT = (text) => translate(text, lang);
   const clinic = branding?.kind === 'clinic';
+  const copy = activityCopy(branding?.kind);
   const pickup = branding?.pickup_message;
-  const pickupMessage = clinic
-    ? bippoT('توجّه للاستقبال.')
-    : !pickup || pickup === 'تقدر تجي تديه من الكونتوار.'
-      ? bippoT('تقدر تجي تديه من الكونتوار.')
-      : pickup;
+  const pickupMessage =
+    clinic || !pickup || defaultPickups.has(pickup) ? bippoT(copy.pickup) : pickup;
   const calling = status === 'ready' && !acknowledged,
     finished = status === 'collected';
   const title = loading
-    ? bippoT('نوجدو طلبك…')
+    ? bippoT(copy.loading)
     : !number
       ? bippoT('الرابط غير متاح')
       : status === 'cancelled'
-        ? bippoT(clinic ? 'دورك تلغى' : 'الطلب تلغى')
+        ? bippoT(copy.cancelled)
         : finished
-          ? bippoT(clinic ? 'انتهى دورك' : 'بالصحة والراحة!')
+          ? bippoT(copy.finished)
           : calling
-            ? bippoT(clinic ? 'جا دورك!' : 'طلبك راه واجد!')
+            ? bippoT(copy.calling)
             : status === 'ready'
-              ? bippoT(clinic ? 'جا دورك!' : 'طلبك واجد للاستلام')
-              : bippoT(clinic ? 'راك في الانتظار' : 'طلبك راه يتحضّر');
+              ? bippoT(copy.ready)
+              : bippoT(copy.waiting);
   const Ticket = preview ? 'section' : 'main';
   const Heading = preview ? 'h3' : 'h1';
   const theme = customerPalette(branding);
@@ -93,7 +93,7 @@ export default function CustomerPager({
         </div>
       </header>
       <Ticket className="pager-ticket">
-        <div className="pager-display" aria-label={bippoT(clinic ? 'رقم الدور' : 'رقم الطلب')}>
+        <div className="pager-display" aria-label={bippoT(copy.number)}>
           {number ? <DotNumber value={number} /> : <span className="pager-loading">…</span>}
           {status === 'preparing' && (
             <div className="pager-waiting-dots" aria-hidden="true">
@@ -113,16 +113,12 @@ export default function CustomerPager({
           {number && (
             <p>
               {status === 'cancelled'
-                ? bippoT(
-                    clinic
-                      ? 'إذا مازلت هنا، توجّه للاستقبال باش يرجّعوك للانتظار.'
-                      : 'تواصل مع المحل إذا تحتاج مساعدة.',
-                  )
+                ? bippoT(copy.cancelledNote)
                 : finished
                   ? bippoT('يعطيك الصحة على الزيارة.')
                   : status === 'ready'
                     ? pickupMessage
-                    : bippoT(clinic ? 'ننبّهوك كي يجي دورك.' : 'ننبّهوك كي يوجد، اقعد مرتاح.')}
+                    : bippoT(copy.waitingNote)}
             </p>
           )}
         </div>
@@ -147,12 +143,12 @@ export default function CustomerPager({
           <div className="pager-links">
             <span>
               <Layers size={16} />
-              {bippoT('طلّع قهوتك')}
+              {bippoT(gameThemes[gameFor(branding?.kind) || 'coffee'].title)}
             </span>
           </div>
         ) : (
           <Suspense fallback={null}>
-            <WaitingGame key={number} />
+            <WaitingGame key={number} kind={branding?.kind} />
           </Suspense>
         ))}
       {!calling && number && (branding?.banner_text || branding?.banner_image) && (

@@ -61,18 +61,20 @@ export function resumeCup(game) {
   return game.phase === 'paused' ? { ...game, phase: 'playing' } : game;
 }
 export const BEST_KEY = 'bippo-cup-best-v1';
-export function readCupBest(storage) {
+export function readCupBest(storage, key = BEST_KEY) {
   try {
-    const n = Number(storage.getItem(BEST_KEY));
+    const n = Number(storage.getItem(key));
     return Number.isInteger(n) && n >= 0 && n <= 10000 ? n : 0;
   } catch {
     return 0;
   }
 }
-export function saveCupBest(storage, score) {
-  const best = Math.max(readCupBest(storage), score);
+export function saveCupBest(storage, score, key = BEST_KEY) {
+  const best = Math.max(readCupBest(storage, key), score);
   try {
-    storage.setItem(BEST_KEY, String(best));
+    storage.setItem(key, String(best));
   } catch {}
   return best;
 }
+// Each themed game keeps its own best score (coffee keeps the original key).
+export const bestKey = (theme) => (theme === 'coffee' ? BEST_KEY : BEST_KEY + '-' + theme);

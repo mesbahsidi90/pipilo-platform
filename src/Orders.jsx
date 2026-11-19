@@ -121,6 +121,8 @@ export default function Orders({ Share, workspace }) {
     };
   }, [shop?.shop_id]);
   const activity = shopActivity(shop?.kind);
+  // Laundries, car washes, tailors…: a service is «worked on», not «prepared».
+  const service = !activity.clinic && !activity.foodService;
   useEffect(() => {
     let alive = true;
     async function load() {
@@ -246,10 +248,22 @@ export default function Orders({ Share, workspace }) {
     try {
       await transition(o, status, { clinic: activity.clinic });
       const message = {
-        collected: bippoT(activity.clinic ? 'دخل المريض' : 'الطلب {0} تسلّم وبقى محفوظ في السجل.', [
-          o.number,
-        ]),
-        ready: bippoT(activity.clinic ? 'نادينا الرقم {0}.' : 'الطلب {0} راه واجد.', [o.number]),
+        collected: bippoT(
+          activity.clinic
+            ? 'دخل المريض'
+            : service
+              ? 'التيكي {0} تسلّم وبقى محفوظ في السجل.'
+              : 'الطلب {0} تسلّم وبقى محفوظ في السجل.',
+          [o.number],
+        ),
+        ready: bippoT(
+          activity.clinic
+            ? 'نادينا الرقم {0}.'
+            : service
+              ? 'التيكي {0} راه واجد.'
+              : 'الطلب {0} راه واجد.',
+          [o.number],
+        ),
         cancelled:
           activity.clinic && o.status === 'ready'
             ? bippoT('علّمنا أن {0} ما جاش. تقدر ترجّعو للانتظار من السجل.', [o.number])
@@ -347,7 +361,9 @@ export default function Orders({ Share, workspace }) {
     !activity.clinic || Date.parse(order.restored_at || order.created_at) > Date.now() - 86400000;
   const laneLabels = activity.clinic
     ? { preparing: bippoT('في الانتظار'), ready: bippoT('تم النداء') }
-    : statuses;
+    : service
+      ? { ...statuses, preparing: bippoT('راه يتخدم'), collected: bippoT('تسلّم') }
+      : statuses;
   const groups = {
     preparing: rows.filter((order) => order.status === 'preparing' && current(order)),
     ready: rows.filter((order) => order.status === 'ready' && current(order)),
@@ -524,7 +540,7 @@ export default function Orders({ Share, workspace }) {
           ) : order.status === 'collected' ? (
             <>
               <CheckCheck size={20} />
-              <span>{activity.clinic ? bippoT('دخل المريض') : statuses.collected}</span>
+              <span>{activity.clinic ? bippoT('دخل المريض') : laneLabels.collected}</span>
             </>
           ) : (
             <>
@@ -555,7 +571,9 @@ export default function Orders({ Share, workspace }) {
                 >
                   {activity.clinic
                     ? bippoT(order.status === 'preparing' ? 'نادِ' : 'دخل المريض')
-                    : bippoT(order.status === 'preparing' ? 'جاهز' : 'تسلّم الطلب')}
+                    : bippoT(
+                        order.status === 'preparing' ? 'جاهز' : service ? 'تسلّم' : 'تسلّم الطلب',
+                      )}
                   <Check size={15} />
                 </button>
               )}
@@ -951,7 +969,13 @@ export default function Orders({ Share, workspace }) {
                   CheckCheck,
                 ],
                 [
-                  bippoT(activity.clinic ? 'متوسط الانتظار قبل النداء' : 'متوسط التحضير'),
+                  bippoT(
+                    activity.clinic
+                      ? 'متوسط الانتظار قبل النداء'
+                      : service
+                        ? 'متوسط مدة الخدمة'
+                        : 'متوسط التحضير',
+                  ),
                   average,
                   BarChart3,
                 ],

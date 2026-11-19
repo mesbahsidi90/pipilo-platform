@@ -6,6 +6,16 @@ import './developer-docs.css';
 const fr = language === 'fr';
 const copy = (ar, french) => (fr ? french : ar);
 const specUrl = `${import.meta.env.BASE_URL}openapi/pos-v1.json`;
+const api = 'https://kdvtqlqiervznhzbpjcx.supabase.co/functions/v1/pos-api/v1';
+const example = [
+  `curl -X POST ${api}/tickets \\`,
+  '  -H "Authorization: Bearer bpk_…" \\',
+  '  -H "Content-Type: application/json" \\',
+  `  -d '{"externalRef":"INV-2026-000123","number":"42"}'`,
+  '',
+  `curl -X POST ${api}/tickets/INV-2026-000123/ready \\`,
+  '  -H "Authorization: Bearer bpk_…"',
+].join('\n');
 
 export default function DeveloperDocs() {
   const [spec, setSpec] = useState(null);
@@ -30,8 +40,8 @@ export default function DeveloperDocs() {
       <div className="public-note">
         <p>
           {copy(
-            'هذه مسودة للتكامل مع الكاشير. العمليات أدناه مقترحة، والوصول للواجهة مازال غير متاح.',
-            'Ce document présente le projet d’intégration caisse. Les opérations ci-dessous sont proposées et l’API n’est pas encore accessible.',
+            'واجهة الربط مع الكاشير متاحة في الباقة الاحترافية. صاحب المحل ينشئ مفتاح الفرع من «المزايا» ← «الربط مع الكاشير».',
+            'L’API caisse est disponible avec l’offre Pro. Le gérant crée la clé de la succursale dans « Fonctionnalités » → « Liaison caisse ».',
           )}
         </p>
         <a href={specUrl} download>
@@ -43,31 +53,39 @@ export default function DeveloperDocs() {
         <ol>
           <li>
             {copy(
-              'الكاشير ينشئ تيكي بكود الفرع ونمرة الطلب ومرجعه في الكاشير.',
-              'La caisse crée un ticket avec le code de la succursale, le numéro de commande et sa référence interne.',
+              'كي يتسجّل الطلب، الكاشير يبعث ⁦POST /tickets⁩ بمرجع الفاتورة (⁦externalRef⁩)، ونمرة الطلب إذا حب.',
+              'À l’enregistrement, la caisse envoie POST /tickets avec la référence du ticket de caisse (externalRef) et, si besoin, le numéro.',
             )}
           </li>
           <li>
             {copy(
-              'يحفظ معرّف التيكي، ويحوّل رابط المتابعة إلى QR يطبعو على الفاتورة. الزبون يتبع طلبو بلا حساب.',
-              'Elle conserve l’identifiant du ticket et imprime un QR à partir du lien de suivi. Le client suit sa commande sans compte.',
+              'الرد فيه ⁦trackingUrl⁩: الكاشير يطبعو QR على التيكي. الزبون يمسحو ويفعّل التنبيه بلا حساب.',
+              'La réponse contient trackingUrl : la caisse l’imprime en QR sur le ticket. Le client le scanne et active l’alerte, sans compte.',
             )}
           </li>
           <li>
             {copy(
-              'كي يوجد الطلب، الكاشير أو المطبخ يرسل معرّف التيكي لتحديث الحالة.',
-              'Quand la commande est prête, la caisse ou la cuisine envoie l’identifiant du ticket pour mettre à jour son statut.',
+              'كي يوجد الطلب، الكاشير ولا المطبخ يبعث ⁦POST /tickets/{ticket}/ready⁩ وتليفون الزبون يصوني. من بعد ⁦complete⁩ كي يستلم، ولا ⁦cancel⁩.',
+              'Quand la commande est prête, la caisse ou la cuisine envoie POST /tickets/{ticket}/ready et le téléphone du client sonne. Puis complete à la remise, ou cancel.',
             )}
           </li>
         </ol>
         <p>
           {copy(
-            'التصميم المقترح يستعمل مفتاح وصول خاص بكل نشاط. المفتاح يبقى في خادم التكامل، ورابط المتابعة وحده هو اللي يوصل للزبون.',
-            'Le projet prévoit une clé d’accès par établissement, conservée côté serveur. Seul le lien de suivi est communiqué au client.',
+            '⁦{ticket}⁩ هو معرّف Bipilo ولا مرجعك ⁦externalRef⁩، باش ما تحتاجش تحفظ معرّفنا. إذا عاودت نفس الطلب بنفس ⁦externalRef⁩ ترجعلك نفس التيكي، ما يتزادش تيكي ثاني.',
+            '{ticket} est l’identifiant Bipilo ou votre externalRef : inutile de stocker notre identifiant. Renvoyer la même création avec le même externalRef renvoie le même ticket, sans doublon.',
           )}
         </p>
+        <p>
+          {copy(
+            'المفتاح يبقى في خادم الكاشير: الطلبات اللي تجي من متصفح مرفوضة. الحد 120 طلب في الدقيقة لكل مفتاح.',
+            'La clé reste sur le serveur de la caisse : les appels depuis un navigateur sont refusés. Limite : 120 appels par minute et par clé.',
+          )}
+        </p>
+        <h3>{copy('مثال', 'Exemple')}</h3>
+        <pre dir="ltr">{example}</pre>
       </div>
-      <h2>{copy('عمليات الواجهة المقترحة', 'Opérations proposées')}</h2>
+      <h2>{copy('عمليات الواجهة', 'Opérations')}</h2>
       {!spec && (
         <p role="status">
           {failed

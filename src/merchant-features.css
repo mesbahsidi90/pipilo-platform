@@ -312,3 +312,76 @@
     font-size: 20pt;
   }
 }
+.pos-keys {
+  display: grid;
+  gap: 12px;
+  margin-top: 12px;
+}
+.pos-field,
+.pos-create label {
+  display: grid;
+  gap: 5px;
+  font-size: 12px;
+}
+.pos-field > span,
+.pos-fresh > span {
+  display: flex;
+  gap: 6px;
+  align-items: center;
+}
+.pos-field input,
+.pos-fresh input {
+  flex: 1;
+  min-width: 0;
+  font-family: monospace;
+  font-size: 12px;
+}
+.pos-fresh {
+  display: grid;
+  gap: 8px;
+  padding: 12px;
+  border: 1px solid #e3c98f;
+  border-radius: 12px;
+  background: #fff8e8;
+}
+.pos-fresh b {
+  font-size: 13px;
+}
+.pos-key-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 8px;
+}
+.pos-key-list li {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 12px;
+  border: 1px solid var(--bippo-border);
+  border-radius: 12px;
+}
+.pos-key-list li > span {
+  flex: 1;
+  display: grid;
+  gap: 2px;
+}
+.pos-key-list small {
+  font-size: 11px;
+  color: #7f8f85;
+}
+.pos-create {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  gap: 10px;
+}
+.pos-create label {
+  flex: 1;
+  min-width: 180px;
+}
+.pos-docs {
+  font-size: 12px;
+  justify-self: start;
+}

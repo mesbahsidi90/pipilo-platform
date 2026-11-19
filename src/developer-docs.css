@@ -10,3 +10,4 @@
 .developer-operation summary b { color: #17604e; }
 .developer-operation pre { background: #102b2b; color: white; border-radius: .75rem; padding: 1rem; overflow-x: auto; text-align: left; }
 .developer-operation h3 { margin-block: 1rem .45rem; font-size: .95rem; }
+.developer-card > pre { background: #102b2b; color: white; border-radius: .75rem; padding: 1rem; overflow-x: auto; text-align: left; direction: ltr; max-width: 100%; }

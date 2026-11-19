@@ -10,12 +10,14 @@ import {
   BookOpen,
   Smartphone,
   QrCode,
+  Plug,
 } from 'lucide-react';
 import { getSettings, saveSettings } from './shopSettings';
 import { reviewUrl } from './guestExperience';
 import LoyaltyCard from './LoyaltyCard';
 import MenuEditor from './MenuEditor';
 import TableCodes from './TableCodes';
+import PosKeys from './PosKeys';
 import { LOYALTY_GOALS } from './loyaltyRules';
 import './merchant-features.css';
 
@@ -490,6 +492,31 @@ export default function MerchantFeatures({ paid = null, onOpen, onSaved }) {
             {bippoT('افتح الفروع والأكواد')}
           </button>
         </div>
+      </FeatureCard>
+
+      <FeatureCard
+        icon={Plug}
+        title={bippoT('الربط مع الكاشير')}
+        pro
+        status={<Status label={bippoT('واجهة API')} />}
+      >
+        <p>
+          {bippoT(
+            'نظام الكاشير يبعث الطلب إلى Bipilo ويطبع كود التتبّع على التيكي، ومن بعد يعلّمو «جاهز» وحدو. يلزم مبرمج الكاشير يزيد الربط بمفتاح الفرع.',
+          )}
+        </p>
+        <div className="feature-actions">
+          <button
+            type="button"
+            className="button outline small"
+            aria-expanded={editing === 'pos'}
+            onClick={() => edit('pos', {})}
+          >
+            {bippoT('مفاتيح الربط')}
+          </button>
+          {upgrade}
+        </div>
+        {editing === 'pos' && <PosKeys locked={locked} />}
       </FeatureCard>
     </section>
   );

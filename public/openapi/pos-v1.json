@@ -1,13 +1,13 @@
 {
   "openapi": "3.1.0",
   "info": {
-    "title": "Bipilo POS API — Draft",
-    "version": "1.0.0-draft",
-    "description": "Proposed integration contract for restaurants and cafés. No live API is available. The .invalid server is a placeholder."
+    "title": "Bipilo POS API",
+    "version": "1.0.0",
+    "description": "Server-to-server API for cashier (POS) systems. One key per branch, created by the shop owner in Dashboard → Features → Cashier link. Requests sent from a browser (with an Origin header) are refused."
   },
   "servers": [
     {
-      "url": "https://example.invalid"
+      "url": "https://kdvtqlqiervznhzbpjcx.supabase.co/functions/v1/pos-api/v1"
     }
   ],
   "security": [
@@ -16,23 +16,19 @@
     }
   ],
   "paths": {
-    "/api/v1/branches": {
+    "/branches": {
       "get": {
-        "operationId": "listBranches",
-        "summary": "Lister les succursales",
-        "x-summary-ar": "عرض الفروع",
+        "summary": "Succursale de la clé",
+        "x-summary-ar": "الفرع تاع المفتاح",
         "responses": {
           "200": {
-            "description": "Success",
+            "description": "OK",
             "content": {
               "application/json": {
                 "schema": {
                   "type": "object",
-                  "required": [
-                    "branches"
-                  ],
                   "properties": {
-                    "branches": {
+                    "data": {
                       "type": "array",
                       "items": {
                         "$ref": "#/components/schemas/Branch"
@@ -41,10 +37,10 @@
                   }
                 },
                 "example": {
-                  "branches": [
+                  "data": [
                     {
-                      "code": "ALGER-CENTRE",
-                      "name": "Alger Centre",
+                      "code": "0b6f3a9e-2c41-4d7b-8e15-6a2f9c0d4b71",
+                      "name": "Café Centre",
                       "active": true
                     }
                   ]
@@ -53,28 +49,39 @@
             }
           },
           "401": {
-            "description": "Invalid or missing key"
+            "description": "Missing, invalid or revoked key",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                },
+                "example": {
+                  "error": "invalid_key"
+                }
+              }
+            }
           },
-          "403": {
-            "description": "Branch or operation outside key scope"
-          },
-          "404": {
-            "description": "Resource not found"
-          },
-          "409": {
-            "description": "Conflict with current ticket state or existing reference"
-          },
-          "422": {
-            "description": "Invalid input"
+          "429": {
+            "description": "More than 120 calls a minute with this key",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                },
+                "example": {
+                  "error": "rate_limit"
+                }
+              }
+            }
           }
         }
       }
     },
-    "/api/v1/tickets": {
+    "/tickets": {
       "post": {
-        "operationId": "createTicket",
         "summary": "Créer un ticket",
         "x-summary-ar": "إنشاء تيكي",
+        "description": "Idempotent by externalRef: sending the same externalRef again returns the existing ticket with 200. Without number, Bipilo gives the next free number of the day.",
         "requestBody": {
           "required": true,
           "content": {
@@ -83,234 +90,535 @@
                 "$ref": "#/components/schemas/CreateTicket"
               },
               "example": {
-                "branchCode": "ALGER-CENTRE",
-                "number": "104",
-                "externalRef": "pos-2026-104"
+                "externalRef": "INV-2026-000123",
+                "number": "42",
+                "customerName": "Amine"
               }
             }
           }
         },
         "responses": {
+          "200": {
+            "description": "Already created with this externalRef",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Ticket"
+                },
+                "example": {
+                  "id": "7d3f1c2a-5b8e-4f0a-9c61-2e4b8a9d0f13",
+                  "number": "42",
+                  "branchCode": "0b6f3a9e-2c41-4d7b-8e15-6a2f9c0d4b71",
+                  "externalRef": "INV-2026-000123",
+                  "status": "preparing",
+                  "customerName": "Amine",
+                  "trackingUrl": "https://bipilo.app/#track/3c9a1e57-0d2b-4f86-b4a1-9e7c2d5f8a10",
+                  "createdAt": "2026-11-19T09:41:00Z",
+                  "readyAt": null,
+                  "collectedAt": null
+                }
+              }
+            }
+          },
           "201": {
-            "description": "Ticket created",
+            "description": "Created",
             "content": {
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/Ticket"
                 },
                 "example": {
-                  "id": "3dc94c4a-d87c-46c1-8628-8b4ac2060b89",
-                  "number": "104",
-                  "branchCode": "ALGER-CENTRE",
-                  "externalRef": "pos-2026-104",
+                  "id": "7d3f1c2a-5b8e-4f0a-9c61-2e4b8a9d0f13",
+                  "number": "42",
+                  "branchCode": "0b6f3a9e-2c41-4d7b-8e15-6a2f9c0d4b71",
+                  "externalRef": "INV-2026-000123",
                   "status": "preparing",
-                  "trackingUrl": "https://example.invalid/?lang=ar#track/8de62742-1716-4f7d-a3f9-4a45b584be55"
+                  "customerName": "Amine",
+                  "trackingUrl": "https://bipilo.app/#track/3c9a1e57-0d2b-4f86-b4a1-9e7c2d5f8a10",
+                  "createdAt": "2026-11-19T09:41:00Z",
+                  "readyAt": null,
+                  "collectedAt": null
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Body is not a JSON object",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                },
+                "example": {
+                  "error": "invalid_json"
                 }
               }
             }
           },
           "401": {
-            "description": "Invalid or missing key"
+            "description": "Missing, invalid or revoked key",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                },
+                "example": {
+                  "error": "invalid_key"
+                }
+              }
+            }
           },
           "403": {
-            "description": "Branch or operation outside key scope"
+            "description": "Branch is not on a paid plan, or is inactive (branch_inactive)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                },
+                "example": {
+                  "error": "plan_required"
+                }
+              }
+            }
           },
           "404": {
-            "description": "Resource not found"
+            "description": "branchCode is not the branch of this key",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                },
+                "example": {
+                  "error": "branch_not_found"
+                }
+              }
+            }
           },
           "409": {
-            "description": "Conflict with current ticket state or existing reference"
+            "description": "Another open ticket already has this number",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                },
+                "example": {
+                  "error": "number_in_use"
+                }
+              }
+            }
           },
           "422": {
-            "description": "Invalid input"
+            "description": "number must be 1–9999 (also invalid_external_ref)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                },
+                "example": {
+                  "error": "invalid_number"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "More than 120 calls a minute with this key",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                },
+                "example": {
+                  "error": "rate_limit"
+                }
+              }
+            }
           }
         }
       }
     },
-    "/api/v1/tickets/{id}": {
+    "/tickets/{ticket}": {
       "get": {
-        "operationId": "getTicket",
         "summary": "Consulter un ticket",
-        "x-summary-ar": "قراءة حالة التيكي",
+        "x-summary-ar": "شوف حالة التيكي",
         "parameters": [
           {
-            "$ref": "#/components/parameters/TicketId"
+            "$ref": "#/components/parameters/Ticket"
           }
         ],
         "responses": {
           "200": {
-            "description": "Success",
+            "description": "OK",
             "content": {
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/Ticket"
                 },
                 "example": {
-                  "id": "3dc94c4a-d87c-46c1-8628-8b4ac2060b89",
-                  "number": "104",
-                  "branchCode": "ALGER-CENTRE",
-                  "externalRef": "pos-2026-104",
+                  "id": "7d3f1c2a-5b8e-4f0a-9c61-2e4b8a9d0f13",
+                  "number": "42",
+                  "branchCode": "0b6f3a9e-2c41-4d7b-8e15-6a2f9c0d4b71",
+                  "externalRef": "INV-2026-000123",
                   "status": "preparing",
-                  "trackingUrl": "https://example.invalid/?lang=ar#track/8de62742-1716-4f7d-a3f9-4a45b584be55"
+                  "customerName": "Amine",
+                  "trackingUrl": "https://bipilo.app/#track/3c9a1e57-0d2b-4f86-b4a1-9e7c2d5f8a10",
+                  "createdAt": "2026-11-19T09:41:00Z",
+                  "readyAt": null,
+                  "collectedAt": null
                 }
               }
             }
           },
           "401": {
-            "description": "Invalid or missing key"
+            "description": "Missing, invalid or revoked key",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                },
+                "example": {
+                  "error": "invalid_key"
+                }
+              }
+            }
           },
           "403": {
-            "description": "Branch or operation outside key scope"
+            "description": "Branch is not on a paid plan, or is inactive (branch_inactive)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                },
+                "example": {
+                  "error": "plan_required"
+                }
+              }
+            }
           },
           "404": {
-            "description": "Resource not found"
+            "description": "No ticket with this id or externalRef",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                },
+                "example": {
+                  "error": "ticket_not_found"
+                }
+              }
+            }
           },
-          "409": {
-            "description": "Conflict with current ticket state or existing reference"
-          },
-          "422": {
-            "description": "Invalid input"
+          "429": {
+            "description": "More than 120 calls a minute with this key",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                },
+                "example": {
+                  "error": "rate_limit"
+                }
+              }
+            }
           }
         }
       }
     },
-    "/api/v1/tickets/{id}/ready": {
+    "/tickets/{ticket}/ready": {
       "post": {
-        "operationId": "readyTicket",
         "summary": "Signaler que le ticket est prêt",
-        "x-summary-ar": "تعليم الطلب واجد",
+        "x-summary-ar": "علّم التيكي «جاهز» (تليفون الزبون يصوني)",
         "parameters": [
           {
-            "$ref": "#/components/parameters/TicketId"
+            "$ref": "#/components/parameters/Ticket"
           }
         ],
         "responses": {
           "200": {
-            "description": "Success",
+            "description": "Updated (or already in that status)",
             "content": {
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/Ticket"
                 },
                 "example": {
-                  "id": "3dc94c4a-d87c-46c1-8628-8b4ac2060b89",
-                  "number": "104",
-                  "branchCode": "ALGER-CENTRE",
-                  "externalRef": "pos-2026-104",
+                  "id": "7d3f1c2a-5b8e-4f0a-9c61-2e4b8a9d0f13",
+                  "number": "42",
+                  "branchCode": "0b6f3a9e-2c41-4d7b-8e15-6a2f9c0d4b71",
+                  "externalRef": "INV-2026-000123",
                   "status": "ready",
-                  "trackingUrl": "https://example.invalid/?lang=ar#track/8de62742-1716-4f7d-a3f9-4a45b584be55"
+                  "customerName": "Amine",
+                  "trackingUrl": "https://bipilo.app/#track/3c9a1e57-0d2b-4f86-b4a1-9e7c2d5f8a10",
+                  "createdAt": "2026-11-19T09:41:00Z",
+                  "readyAt": "2026-11-19T09:52:00Z",
+                  "collectedAt": null
                 }
               }
             }
           },
           "401": {
-            "description": "Invalid or missing key"
+            "description": "Missing, invalid or revoked key",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                },
+                "example": {
+                  "error": "invalid_key"
+                }
+              }
+            }
           },
           "403": {
-            "description": "Branch or operation outside key scope"
+            "description": "Branch is not on a paid plan, or is inactive (branch_inactive)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                },
+                "example": {
+                  "error": "plan_required"
+                }
+              }
+            }
           },
           "404": {
-            "description": "Resource not found"
+            "description": "No ticket with this id or externalRef",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                },
+                "example": {
+                  "error": "ticket_not_found"
+                }
+              }
+            }
           },
           "409": {
-            "description": "Conflict with current ticket state or existing reference"
+            "description": "Only a preparing ticket can become ready",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                },
+                "example": {
+                  "error": "invalid_transition"
+                }
+              }
+            }
           },
-          "422": {
-            "description": "Invalid input"
+          "429": {
+            "description": "More than 120 calls a minute with this key",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                },
+                "example": {
+                  "error": "rate_limit"
+                }
+              }
+            }
           }
         }
       }
     },
-    "/api/v1/tickets/{id}/complete": {
+    "/tickets/{ticket}/complete": {
       "post": {
-        "operationId": "completeTicket",
         "summary": "Confirmer la remise",
-        "x-summary-ar": "تأكيد تسليم الطلب",
+        "x-summary-ar": "علّم التيكي «تسلّم»",
         "parameters": [
           {
-            "$ref": "#/components/parameters/TicketId"
+            "$ref": "#/components/parameters/Ticket"
           }
         ],
         "responses": {
           "200": {
-            "description": "Success",
+            "description": "Updated (or already in that status)",
             "content": {
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/Ticket"
                 },
                 "example": {
-                  "id": "3dc94c4a-d87c-46c1-8628-8b4ac2060b89",
-                  "number": "104",
-                  "branchCode": "ALGER-CENTRE",
-                  "externalRef": "pos-2026-104",
+                  "id": "7d3f1c2a-5b8e-4f0a-9c61-2e4b8a9d0f13",
+                  "number": "42",
+                  "branchCode": "0b6f3a9e-2c41-4d7b-8e15-6a2f9c0d4b71",
+                  "externalRef": "INV-2026-000123",
                   "status": "collected",
-                  "trackingUrl": "https://example.invalid/?lang=ar#track/8de62742-1716-4f7d-a3f9-4a45b584be55"
+                  "customerName": "Amine",
+                  "trackingUrl": "https://bipilo.app/#track/3c9a1e57-0d2b-4f86-b4a1-9e7c2d5f8a10",
+                  "createdAt": "2026-11-19T09:41:00Z",
+                  "readyAt": "2026-11-19T09:52:00Z",
+                  "collectedAt": "2026-11-19T09:55:00Z"
                 }
               }
             }
           },
           "401": {
-            "description": "Invalid or missing key"
+            "description": "Missing, invalid or revoked key",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                },
+                "example": {
+                  "error": "invalid_key"
+                }
+              }
+            }
           },
           "403": {
-            "description": "Branch or operation outside key scope"
+            "description": "Branch is not on a paid plan, or is inactive (branch_inactive)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                },
+                "example": {
+                  "error": "plan_required"
+                }
+              }
+            }
           },
           "404": {
-            "description": "Resource not found"
+            "description": "No ticket with this id or externalRef",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                },
+                "example": {
+                  "error": "ticket_not_found"
+                }
+              }
+            }
           },
           "409": {
-            "description": "Conflict with current ticket state or existing reference"
+            "description": "Only a ready ticket can be collected",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                },
+                "example": {
+                  "error": "invalid_transition"
+                }
+              }
+            }
           },
-          "422": {
-            "description": "Invalid input"
+          "429": {
+            "description": "More than 120 calls a minute with this key",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                },
+                "example": {
+                  "error": "rate_limit"
+                }
+              }
+            }
           }
         }
       }
     },
-    "/api/v1/tickets/{id}/cancel": {
+    "/tickets/{ticket}/cancel": {
       "post": {
-        "operationId": "cancelTicket",
         "summary": "Annuler le ticket",
-        "x-summary-ar": "إلغاء الطلب",
+        "x-summary-ar": "ألغي التيكي",
         "parameters": [
           {
-            "$ref": "#/components/parameters/TicketId"
+            "$ref": "#/components/parameters/Ticket"
           }
         ],
         "responses": {
           "200": {
-            "description": "Success",
+            "description": "Updated (or already in that status)",
             "content": {
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/Ticket"
                 },
                 "example": {
-                  "id": "3dc94c4a-d87c-46c1-8628-8b4ac2060b89",
-                  "number": "104",
-                  "branchCode": "ALGER-CENTRE",
-                  "externalRef": "pos-2026-104",
+                  "id": "7d3f1c2a-5b8e-4f0a-9c61-2e4b8a9d0f13",
+                  "number": "42",
+                  "branchCode": "0b6f3a9e-2c41-4d7b-8e15-6a2f9c0d4b71",
+                  "externalRef": "INV-2026-000123",
                   "status": "cancelled",
-                  "trackingUrl": "https://example.invalid/?lang=ar#track/8de62742-1716-4f7d-a3f9-4a45b584be55"
+                  "customerName": "Amine",
+                  "trackingUrl": "https://bipilo.app/#track/3c9a1e57-0d2b-4f86-b4a1-9e7c2d5f8a10",
+                  "createdAt": "2026-11-19T09:41:00Z",
+                  "readyAt": null,
+                  "collectedAt": null
                 }
               }
             }
           },
           "401": {
-            "description": "Invalid or missing key"
+            "description": "Missing, invalid or revoked key",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                },
+                "example": {
+                  "error": "invalid_key"
+                }
+              }
+            }
           },
           "403": {
-            "description": "Branch or operation outside key scope"
+            "description": "Branch is not on a paid plan, or is inactive (branch_inactive)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                },
+                "example": {
+                  "error": "plan_required"
+                }
+              }
+            }
           },
           "404": {
-            "description": "Resource not found"
+            "description": "No ticket with this id or externalRef",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                },
+                "example": {
+                  "error": "ticket_not_found"
+                }
+              }
+            }
           },
           "409": {
-            "description": "Conflict with current ticket state or existing reference"
+            "description": "Only a preparing ticket can be cancelled",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                },
+                "example": {
+                  "error": "invalid_transition"
+                }
+              }
+            }
           },
-          "422": {
-            "description": "Invalid input"
+          "429": {
+            "description": "More than 120 calls a minute with this key",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                },
+                "example": {
+                  "error": "rate_limit"
+                }
+              }
+            }
           }
         }
       }
@@ -321,17 +629,18 @@
       "posKey": {
         "type": "http",
         "scheme": "bearer",
-        "description": "Proposed server-side Bipilo integration key."
+        "description": "Branch key: Authorization: Bearer bpk_…  Keep it on the server."
       }
     },
     "parameters": {
-      "TicketId": {
-        "name": "id",
+      "Ticket": {
+        "name": "ticket",
         "in": "path",
         "required": true,
+        "description": "Bipilo ticket id, or your own externalRef (URL-encoded).",
         "schema": {
           "type": "string",
-          "format": "uuid"
+          "maxLength": 128
         }
       }
     },
@@ -345,7 +654,8 @@
         ],
         "properties": {
           "code": {
-            "type": "string"
+            "type": "string",
+            "format": "uuid"
           },
           "name": {
             "type": "string"
@@ -358,23 +668,28 @@
       "CreateTicket": {
         "type": "object",
         "required": [
-          "branchCode",
-          "number",
           "externalRef"
         ],
         "properties": {
-          "branchCode": {
-            "type": "string",
-            "minLength": 1
-          },
-          "number": {
-            "type": "string",
-            "pattern": "^[1-9][0-9]{0,3}$"
-          },
           "externalRef": {
             "type": "string",
             "minLength": 1,
-            "maxLength": 128
+            "maxLength": 128,
+            "description": "Your receipt/order id. Unique per branch."
+          },
+          "number": {
+            "type": "string",
+            "pattern": "^[1-9][0-9]{0,3}$",
+            "description": "Number shown to the customer. Optional."
+          },
+          "customerName": {
+            "type": "string",
+            "maxLength": 40
+          },
+          "branchCode": {
+            "type": "string",
+            "format": "uuid",
+            "description": "Optional check."
           }
         }
       },
@@ -389,22 +704,19 @@
           "trackingUrl"
         ],
         "properties": {
-          "branchCode": {
-            "type": "string",
-            "minLength": 1
-          },
-          "number": {
-            "type": "string",
-            "pattern": "^[1-9][0-9]{0,3}$"
-          },
-          "externalRef": {
-            "type": "string",
-            "minLength": 1,
-            "maxLength": 128
-          },
           "id": {
             "type": "string",
             "format": "uuid"
+          },
+          "number": {
+            "type": "string"
+          },
+          "branchCode": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "externalRef": {
+            "type": "string"
           },
           "status": {
             "type": "string",
@@ -415,9 +727,45 @@
               "cancelled"
             ]
           },
+          "customerName": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
           "trackingUrl": {
             "type": "string",
-            "format": "uri"
+            "format": "uri",
+            "description": "Print it as a QR code on the receipt."
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "readyAt": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "date-time"
+          },
+          "collectedAt": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "date-time"
+          }
+        }
+      },
+      "Error": {
+        "type": "object",
+        "required": [
+          "error"
+        ],
+        "properties": {
+          "error": {
+            "type": "string"
           }
         }
       }

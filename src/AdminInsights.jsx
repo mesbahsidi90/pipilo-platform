@@ -128,7 +128,18 @@ const featureNames = [
 ];
 
 // Everything about one shop in one place.
-export function ShopSheet({ shop, sub, plan, row, freeLimit, notes, branches, onEdit }) {
+export function ShopSheet({
+  shop,
+  sub,
+  plan,
+  row,
+  freeLimit,
+  notes,
+  branches,
+  invitedBy,
+  invited = [],
+  onEdit,
+}) {
   const features = row?.features || {};
   const used = row?.orders_month || 0;
   const share =
@@ -154,6 +165,24 @@ export function ShopSheet({ shop, sub, plan, row, freeLimit, notes, branches, on
           </dd>
           <dt>{bippoT('عرفنا من')}</dt>
           <dd>{sourceText(row?.source)}</dd>
+          {invitedBy && (
+            <>
+              <dt>{bippoT('دعاه')}</dt>
+              <dd>{invitedBy.name}</dd>
+            </>
+          )}
+          {row?.referral_code && (
+            <>
+              <dt>{bippoT('كود الإحالة')}</dt>
+              <dd>
+                <code dir="ltr">{row.referral_code}</code>
+                {' · '}
+                {invited.length
+                  ? bippoT('جاب {0}: {1}', [invited.length, invited.map((s) => s.name).join('، ')])
+                  : bippoT('مازال ما جاب حتى محل')}
+              </dd>
+            </>
+          )}
           <dt>{bippoT('آخر دخول')}</dt>
           <dd>{dateTime(row?.owner?.last_sign_in_at)}</dd>
           <dt>{bippoT('الحسابات')}</dt>
@@ -276,7 +305,7 @@ export function StatsTab({ stats, overview, shops }) {
           label={(r) => short(r.week)}
         />
       </div>
-      <SourcesTable overview={overview} />
+      <SourcesTable overview={overview} shops={shops} />
       <LinkBuilder />
       <section className="panel admin-section">
         <div className="admin-section-title">
@@ -326,6 +355,8 @@ export function exportShops({ shops, subFor, planFor, overview }) {
       'ref',
       'utm_source',
       'utm_campaign',
+      'referral_code',
+      'invited_by',
     ],
   ];
   for (const s of shops) {
@@ -350,6 +381,8 @@ export function exportShops({ shops, subFor, planFor, overview }) {
       row.source?.ref,
       row.source?.utm_source,
       row.source?.utm_campaign,
+      row.referral_code,
+      shops.find((x) => x.id === row.source?.referred_by)?.name,
     ]);
   }
   const url = URL.createObjectURL(new Blob([toCsv(rows)], { type: 'text/csv;charset=utf-8' }));
@@ -361,7 +394,7 @@ export function exportShops({ shops, subFor, planFor, overview }) {
 }
 
 // Signups per source, and how many became active (orders) and paid.
-function SourcesTable({ overview }) {
+function SourcesTable({ overview, shops }) {
   const roots = overview.filter((row) => !row.parent_id);
   const keys = [...SOURCE_ANSWERS, ''];
   const rows = keys
@@ -385,6 +418,19 @@ function SourcesTable({ overview }) {
     if (row.paid) item.paid++;
     campaigns.set(name, item);
   }
+  const referrers = new Map();
+  for (const row of roots) {
+    const by = row.source?.referred_by;
+    if (!by) continue;
+    const item = referrers.get(by) || { signups: 0, paid: 0 };
+    item.signups++;
+    if (row.paid) item.paid++;
+    referrers.set(by, item);
+  }
+  const topReferrers = [...referrers]
+    .map(([id, item]) => ({ id, name: shops.find((s) => s.id === id)?.name || '—', ...item }))
+    .sort((a, b) => b.signups - a.signups)
+    .slice(0, 10);
   return (
     <section className="panel admin-section">
       <div className="admin-section-title">
@@ -428,6 +474,19 @@ function SourcesTable({ overview }) {
             {[...campaigns].map(([name, item]) => (
               <li key={name}>
                 <code dir="ltr">{name}</code>
+                <span>{bippoT('{0} تسجيل · {1} خلّصو', [item.signups, item.paid])}</span>
+              </li>
+            ))}
+          </ul>
+        </>
+      )}
+      {topReferrers.length > 0 && (
+        <>
+          <h3 className="admin-subtitle">{bippoT('المحلات اللي جابو محلات')}</h3>
+          <ul className="admin-campaigns">
+            {topReferrers.map((item) => (
+              <li key={item.id}>
+                <b>{item.name}</b>
                 <span>{bippoT('{0} تسجيل · {1} خلّصو', [item.signups, item.paid])}</span>
               </li>
             ))}

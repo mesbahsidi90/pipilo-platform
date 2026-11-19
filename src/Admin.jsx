@@ -1219,6 +1219,12 @@ function AdminPanel({ session }) {
               branches={shops.filter((b) =>
                 overview.some((r) => r.id === b.id && r.parent_id === sheetShop.id),
               )}
+              invitedBy={shops.find(
+                (s) => s.id === overview.find((r) => r.id === sheetShop.id)?.source?.referred_by,
+              )}
+              invited={shops.filter((s) =>
+                overview.some((r) => r.id === s.id && r.source?.referred_by === sheetShop.id),
+              )}
               onEdit={() => {
                 setSheet(null);
                 openShop(sheetShop);

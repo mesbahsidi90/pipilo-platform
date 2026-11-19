@@ -314,6 +314,7 @@ export async function loadAdminExtras() {
                   }
                 })()
               : null,
+          referral_code: index === 0 ? localStorage.getItem('bipilo-demo-referral') : null,
           id: s.id,
           paid: false,
           orders_month: s.order_count || 0,

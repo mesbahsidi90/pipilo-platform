@@ -7,6 +7,7 @@ import { supportWhatsApp } from './contactDetails';
 import { PlanCards } from './PlanCards';
 import { professionalPlanId } from './planConfig';
 import { myPlanRequest, requestPlanUpgrade } from './planRequest';
+import ReferralCard from './ReferralCard';
 
 export default function MerchantSubscription({ shopId, shopError, branchCount }) {
   const [result, setResult] = useState(null);
@@ -91,6 +92,7 @@ export default function MerchantSubscription({ shopId, shopError, branchCount })
       </section>
 
       {!activeProfessional && <PlanRequest />}
+      <ReferralCard />
       <a className="billing-help" href={supportWhatsApp} target="_blank" rel="noopener noreferrer">
         <MessageCircle size={18} />
         <span>{t('تحتاج مساعدة؟ تواصل مع الدعم المباشر على واتساب')}</span>

@@ -1560,5 +1560,15 @@
   "زيارة من فريق Bipilo": "Visite de l’équipe Bipilo",
   "صاحب محل آخر": "Un autre commerçant",
   "Google": "Google",
-  "غير ذلك": "Autre"
+  "غير ذلك": "Autre",
+  "دعاه": "Invité par",
+  "كود الإحالة": "Code de parrainage",
+  "جاب {0}: {1}": "A amené {0} : {1}",
+  "مازال ما جاب حتى محل": "Aucun commerce amené pour l'instant",
+  "المحلات اللي جابو محلات": "Commerces qui en ont amené d'autres",
+  "جرّب Bipilo لمحلك: الزبون ياخذ رقم ويتبّع دورو من تيليفونو. سجّل من هنا: {0}": "Essaie Bipilo pour ton commerce : le client prend un numéro et suit son tour sur son téléphone. Inscris-toi ici : {0}",
+  "ادعُ صاحب محل آخر": "Invite un autre commerçant",
+  "ابعث رابطك لأصحاب المحلات اللي تعرفهم. كل محل يتسجّل منو يتحسب لك هنا.": "Envoie ton lien aux commerçants que tu connais. Chaque commerce inscrit depuis ce lien est compté ici.",
+  "ابعث في واتساب": "Envoyer sur WhatsApp",
+  "بداو يخدمو": "Ont commencé"
 }

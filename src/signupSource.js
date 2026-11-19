@@ -38,6 +38,7 @@ export async function recordSignupSource(answer) {
       utm_medium: visit.utm_medium || null,
       utm_campaign: visit.utm_campaign || null,
       landing: visit.landing || null,
+      invite: visit.invite || null,
     });
   } catch {
     // Tracking is best effort.

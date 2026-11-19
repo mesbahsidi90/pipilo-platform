@@ -61,3 +61,69 @@
   border-color: #b9dcc4;
   background: #f1f9f3;
 }
+.billing-referral {
+  display: grid;
+  gap: 10px;
+  margin-block: 16px;
+  padding: 18px;
+}
+.billing-referral h3 {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 0;
+  font-size: 17px;
+}
+.billing-referral h3 svg {
+  color: var(--bippo-primary);
+}
+.billing-referral p {
+  margin: 0;
+  font-size: 13px;
+}
+.billing-referral-link {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: center;
+}
+.billing-referral-link input {
+  flex: 1 1 220px;
+  min-width: 0;
+  font-size: 13px;
+}
+.billing-referral-link .button {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+.billing-referral-stats {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 8px;
+  margin: 0;
+}
+.billing-referral-stats div {
+  padding: 10px;
+  border: 1px solid var(--bippo-border);
+  border-radius: 10px;
+  text-align: center;
+}
+.billing-referral-stats dt {
+  color: var(--bippo-muted);
+  font-size: 12px;
+}
+.billing-referral-stats dd {
+  margin: 2px 0 0;
+  font-size: 20px;
+  font-weight: 700;
+}
+.billing-referral-code {
+  color: var(--bippo-muted);
+}
+.billing-referral-code code {
+  font-size: 14px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  color: var(--bippo-text);
+}

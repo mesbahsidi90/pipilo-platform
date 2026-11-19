@@ -1,6 +1,12 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { guessAnswer, parseVisit, trackingLink } from '../src/signupSourceRules.js';
+import {
+  guessAnswer,
+  inviteCode,
+  inviteLink,
+  parseVisit,
+  trackingLink,
+} from '../src/signupSourceRules.js';
 
 test('ad link parameters are read and cleaned', () => {
   assert.equal(parseVisit('?lang=ar'), null);
@@ -9,6 +15,7 @@ test('ad link parameters are read and cleaned', () => {
     utm_source: null,
     utm_medium: null,
     utm_campaign: 'Ramadan 2027',
+    invite: null,
     landing: '/signup',
   });
 });
@@ -34,4 +41,16 @@ test('tracking links carry ref, utm and a clean campaign name', () => {
     'https://bipilo.app/signup?ref=visit&utm_source=field&utm_medium=offline',
   );
   assert.equal(guessAnswer(parseVisit(url.search)), 'facebook');
+});
+
+test('invite links carry a clean referral code and count as a friend', () => {
+  assert.equal(inviteCode(' AtJ5ZA '), 'atj5za');
+  assert.equal(inviteCode('abc'), null);
+  assert.equal(inviteCode('abc-123'), null);
+  const link = inviteLink('https://bipilo.app', 'atj5za');
+  assert.equal(link, 'https://bipilo.app/?invite=atj5za');
+  const visit = parseVisit(new URL(link).search, '/');
+  assert.equal(visit.invite, 'atj5za');
+  assert.equal(guessAnswer(visit), 'friend');
+  assert.equal(parseVisit('?invite=bad!'), null);
 });

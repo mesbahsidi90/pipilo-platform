@@ -44,6 +44,21 @@ const clip = (value, max) => {
   return text ? text.slice(0, max) : null;
 };
 
+// A shop's referral code: six letters/digits, or null.
+export function inviteCode(value) {
+  const code = String(value || '')
+    .trim()
+    .toLowerCase();
+  return /^[a-z0-9]{6}$/.test(code) ? code : null;
+}
+
+// The link a shop owner shares with other owners.
+export function inviteLink(origin, code) {
+  const url = new URL('/', origin);
+  url.searchParams.set('invite', code);
+  return url.href;
+}
+
 // Link parameters, or null when the link has none.
 export function parseVisit(search, pathname = '/') {
   const params = new URLSearchParams(search || '');
@@ -52,14 +67,16 @@ export function parseVisit(search, pathname = '/') {
     utm_source: clip(params.get('utm_source'), 60)?.toLowerCase() || null,
     utm_medium: clip(params.get('utm_medium'), 60)?.toLowerCase() || null,
     utm_campaign: clip(params.get('utm_campaign'), 80),
+    invite: inviteCode(params.get('invite')),
   };
-  if (!visit.ref && !visit.utm_source && !visit.utm_campaign) return null;
+  if (!visit.ref && !visit.utm_source && !visit.utm_campaign && !visit.invite) return null;
   return { ...visit, landing: clip(pathname, 120) };
 }
 
 // Pre-selects the signup answer from the link the visitor came with.
 export function guessAnswer(visit) {
   if (!visit) return '';
+  if (visit.invite) return 'friend';
   for (const key of [visit.ref, visit.utm_source]) {
     if (!key) continue;
     const base = key.split(/[-_]/)[0];

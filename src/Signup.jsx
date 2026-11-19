@@ -56,7 +56,7 @@ export default function Signup({ initialKind = 'cafe' }) {
   async function submit(e) {
     e.preventDefault();
     setError('');
-    if (!session && method === 'whatsapp') {
+    if (cloud && !session && method === 'whatsapp') {
       setError(bippoT('أكّد رقم الهاتف بالكود اللي وصلك في واتساب.'));
       return;
     }

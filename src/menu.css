@@ -62,7 +62,7 @@
 }
 .menu-sold-out b,
 .menu-sold-out small {
-  color: #9aa49f;
+  color: #6b7771;
   text-decoration: line-through;
 }
 .menu-sold-out .menu-price {
@@ -177,7 +177,7 @@
   gap: 8px;
 }
 .menu-editor-item.sold input {
-  color: #9aa49f;
+  color: #6b7771;
 }
 .menu-editor-item label {
   display: flex;

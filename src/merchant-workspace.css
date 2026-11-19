@@ -600,7 +600,7 @@
   display: block;
   padding: 0 8px 6px;
   color: var(--bippo-muted);
-  font-size: 10px;
+  font-size: 11px;
 }
 @media (max-width: 750px) {
   .merchant-shop-menu {

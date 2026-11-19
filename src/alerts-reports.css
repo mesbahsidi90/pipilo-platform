@@ -13,13 +13,13 @@
   background: #193d32;
 }
 .order-alerts .alert-help {
-  font-size: 9px;
+  font-size: 11px;
   line-height: 1.9;
   color: #8eae99;
   margin: 11px auto 17px;
 }
 .order-alerts .alert-warning {
-  font-size: 10px;
+  font-size: 11px;
   padding: 10px;
   background: #4d3829;
   color: #e9c79d;
@@ -45,7 +45,7 @@
   gap: 8px;
   align-items: center;
   color: #94d9ab;
-  font-size: 10px;
+  font-size: 11px;
 }
 .push-status > span {
   display: flex;
@@ -56,7 +56,7 @@
   background: transparent;
   color: #9bb9a6;
   text-decoration: underline;
-  font-size: 10px;
+  font-size: 11px;
 }
 .dashboard-tabs {
   display: flex;
@@ -72,7 +72,7 @@
   border-radius: 30px;
   padding: 10px 19px;
   background: transparent;
-  color: #839583;
+  color: #677967;
   font-size: 13px;
 }
 .dashboard-tabs button.selected {
@@ -81,16 +81,16 @@
   font-weight: 600;
 }
 .history-hint {
-  font-size: 10px !important;
-  color: #829581;
+  font-size: 11px !important;
+  color: #697b68;
   margin-top: 6px;
 }
 .order-row.collected {
   opacity: 0.75;
 }
 .order-detail .prep-duration {
-  font-size: 9px;
-  color: #799b74;
+  font-size: 11px;
+  color: #5e7d5a;
 }
 .report-controls {
   display: flex;
@@ -138,11 +138,11 @@
   gap: 9px;
 }
 .report-metrics svg {
-  color: #8eaa82;
+  color: #607c54;
   margin-bottom: 6px;
 }
 .report-metrics small {
-  color: #8b9d83;
+  color: #6a7c62;
   font-size: 11px;
 }
 .report-metrics strong {
@@ -152,8 +152,8 @@
   line-height: 1.4;
 }
 .report-metrics p {
-  font-size: 9px;
-  color: #a5b39a;
+  font-size: 11px;
+  color: #6a7b5d;
 }
 .report-charts {
   display: grid;
@@ -174,8 +174,8 @@
   gap: 20px;
 }
 .report-chart-heading > span {
-  color: #8ea37e;
-  font-size: 10px;
+  color: #687c58;
+  font-size: 11px;
 }
 .hour-chart {
   display: flex;
@@ -206,15 +206,15 @@
   background: var(--bippo-primary);
 }
 .hour-chart b {
-  font-size: 8px;
-  color: #a0ae94;
+  font-size: 11px;
+  color: #6a7a5d;
   font-family: Arial, sans-serif;
   font-weight: 400;
   margin-top: 10px;
 }
 .hour-chart small {
-  font-size: 8px;
-  color: #8ca37d;
+  font-size: 11px;
+  color: #667c58;
   margin-bottom: 4px;
   font-family: Arial, sans-serif;
 }
@@ -230,15 +230,15 @@
   border-bottom: 1px solid #edf1e6;
   padding: 10px 0;
   font-size: 11px;
-  color: #8ba37d;
+  color: #657c58;
 }
 .daily-report b {
   font-weight: 500;
   color: #537944;
 }
 .report-coverage {
-  font-size: 10px;
-  color: #a5b297;
+  font-size: 11px;
+  color: #6a7a5a;
   margin: 18px 0 25px;
   line-height: 1.9;
 }
@@ -257,14 +257,14 @@
   font-size: 18px;
 }
 .report-history header p {
-  font-size: 10px;
+  font-size: 11px;
   margin-top: 5px;
 }
 .report-history .admin-table th {
-  font-size: 10px;
+  font-size: 11px;
 }
 .report-history .admin-table td {
-  font-size: 10px;
+  font-size: 11px;
 }
 .report-pagination {
   display: flex;
@@ -275,19 +275,19 @@
 }
 .report-pagination > span {
   font: 11px Arial;
-  color: #92a580;
+  color: #697c58;
 }
 .reports > .error {
   margin-bottom: 20px;
 }
 .report-history .button {
-  font-size: 10px;
+  font-size: 11px;
 }
 .history-limit {
-  font-size: 10px;
+  font-size: 11px;
   padding: 12px;
   background: #f2f7ee;
-  color: #8ba37b;
+  color: #657b56;
   border-radius: 8px;
   margin-top: 15px;
 }
@@ -296,8 +296,8 @@
 }
 .retry-alert {
   background: transparent;
-  color: #8aa577;
-  font-size: 10px;
+  color: #647d53;
+  font-size: 11px;
   text-decoration: underline;
   padding: 7px;
 }
@@ -342,13 +342,13 @@
     font-size: 22px;
   }
   .report-controls p {
-    font-size: 10px;
+    font-size: 11px;
   }
   .report-actions {
     gap: 7px;
   }
   .report-actions select {
-    font-size: 10px;
+    font-size: 11px;
     max-width: 140px;
   }
   .report-metrics {
@@ -361,10 +361,10 @@
     font-size: 24px;
   }
   .report-metrics small {
-    font-size: 10px;
+    font-size: 11px;
   }
   .report-metrics p {
-    font-size: 8px;
+    font-size: 11px;
   }
   .report-charts > .panel {
     padding: 19px;
@@ -382,10 +382,10 @@
     height: 150px;
   }
   .hour-chart b {
-    font-size: 7px;
+    font-size: 11px;
   }
   .hour-chart small {
-    font-size: 7px;
+    font-size: 11px;
   }
   .report-history {
     padding: 18px;
@@ -402,13 +402,13 @@
     margin-inline: -7px;
   }
   .report-coverage {
-    font-size: 9px;
+    font-size: 11px;
   }
   .order-alerts .button {
-    font-size: 10px;
+    font-size: 11px;
   }
   .customer-card .order-alerts .alert-help {
-    font-size: 9px;
+    font-size: 11px;
   }
 }
 @media (prefers-reduced-motion: reduce) {
@@ -428,8 +428,8 @@
   margin-bottom: 22px;
 }
 .custom-report-range label {
-  font-size: 10px;
-  color: #809873;
+  font-size: 11px;
+  color: #677c5c;
 }
 .custom-report-range input {
   font-size: 12px;
@@ -451,7 +451,7 @@
   cursor: pointer;
 }
 .lock-help p {
-  font-size: 10px;
+  font-size: 11px;
   color: #a9c5b3;
   margin: 12px 0;
 }
@@ -554,7 +554,7 @@
   display: grid;
   grid-template-columns: 24px minmax(0, 1fr);
   gap: 7px;
-  font-size: 10px;
+  font-size: 11px;
   color: var(--analytics-muted);
 }
 .analytics-daily svg {
@@ -597,7 +597,7 @@
   min-width: 490px;
   table-layout: fixed;
   border-spacing: 2px;
-  font-size: 10px;
+  font-size: 11px;
   color: var(--analytics-muted);
 }
 .analytics-heat th {
@@ -617,7 +617,7 @@
   align-items: center;
   gap: 3px;
   margin-top: 10px;
-  font-size: 10px;
+  font-size: 11px;
   color: var(--analytics-muted);
 }
 .analytics-legend i {
@@ -647,7 +647,7 @@
 .analytics-hourly span {
   position: absolute;
   top: 100%;
-  font-size: 9px;
+  font-size: 11px;
   color: var(--analytics-muted);
 }
 .analytics .report-coverage {
@@ -685,7 +685,7 @@
   color: #153c38;
 }
 .analytics-ratings-score span {
-  font-size: 10px;
+  font-size: 11px;
   color: var(--analytics-muted);
 }
 .analytics-ratings ul,

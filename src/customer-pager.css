@@ -262,12 +262,12 @@
 }
 .pager-powered a span {
   color: #078574;
-  font-size: 10px;
+  font-size: 11px;
 }
 .pager-powered small {
   flex-basis: 100%;
   text-align: center;
-  font-size: 10px;
+  font-size: 11px;
   margin-top: 5px;
   color: #a6afa0;
 }

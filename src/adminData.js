@@ -293,3 +293,66 @@ export async function removeMember(user_id) {
   }
   check(await db.from('memberships').delete().eq('user_id', user_id));
 }
+
+// Requests for Pro, per-shop usage/features/owner, accounts and platform stats.
+export async function loadAdminExtras() {
+  if (!cloud) {
+    const d = read();
+    const today = new Date();
+    return {
+      requests: d.requests || [],
+      overview: {
+        free_limit: 100,
+        shops: d.shops.map((s) => ({
+          id: s.id,
+          paid: false,
+          orders_month: s.order_count || 0,
+          orders_total: s.order_count || 0,
+          last_order_at: null,
+          owner: null,
+          members: d.memberships.filter((m) => m.shop_id === s.id).length,
+          features: {},
+          request: (d.requests || []).find((r) => r.shop_id === s.id) || null,
+        })),
+      },
+      members: d.memberships.map((m) => ({ ...m, email: null, phone: null, owner: false })),
+      stats: {
+        signups: Array.from({ length: 12 }, (_, i) => ({
+          week: new Date(today - (11 - i) * 7 * 86400000).toISOString().slice(0, 10),
+          count: 0,
+        })),
+        orders: Array.from({ length: 30 }, (_, i) => ({
+          day: new Date(today - (29 - i) * 86400000).toISOString().slice(0, 10),
+          count: 0,
+        })),
+      },
+    };
+  }
+  const [requests, overview, members, stats] = await Promise.all([
+    db.rpc('admin_plan_requests'),
+    db.rpc('admin_shop_overview'),
+    db.rpc('admin_members'),
+    db.rpc('admin_platform_stats'),
+  ]).then((results) => results.map(check));
+  return { requests, overview, members, stats };
+}
+
+export async function resolvePlanRequest(id, outcome) {
+  if (!cloud) {
+    const d = read();
+    d.requests = (d.requests || []).filter((r) => r.id !== id);
+    write(d, 'plan_requests', id);
+    return true;
+  }
+  return check(await db.rpc('admin_resolve_plan_request', { target: id, outcome }));
+}
+
+const uuidPattern = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
+// Account id from an email, a phone number or a pasted UUID.
+export async function findAccount(contact) {
+  const value = contact.trim();
+  if (uuidPattern.test(value)) return value;
+  if (!cloud) return null;
+  return check(await db.rpc('admin_find_user', { contact: value }));
+}

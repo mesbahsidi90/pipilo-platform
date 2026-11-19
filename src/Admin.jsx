@@ -19,13 +19,22 @@ import {
   Settings2,
   AlertCircle,
   ClipboardList,
+  Bell,
+  BarChart3,
+  Download,
+  FileText,
 } from 'lucide-react';
 import Brand from './Brand';
 import AdminOrderActivity from './AdminOrderActivity';
+import { AlertList, ShopSheet, StatsTab, exportShops } from './AdminInsights';
+import { adminAlerts } from './adminDomain';
 import { cloud, db } from './store';
 import {
   isAdmin,
   loadAdmin,
+  loadAdminExtras,
+  resolvePlanRequest,
+  findAccount,
   saveShop,
   savePlan,
   saveMember,
@@ -35,15 +44,18 @@ import {
   expired,
   operating,
 } from './adminData';
+import './merchant-workspace.css';
 import './admin.css';
 import { usePanelTitle } from './pageTitle';
 const nav = [
   ['overview', bippoT('نظرة عامة'), LayoutDashboard],
+  ['requests', bippoT('طلبات وتنبيهات'), Bell],
   ['shops', bippoT('المحلات والأنشطة'), Store],
   ['orders', bippoT('نشاط الطلبات'), ClipboardList],
   ['subscriptions', bippoT('الاشتراكات'), CreditCard],
   ['plans', bippoT('الخطط والأسعار'), Layers],
   ['team', bippoT('حسابات المحلات'), Users],
+  ['stats', bippoT('الإحصائيات'), BarChart3],
   ['activity', bippoT('سجل التغييرات'), History],
 ];
 const formatDate = (d) =>
@@ -248,15 +260,18 @@ function AdminPanel({ session }) {
     [edit, setEdit] = useState(null),
     [planEdit, setPlanEdit] = useState(null),
     [teamForm, setTeamForm] = useState(null),
-    [revoke, setRevoke] = useState(null);
+    [revoke, setRevoke] = useState(null),
+    [extras, setExtras] = useState(null),
+    [sheet, setSheet] = useState(null);
   const alive = useRef(true);
   const [ordersRefresh, setOrdersRefresh] = useState(0);
   async function refresh() {
     setLoading(true);
     try {
-      const d = await loadAdmin();
+      const [d, x] = await Promise.all([loadAdmin(), loadAdminExtras().catch(() => null)]);
       if (alive.current) {
         setData(d);
+        setExtras(x);
         setError('');
       }
     } catch (e) {
@@ -324,6 +339,26 @@ function AdminPanel({ session }) {
       .length,
     staff: members.length,
   };
+  const overview = extras?.overview?.shops || [],
+    freeLimit = extras?.overview?.free_limit || 100;
+  const alerts = adminAlerts({ shops, subs, overview, freeLimit });
+  const accounts = extras?.members || members.map((m) => ({ ...m }));
+  function resolveRequest(id, outcome, shop) {
+    perform(
+      () => resolvePlanRequest(id, outcome),
+      outcome === 'done'
+        ? bippoT('علّمنا الطلب. راجع الاشتراك الاحترافي واحفظ.')
+        : bippoT('تجاهلنا الطلب.'),
+      () => {
+        if (outcome !== 'done' || !shop) return;
+        openShop(shop);
+        setEdit(
+          (value) => value && { ...value, plan_id: professionalPlanId, sub_status: 'active' },
+        );
+      },
+    );
+  }
+  const sheetShop = sheet && shops.find((s) => s.id === sheet);
   function changeTab(id) {
     setTab(id);
     setQuery('');
@@ -342,6 +377,10 @@ function AdminPanel({ session }) {
     subscriptions: bippoT('تابع الاشتراكات وبدّل الخطط وفترات الصلاحية.'),
     plans: bippoT('الخطط والأسعار'),
     team: bippoT('حسابات المحلات'),
+    requests: bippoT(
+      'محلات طلبت الاحترافية، تجارب قريبة تكمل، ومحلات قريبة من حد الباقة المجانية.',
+    ),
+    stats: bippoT('الطلبات والتسجيلات واستعمال المزايا.'),
     activity: bippoT('سجل التغييرات'),
   }[tab];
 
@@ -369,6 +408,9 @@ function AdminPanel({ session }) {
               <Icon size={17} aria-hidden="true" />
               <span>{label}</span>
               {id === 'shops' && data && <small className="admin-nav-count">{shops.length}</small>}
+              {id === 'requests' && alerts.length > 0 && (
+                <small className="admin-nav-count alert">{alerts.length}</small>
+              )}
             </button>
           ))}
         </nav>
@@ -479,6 +521,28 @@ function AdminPanel({ session }) {
                     </article>
                   ))}
                 </section>
+                <section className="panel admin-section admin-followup">
+                  <div className="admin-section-title">
+                    <div>
+                      <h2>{bippoT('يحتاجو اتصال')}</h2>
+                      <p>{bippoT('طلبات التفعيل والاشتراكات اللي تحتاج متابعة.')}</p>
+                    </div>
+                    {alerts.length > 3 && (
+                      <button onClick={() => changeTab('requests')} className="admin-text-link">
+                        {bippoT('شوف الكل ')}
+                        <ArrowUpLeft size={14} />
+                      </button>
+                    )}
+                  </div>
+                  <AlertList
+                    alerts={alerts}
+                    overview={overview}
+                    onOpen={(shop) => setSheet(shop.id)}
+                    onResolve={resolveRequest}
+                    busy={busy}
+                    limit={3}
+                  />
+                </section>
                 <div className="admin-overview-grid">
                   <section className="panel admin-section">
                     <div className="admin-section-title">
@@ -505,8 +569,8 @@ function AdminPanel({ session }) {
                         <Badge status={s.status} />
                         <button
                           className="icon-button"
-                          onClick={() => openShop(s)}
-                          aria-label={bippoT('تعديل ') + s.name}
+                          onClick={() => setSheet(s.id)}
+                          aria-label={bippoT('ملف {0}', [s.name])}
                         >
                           <Settings2 size={17} />
                         </button>
@@ -594,6 +658,15 @@ function AdminPanel({ session }) {
                     {filtered.length}
                     {bippoT(' نتيجة')}
                   </small>
+                  <button
+                    type="button"
+                    className="button outline small"
+                    disabled={!filtered.length}
+                    onClick={() => exportShops({ shops: filtered, subFor, planFor, overview })}
+                  >
+                    <Download size={15} />
+                    CSV
+                  </button>
                 </div>
                 <div className="admin-table-scroll">
                   <table className="admin-table">
@@ -648,8 +721,13 @@ function AdminPanel({ session }) {
                             </td>
                             <td>{formatDate(sub?.period_end)}</td>
                             <td>
-                              <button className="button outline small" onClick={() => openShop(s)}>
-                                {bippoT('تعديل')}
+                              <button
+                                className="button outline small"
+                                onClick={() => setSheet(s.id)}
+                                aria-label={bippoT('ملف {0}', [s.name])}
+                              >
+                                <FileText size={15} />
+                                {bippoT('الملف')}
                               </button>
                             </td>
                           </tr>
@@ -756,18 +834,34 @@ function AdminPanel({ session }) {
                   <table className="admin-table">
                     <thead>
                       <tr>
-                        <th>{bippoT('معرّف الحساب')}</th>
+                        <th>{bippoT('الحساب')}</th>
                         <th>{bippoT('المحل')}</th>
+                        <th>{bippoT('آخر دخول')}</th>
                         <th>{bippoT('الإجراءات')}</th>
                       </tr>
                     </thead>
                     <tbody>
-                      {members.map((m) => (
+                      {accounts.map((m) => (
                         <tr key={m.user_id}>
                           <td>
-                            <code dir="ltr">{m.user_id}</code>
+                            <b dir="ltr">{m.email || (m.phone ? '+' + m.phone : '—')}</b>
+                            <small>
+                              {m.owner ? bippoT('صاحب المحل') : bippoT('موظف')}
+                              {m.email && m.phone && (
+                                <>
+                                  {' · '}
+                                  <span dir="ltr">+{m.phone}</span>
+                                </>
+                              )}
+                            </small>
+                            <small dir="ltr">{m.user_id}</small>
                           </td>
                           <td>{shops.find((s) => s.id === m.shop_id)?.name || '—'}</td>
+                          <td>
+                            {m.last_sign_in_at
+                              ? new Date(m.last_sign_in_at).toLocaleDateString(bippoLocale)
+                              : '—'}
+                          </td>
                           <td>
                             <button className="admin-text-link" onClick={() => setTeamForm(m)}>
                               {bippoT('تغيير المحل')}
@@ -781,17 +875,44 @@ function AdminPanel({ session }) {
                     </tbody>
                   </table>
                 </div>
-                {!members.length && <Empty text={bippoT('مازال ما كاش حسابات مرتبطة.')} />}
+                {!accounts.length && <Empty text={bippoT('مازال ما كاش حسابات مرتبطة.')} />}
                 <div className="admin-tip">
                   <Users size={19} />
                   <p>
                     {bippoT(
-                      'أنشئ أو ادعُ الحساب أولًا من Authentication في Supabase، ثم استعمل UUID تاعو هنا. إدارة كلمات المرور ومنح صلاحية أدمين تبقى خارج هاذ الصفحة.',
+                      'الحساب لازم يكون مسجّل في Bipilo. اكتب الإيميل ولا رقم التليفون تاعو باش تربطو. إدارة كلمات المرور ومنح صلاحية أدمين تبقى خارج هاذ الصفحة.',
                     )}
                   </p>
                 </div>
               </section>
             )}
+            {tab === 'requests' && (
+              <section className="panel admin-section">
+                <AlertList
+                  alerts={alerts}
+                  overview={overview}
+                  onOpen={(shop) => setSheet(shop.id)}
+                  onResolve={resolveRequest}
+                  busy={busy}
+                />
+                <div className="admin-tip">
+                  <AlertCircle size={18} />
+                  <p>
+                    {bippoT(
+                      'المحل يطلب التفعيل من صفحة «الاشتراك». كي يخلّص، اضغط «فعّل الاحترافية» واحفظ الخطة.',
+                    )}
+                  </p>
+                </div>
+              </section>
+            )}
+            {tab === 'stats' &&
+              (extras ? (
+                <StatsTab stats={extras.stats} overview={overview} shops={shops} />
+              ) : (
+                <div className="panel admin-loading">
+                  {bippoT('ما قدرناش نحمّلو الإحصائيات. عاود جرّب التحديث.')}
+                </div>
+              ))}
             {tab === 'activity' && <Activity rows={data.audit} shops={shops} />}
           </>
         )}
@@ -1086,20 +1207,43 @@ function AdminPanel({ session }) {
             </form>
           </Modal>
         )}
+        {sheetShop && (
+          <Modal title={sheetShop.name} close={() => setSheet(null)}>
+            <ShopSheet
+              shop={sheetShop}
+              sub={subFor(sheetShop.id)}
+              plan={planFor(subFor(sheetShop.id)?.plan_id)}
+              row={overview.find((r) => r.id === sheetShop.id)}
+              freeLimit={freeLimit}
+              notes={subFor(sheetShop.id)?.notes}
+              branches={shops.filter((b) =>
+                overview.some((r) => r.id === b.id && r.parent_id === sheetShop.id),
+              )}
+              onEdit={() => {
+                setSheet(null);
+                openShop(sheetShop);
+              }}
+            />
+          </Modal>
+        )}
         {teamForm && (
           <Modal title={bippoT('ربط حساب بمحل')} close={() => !busy && setTeamForm(null)}>
             <form
               onSubmit={(e) => {
                 e.preventDefault();
                 perform(
-                  () => saveMember(teamForm.user_id, teamForm.shop_id),
+                  async () => {
+                    const id = await findAccount(teamForm.user_id);
+                    if (!id) throw new Error(bippoT('ما لقيناش حساب بهذا الإيميل ولا الرقم.'));
+                    await saveMember(id, teamForm.shop_id);
+                  },
                   bippoT('تسجّل ربط الحساب.'),
                   () => setTeamForm(null),
                 );
               }}
             >
               <label>
-                {bippoT('معرّف حساب Supabase (UUID)')}
+                {bippoT('إيميل الحساب، رقم التليفون ولا UUID')}
                 <input
                   dir="ltr"
                   autoFocus

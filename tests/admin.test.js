@@ -34,3 +34,37 @@ test('order follow-up waits for three full Algerian days and skips unused or sus
   assert.equal(needsOrderFollowup({ ...shop, last_order_at: null }, today), false);
   assert.equal(needsOrderFollowup({ ...shop, status: 'suspended' }, today), false);
 });
+
+test('admin alerts: requests, expiry, trial ending, free plan near limit', async () => {
+  const { adminAlerts } = await import('../src/adminDomain.js');
+  const now = Date.parse('2026-11-19T10:00:00Z');
+  const day = 86400000;
+  const shops = ['a', 'b', 'c', 'd', 'e', 'f'].map((id) => ({ id, status: 'active' }));
+  shops.push({ id: 'g', status: 'suspended' });
+  const subs = [
+    { shop_id: 'b', status: 'active', period_end: new Date(now - day).toISOString() },
+    { shop_id: 'c', status: 'trial', period_end: new Date(now + 3 * day).toISOString() },
+    { shop_id: 'd', status: 'trial', period_end: new Date(now + 20 * day).toISOString() },
+    { shop_id: 'g', status: 'active', period_end: new Date(now - day).toISOString() },
+  ];
+  const overview = [
+    { id: 'a', request: { created_at: '2026-11-18' }, orders_month: 95 },
+    { id: 'e', paid: false, orders_month: 85 },
+    { id: 'f', paid: true, orders_month: 500 },
+  ];
+  const alerts = adminAlerts({ shops, subs, overview, freeLimit: 100, now });
+  assert.deepEqual(
+    alerts.map((x) => x.shop.id + ':' + x.kind),
+    ['a:request', 'b:expired', 'c:trial_ending', 'e:near_limit'],
+  );
+  assert.equal(alerts[2].days, 3);
+});
+
+test('CSV export escapes and blocks formulas', async () => {
+  const { toCsv } = await import('../src/adminDomain.js');
+  const csv = toCsv([
+    ['name', 'note'],
+    ['مقهى, "الرواق"', '=HYPERLINK("x")'],
+  ]);
+  assert.equal(csv, '﻿name,note\r\n"مقهى, ""الرواق""","\'=HYPERLINK(""x"")"');
+});

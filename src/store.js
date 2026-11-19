@@ -8,9 +8,10 @@ const key = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY;
 // The no-account trial at /jarreb runs on local sample data (see sandboxRules).
 export const sandbox = (() => {
   try {
-    const on = sandboxActive(location, sessionStorage.getItem(sandboxFlag) === '1');
-    if (on) sessionStorage.setItem(sandboxFlag, '1');
-    else sessionStorage.removeItem(sandboxFlag);
+    const saved = localStorage.getItem(sandboxFlag);
+    const on = sandboxActive(location, saved ? Number(saved) : null);
+    if (on) localStorage.setItem(sandboxFlag, String(Date.now()));
+    else if (saved) localStorage.removeItem(sandboxFlag);
     return on;
   } catch {
     return false;

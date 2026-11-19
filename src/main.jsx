@@ -171,7 +171,10 @@ function App() {
   ) : (
     <Landing />
   );
-  if (!sandbox || page === 'jarreb') return view;
+  // No trial bar on the full-screen displays (TV, kitchen, counter tablet).
+  const screen =
+    page === 'display' || (page === 'dashboard' && ['kitchen', 'customer-screen'].includes(token));
+  if (!sandbox || page === 'jarreb' || screen) return view;
   return (
     <>
       <Suspense fallback={null}>

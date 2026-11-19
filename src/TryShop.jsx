@@ -95,6 +95,7 @@ export function SandboxBar() {
     <div className="sandbox-bar" role="note">
       <span>{t('تجربة بأمثلة · البيانات في هذا المتصفح برك')}</span>
       <a href="/jarreb">{t('بدّل النشاط')}</a>
+      <a href="/login">{t('اخرج من التجربة')}</a>
       <a className="sandbox-bar-cta" href="/signup">
         {t('سجّل محلك مجانًا')}
       </a>

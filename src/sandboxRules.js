@@ -1,5 +1,5 @@
 // «جرّب لوحة التحكم» at /jarreb: the real merchant screens running on sample
-// data kept in this browser tab only, without an account.
+// data kept in this browser only, without an account.
 
 export const sandboxPath = '/jarreb';
 export const sandboxFlag = 'bipilo-sandbox';
@@ -7,10 +7,15 @@ export const sandboxFlag = 'bipilo-sandbox';
 // Pages that always use the real platform; opening one ends the trial.
 const realPages = /^\/(?:signup|login|account|admin|reset-password|forgot-password|invite)(?:\/|$)/;
 
-// Whether this page load runs in the trial: started at /jarreb, kept while
-// moving around the dashboard and customer pages of the same tab.
-export function sandboxActive({ pathname, hash }, flagged) {
+// The trial lasts this long after its last page load.
+export const sandboxTtl = 6 * 3600000;
+
+// Whether this page load runs in the trial: started at /jarreb, kept for the
+// dashboard, its screens (opened in new tabs) and customer pages.
+// `startedAt` is the saved trial time (ms) or null.
+export function sandboxActive({ pathname, hash }, startedAt, now = Date.now()) {
   if (pathname === sandboxPath || pathname.startsWith(sandboxPath + '/')) return true;
+  const flagged = Number.isFinite(startedAt) && now - startedAt < sandboxTtl;
   if (!flagged) return false;
   if (realPages.test(pathname)) return false;
   if (pathname === '/' && !hash) return false;

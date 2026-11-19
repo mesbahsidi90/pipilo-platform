@@ -20,6 +20,10 @@ export function shopActivity(kind) {
     label: shopTypes[key],
     foodService,
     clinic: key === 'clinic',
+    // Menu and phone ordering only make sense where food is sold
+    // («نشاط آخر» keeps them, it may be a bakery or a shop with a catalogue).
+    menu: foodService || key === 'other',
+    loyalty: key !== 'clinic',
     trackingMode: foodService ? 'order' : 'counter',
   };
 }

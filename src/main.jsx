@@ -19,7 +19,17 @@ import {
   Printer,
   Star,
 } from 'lucide-react';
-import { cloud, db, listOrders, createOrder, transition, track, display, subscribe } from './store';
+import {
+  sandbox,
+  cloud,
+  db,
+  listOrders,
+  createOrder,
+  transition,
+  track,
+  display,
+  subscribe,
+} from './store';
 import { statuses } from './domain';
 import './style.css';
 import './redesign.css';
@@ -29,6 +39,8 @@ import Landing, { Brand } from './Landing';
 captureVisit();
 const Account = lazy(() => import('./Account'));
 const Signup = lazy(() => import('./Signup'));
+const TryShop = lazy(() => import('./TryShop'));
+const SandboxBar = lazy(() => import('./TryShop').then((m) => ({ default: m.SandboxBar })));
 import PublicPages from './PublicPages';
 import { publicRoutes, pageInfo } from './publicContent';
 const ResetPassword = lazy(() => import('./ResetPassword'));
@@ -96,6 +108,7 @@ const routeTitles = {
   login: bippoT('تسجيل الدخول'),
   dashboard: bippoT('لوحة التحكم'),
   demo: bippoT('تجربة Bipilo'),
+  jarreb: bippoT('جرّب لوحة التحكم'),
   display: bippoT('شاشة الانتظار'),
   follow: bippoT('تتبّع الطلب'),
   invite: bippoT('قبول الدعوة'),
@@ -121,10 +134,12 @@ function App() {
     addEventListener('hashchange', change);
     return () => removeEventListener('hashchange', change);
   }, []);
-  return publicRoutes.includes(page) ? (
+  const view = publicRoutes.includes(page) ? (
     <PublicPages key={page} page={page} />
   ) : page === 'invite' ? (
     <AcceptInvite key={token} token={token} />
+  ) : page === 'jarreb' ? (
+    <TryShop />
   ) : page === 'signup' ? (
     <Signup key={token} initialKind={Object.hasOwn(shopTypes, token) ? token : 'cafe'} />
   ) : page === 'demo' ? (
@@ -155,6 +170,15 @@ function App() {
     <Dashboard key={token} workspace={token} />
   ) : (
     <Landing />
+  );
+  if (!sandbox || page === 'jarreb') return view;
+  return (
+    <>
+      <Suspense fallback={null}>
+        <SandboxBar />
+      </Suspense>
+      {view}
+    </>
   );
 }
 function useLive(loader, deps = []) {

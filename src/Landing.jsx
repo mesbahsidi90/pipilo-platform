@@ -498,6 +498,9 @@ export default function Landing() {
               <a href="#try" onClick={jump('try')} className="button outline full">
                 {bippoT('افتح التجربة')}
               </a>
+              <a href="/jarreb" className="access-try-dashboard">
+                {bippoT('ولا جرّب لوحة التحكم بأمثلة')}
+              </a>
             </article>
             <article className="access-card featured">
               <span className="access-badge">{bippoT('للعمل بين الأجهزة')}</span>

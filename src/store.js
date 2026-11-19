@@ -2,9 +2,21 @@ import { t as bippoT } from './i18n.js';
 import { createClient } from '@supabase/supabase-js';
 import { normalizeNumber, validTransition, active, cleanGuestName } from './domain';
 import { branchFetch } from './merchantBranches';
+import { sandboxActive, sandboxFlag } from './sandboxRules';
 const url = import.meta.env.VITE_SUPABASE_URL;
 const key = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY;
-export const cloud = Boolean(url && key);
+// The no-account trial at /jarreb runs on local sample data (see sandboxRules).
+export const sandbox = (() => {
+  try {
+    const on = sandboxActive(location, sessionStorage.getItem(sandboxFlag) === '1');
+    if (on) sessionStorage.setItem(sandboxFlag, '1');
+    else sessionStorage.removeItem(sandboxFlag);
+    return on;
+  } catch {
+    return false;
+  }
+})();
+export const cloud = Boolean(url && key) && !sandbox;
 export const authLinkError = new URLSearchParams(location.hash.slice(1)).get('error_description');
 export const db = cloud ? createClient(url, key, { global: { fetch: branchFetch(url) } }) : null;
 const STORAGE = 'nawba-demo-v1';

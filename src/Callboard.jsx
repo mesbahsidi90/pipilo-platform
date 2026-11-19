@@ -149,6 +149,10 @@ export function CallboardHero({ onTry }) {
               {bippoT('جرّب كيفاش يصوني تليفونك ')}
               <ArrowLeft size={17} />
             </a>
+            <a className="callboard-secondary" href="/jarreb">
+              {bippoT('شوف لوحة التحكم بلا تسجيل ')}
+              <ArrowLeft size={17} />
+            </a>
           </div>
           <ul className="callboard-facts">
             <li>

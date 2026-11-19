@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { ChevronLeft, MessageCircle } from 'lucide-react';
-import { cloud, db } from './store';
+import { cloud, db, sandbox } from './store';
 import { t, locale } from './i18n.js';
 import { subStates } from './adminData';
 import { supportWhatsApp } from './contactDetails';
@@ -91,8 +91,8 @@ export default function MerchantSubscription({ shopId, shopError, branchCount })
         )}
       </section>
 
-      {!activeProfessional && <PlanRequest />}
-      <ReferralCard />
+      {!activeProfessional && !sandbox && <PlanRequest />}
+      {!sandbox && <ReferralCard />}
       <a className="billing-help" href={supportWhatsApp} target="_blank" rel="noopener noreferrer">
         <MessageCircle size={18} />
         <span>{t('تحتاج مساعدة؟ تواصل مع الدعم المباشر على واتساب')}</span>

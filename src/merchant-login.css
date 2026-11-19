@@ -40,3 +40,8 @@
 .whatsapp-code-actions { display: flex; justify-content: space-between; flex-wrap: wrap; gap: 8px 16px; }
 .whatsapp-code-actions .link { padding: 4px 0; border: 0; background: none; color: var(--bippo-primary-deep); font: inherit; font-size: .88rem; text-decoration: underline; text-underline-offset: 3px; cursor: pointer; }
 .whatsapp-code-actions .link:disabled { color: var(--bippo-muted); text-decoration: none; cursor: default; }
+.signup-steps { display: flex; gap: 8px; margin: 4px 0 2px; padding: 0; list-style: none; }
+.signup-steps li { display: inline-flex; align-items: center; gap: 6px; padding: 4px 12px 4px 6px; border: 1px solid var(--bippo-border); border-radius: 999px; color: var(--bippo-muted); font-size: .85rem; }
+.signup-steps li span { display: grid; place-items: center; width: 22px; height: 22px; border-radius: 50%; background: var(--bippo-bg); font-size: .8rem; font-weight: 700; }
+.signup-steps li.current { border-color: var(--bippo-primary); color: var(--bippo-primary-deep); font-weight: 600; }
+.signup-steps li.current span, .signup-steps li.done span { background: var(--bippo-primary); color: #fff; }

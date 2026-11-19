@@ -16,9 +16,6 @@ export default function Signup({ initialKind = 'cafe' }) {
     [waitChoice, setWaitChoice] = useState(null),
     [qrChoice, setQrChoice] = useState(null),
     [city, setCity] = useState(''),
-    [email, setEmail] = useState(''),
-    [password, setPassword] = useState(''),
-    [confirm, setConfirm] = useState(''),
     [session, setSession] = useState(null),
     [loading, setLoading] = useState(cloud),
     [busy, setBusy] = useState(false),
@@ -56,14 +53,6 @@ export default function Signup({ initialKind = 'cafe' }) {
   async function submit(e) {
     e.preventDefault();
     setError('');
-    if (cloud && !session && method === 'whatsapp') {
-      setError(bippoT('أكّد رقم الهاتف بالكود اللي وصلك في واتساب.'));
-      return;
-    }
-    if (!session && password !== confirm) {
-      setError(bippoT('كلمتا المرور ماشي كيف كيف.'));
-      return;
-    }
     setBusy(true);
     try {
       if (!cloud) {
@@ -81,20 +70,6 @@ export default function Signup({ initialKind = 'cafe' }) {
         location.assign('/dashboard');
         return;
       }
-      let active = session;
-      if (!active) {
-        const { data, error } = await db.auth.signUp({
-          email: email.trim(),
-          password,
-        });
-        if (error) throw error;
-        active = data.session;
-        setSession(active);
-        if (!active)
-          throw new Error(
-            bippoT('الحساب تسجّل، لكن الدخول المباشر مازال غير مفعّل. تواصل مع إدارة Bipilo.'),
-          );
-      }
       const { error } = await db.rpc('create_my_shop', {
         shop_name: shop.trim(),
         shop_kind: kind,
@@ -107,22 +82,27 @@ export default function Signup({ initialKind = 'cafe' }) {
       location.assign('/dashboard');
     } catch (e) {
       setError(
-        e.code === 'user_already_exists'
-          ? bippoT('هذا البريد عندو حساب. ادخل من صفحة الدخول.')
-          : e.code === 'weak_password'
-            ? bippoT('اختار كلمة مرور أقوى، 12 حرف على الأقل.')
-            : e.status === 429
-              ? bippoT('محاولات كثيرة. استنى شوية وعاود.')
-              : e.message || bippoT('ما قدرناش نكملو التسجيل. عاود المحاولة.'),
+        e.status === 429
+          ? bippoT('محاولات كثيرة. استنى شوية وعاود.')
+          : e.message || bippoT('ما قدرناش نكملو التسجيل. عاود المحاولة.'),
       );
     } finally {
       setBusy(false);
     }
   }
+  if (cloud && loading)
+    return (
+      <div className="merchant-signup">
+        <p role="status">{bippoT('جارٍ الاتصال…')}</p>
+      </div>
+    );
+  if (cloud && !session)
+    return <AccountStep method={method} setMethod={setMethod} onReady={setSession} />;
   return (
     <div className="merchant-signup">
       <form className="panel login" onSubmit={submit}>
         <Brand />
+        {cloud && <SignupSteps current={2} />}
         <h1>{bippoT('خلّينا نجهّزو محلك')}</h1>
         <p>{bippoT('اختار نشاطك وكيفاش زبائنك يتابعو التيكي.')}</p>
         <label>
@@ -232,11 +212,120 @@ export default function Signup({ initialKind = 'cafe' }) {
             ))}
           </select>
         </label>
-        {!session && cloud && <SignInMethod value={method} onChange={setMethod} />}
-        {!session && cloud && method === 'whatsapp' && (
-          <WhatsAppCode onVerified={(active) => setSession(active)} />
+        {error && (
+          <p role="alert" className="error">
+            {error}
+          </p>
         )}
-        {!session && (!cloud || method === 'email') && (
+        <button className="button full" disabled={busy || loading}>
+          {busy ? bippoT('نوجدو محلك…') : bippoT('جهّز المحل')}
+        </button>
+        {!cloud && <small>{bippoT('وضع تجريبي: ما يتنشأش حساب حقيقي.')}</small>}
+        <p className="signup-legal-links">
+          {bippoT('اطّلع على ')}
+          <a href="#terms">{bippoT('شروط الاستعمال')}</a>
+          {bippoT(' و')}
+          <a href="#privacy">{bippoT('سياسة الخصوصية')}</a>
+          {bippoT('، أو ')}
+          <a href="#contact">{bippoT('تواصل معانا')}</a>.
+        </p>
+      </form>
+    </div>
+  );
+}
+
+function SetupOption({ name, value, selected, Icon, title, description, onSelect }) {
+  return (
+    <label className="signup-option">
+      <input
+        type="radio"
+        name={name}
+        value={value}
+        checked={selected === value}
+        onChange={onSelect}
+      />
+      <span>
+        <strong>
+          <Icon size={18} aria-hidden="true" />
+          {title}
+        </strong>
+        <small>{description}</small>
+      </span>
+    </label>
+  );
+}
+
+// «1 الحساب · 2 المحل»
+function SignupSteps({ current }) {
+  const steps = [bippoT('رقمك'), bippoT('محلك')];
+  return (
+    <ol className="signup-steps" aria-label={bippoT('خطوات التسجيل')}>
+      {steps.map((label, index) => (
+        <li
+          key={label}
+          className={index + 1 < current ? 'done' : index + 1 === current ? 'current' : ''}
+          aria-current={index + 1 === current ? 'step' : undefined}
+        >
+          <span>{index + 1 < current ? '✓' : index + 1}</span>
+          {label}
+        </li>
+      ))}
+    </ol>
+  );
+}
+
+const emailErrors = (e) =>
+  e.code === 'user_already_exists'
+    ? bippoT('هذا البريد عندو حساب. ادخل من صفحة الدخول.')
+    : e.code === 'weak_password'
+      ? bippoT('اختار كلمة مرور أقوى، 12 حرف على الأقل.')
+      : e.status === 429
+        ? bippoT('محاولات كثيرة. استنى شوية وعاود.')
+        : e.message || bippoT('ما قدرناش نكملو التسجيل. عاود المحاولة.');
+
+// Step 1: the WhatsApp number and its code (or email and password).
+function AccountStep({ method, setMethod, onReady }) {
+  const [email, setEmail] = useState(''),
+    [password, setPassword] = useState(''),
+    [confirm, setConfirm] = useState(''),
+    [busy, setBusy] = useState(false),
+    [error, setError] = useState('');
+
+  async function signUpWithEmail(event) {
+    event.preventDefault();
+    setError('');
+    if (password !== confirm) return setError(bippoT('كلمتا المرور ماشي كيف كيف.'));
+    setBusy(true);
+    try {
+      const { data, error } = await db.auth.signUp({ email: email.trim(), password });
+      if (error) throw error;
+      if (!data.session)
+        throw new Error(
+          bippoT('الحساب تسجّل، لكن الدخول المباشر مازال غير مفعّل. تواصل مع إدارة Bipilo.'),
+        );
+      onReady(data.session);
+    } catch (e) {
+      setError(emailErrors(e));
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  return (
+    <div className="merchant-signup">
+      <form className="panel login" onSubmit={signUpWithEmail}>
+        <Brand />
+        <SignupSteps current={1} />
+        <h1>{bippoT('أنشئ حسابك')}</h1>
+        <p>
+          {method === 'whatsapp'
+            ? bippoT('اكتب رقم واتساب تاعك، نبعثولك كود تأكيد. من بعد نجهّزو محلك.')
+            : bippoT('اكتب بريدك وكلمة مرور. من بعد نجهّزو محلك.')}
+        </p>
+        <SignInMethod value={method} onChange={setMethod} />
+        {method === 'whatsapp' ? (
+          <WhatsAppCode onVerified={onReady} />
+        ) : (
           <>
             <label>
               {bippoT('البريد الإلكتروني')}
@@ -273,28 +362,20 @@ export default function Signup({ initialKind = 'cafe' }) {
             <small>
               {bippoT('12 حرف على الأقل. تأكد من بريدك باش تقدر ترجع حسابك إذا نسيت كلمة المرور.')}
             </small>
+            {error && (
+              <p role="alert" className="error">
+                {error}
+              </p>
+            )}
+            <button className="button full" disabled={busy}>
+              {busy ? bippoT('نوجدو حسابك…') : bippoT('كمّل')}
+            </button>
           </>
         )}
-        {error && (
-          <p role="alert" className="error">
-            {error}
-          </p>
-        )}
-        <button
-          className="button full"
-          disabled={busy || loading || (cloud && !session && method === 'whatsapp')}
-        >
-          {busy ? bippoT('نوجدو حسابك…') : bippoT('جهّز المحل')}
-        </button>
-        {session && cloud && method === 'whatsapp' && (
-          <p className="whatsapp-code-sent">{bippoT('تأكّد رقمك ✓ كمّل وجهّز المحل.')}</p>
-        )}
         <small>
-          {cloud
-            ? method === 'whatsapp'
-              ? bippoT('تدخل بعدها برقمك وكود واتساب، بلا كلمة مرور.')
-              : bippoT('الدخول مباشرة، بلا رسالة تأكيد للبريد.')
-            : bippoT('وضع تجريبي: ما يتنشأش حساب حقيقي.')}
+          {method === 'whatsapp'
+            ? bippoT('تدخل بعدها برقمك وكود واتساب، بلا كلمة مرور.')
+            : bippoT('الدخول مباشرة، بلا رسالة تأكيد للبريد.')}
         </small>
         <a className="recovery-back" href="/login">
           {bippoT('عندك حساب؟ ادخل من هنا')}
@@ -309,26 +390,5 @@ export default function Signup({ initialKind = 'cafe' }) {
         </p>
       </form>
     </div>
-  );
-}
-
-function SetupOption({ name, value, selected, Icon, title, description, onSelect }) {
-  return (
-    <label className="signup-option">
-      <input
-        type="radio"
-        name={name}
-        value={value}
-        checked={selected === value}
-        onChange={onSelect}
-      />
-      <span>
-        <strong>
-          <Icon size={18} aria-hidden="true" />
-          {title}
-        </strong>
-        <small>{description}</small>
-      </span>
-    </label>
   );
 }

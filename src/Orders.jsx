@@ -25,6 +25,8 @@ import {
   BellRing,
   RotateCcw,
   X,
+  Phone,
+  UserX,
 } from 'lucide-react';
 import {
   cloud,
@@ -54,7 +56,8 @@ import MerchantAssistant from './MerchantAssistant';
 import MerchantTeam, { BranchSelector, workspaceAction } from './MerchantTeam';
 import { rememberBranch } from './merchantBranches';
 import './merchant-workspace.css';
-import { clinicAction } from './ClinicQueue';
+import { addPatient, clinicAction } from './ClinicQueue';
+import { cleanPhone, waitedMinutes, whatsappLink } from './clinicRules';
 import { usePanelTitle } from './pageTitle';
 import { retryPush } from './OrderAlerts';
 import { staffSignals } from './guestApi';
@@ -74,6 +77,7 @@ export default function Orders({ Share, workspace }) {
     [error, setError] = useState(''),
     [number, setNumber] = useState(''),
     [guestName, setGuestName] = useState(''),
+    [patient, setPatient] = useState({ name: '', phone: '' }),
     [notice, setNotice] = useState(''),
     [busy, setBusy] = useState(false),
     [selected, setSelected] = useState(null),
@@ -240,14 +244,19 @@ export default function Orders({ Share, workspace }) {
   async function mark(o, status) {
     setBusy(true);
     try {
-      await transition(o, status);
+      await transition(o, status, { clinic: activity.clinic });
       const message = {
         collected: bippoT(activity.clinic ? 'دخل المريض' : 'الطلب {0} تسلّم وبقى محفوظ في السجل.', [
           o.number,
         ]),
         ready: bippoT(activity.clinic ? 'نادينا الرقم {0}.' : 'الطلب {0} راه واجد.', [o.number]),
-        cancelled: bippoT('الطلب تلغى وبقى محفوظ في السجل.'),
-        preparing: bippoT('الطلب رجع لقيد التحضير.'),
+        cancelled:
+          activity.clinic && o.status === 'ready'
+            ? bippoT('علّمنا أن {0} ما جاش. تقدر ترجّعو للانتظار من السجل.', [o.number])
+            : bippoT('الطلب تلغى وبقى محفوظ في السجل.'),
+        preparing: activity.clinic
+          ? bippoT('رجّعنا {0} للانتظار في آخر الصف.', [o.number])
+          : bippoT('الطلب رجع لقيد التحضير.'),
       };
       setNotice(message[status]);
       if (status === 'ready' && cloud) {
@@ -283,6 +292,30 @@ export default function Orders({ Share, workspace }) {
       );
     } catch (e) {
       setNotice(e.message);
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  async function addToQueue(event) {
+    event.preventDefault();
+    const phone = cleanPhone(patient.phone);
+    if (phone === false) return setNotice(bippoT('رقم التليفون ماشي صحيح.'));
+    setBusy(true);
+    setNotice('');
+    try {
+      const ticket = await addPatient(patient.name, phone);
+      if (ticket?.error === 'phone') return setNotice(bippoT('رقم التليفون ماشي صحيح.'));
+      if (!ticket) return setNotice(bippoT('تعذر إضافة رقم دور.'));
+      setSelected(ticket);
+      setPatient({ name: '', phone: '' });
+      setNotice(
+        ticket.guest_name
+          ? bippoT('تزاد {0} برقم {1}.', [ticket.guest_name, ticket.number])
+          : bippoT('تزاد رقم الدور {0}.', [ticket.number]),
+      );
+    } catch (e) {
+      setNotice(e.message || bippoT('تعذر تحديث الطابور. عاود المحاولة.'));
     } finally {
       setBusy(false);
     }
@@ -412,6 +445,32 @@ export default function Orders({ Share, workspace }) {
           <DotNumber value={order.number} />
           <div>
             {order.guest_name && <b className="merchant-guest-name">{order.guest_name}</b>}
+            {activity.clinic && order.status === 'preparing' && (
+              <span className="clinic-place">
+                <b>#{groups.preparing.findIndex((row) => row.id === order.id) + 1}</b>
+                {bippoT('يستنّى من {0} د', [waitedMinutes(order)])}
+              </span>
+            )}
+            {order.guest_phone && (
+              <span className="clinic-phone">
+                <a
+                  href={'tel:' + order.guest_phone}
+                  aria-label={bippoT('اتصل بـ {0}', [order.number])}
+                >
+                  <Phone size={14} />
+                  <span dir="ltr">{order.guest_phone}</span>
+                </a>
+                <a
+                  href={whatsappLink(order.guest_phone)}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  aria-label={bippoT('واتساب {0}', [order.number])}
+                >
+                  <MessageCircle size={14} />
+                  {bippoT('واتساب')}
+                </a>
+              </span>
+            )}
             <time dateTime={order.created_at}>
               {new Date(order.created_at).toLocaleString(bippoLocale, {
                 day: '2-digit',
@@ -509,6 +568,17 @@ export default function Orders({ Share, workspace }) {
                 >
                   <BellRing size={16} />
                   {bippoT('رنّ مرة ثانية')}
+                </button>
+              )}
+              {activity.clinic && order.status === 'ready' && (
+                <button
+                  type="button"
+                  className="button outline small merchant-cancel-order"
+                  disabled={busy}
+                  onClick={() => mark(order, 'cancelled')}
+                >
+                  <UserX size={15} />
+                  {bippoT('ما جاش')}
                 </button>
               )}
               {order.status === 'preparing' && (
@@ -904,15 +974,35 @@ export default function Orders({ Share, workspace }) {
                   <BellRing size={18} />
                   {bippoT('نادِ التالي')}
                 </button>
-                <button
-                  className="button outline"
-                  type="button"
-                  disabled={busy}
-                  onClick={() => manageQueue('add')}
-                >
-                  <Plus size={18} />
-                  {bippoT('أضف رقم دور')}
-                </button>
+                <form className="clinic-add" onSubmit={addToQueue}>
+                  <label>
+                    {bippoT('اسم المريض (اختياري)')}
+                    <input
+                      maxLength={40}
+                      autoComplete="off"
+                      placeholder={bippoT('مثلًا أمينة')}
+                      value={patient.name}
+                      onChange={(e) => setPatient({ ...patient, name: e.target.value })}
+                    />
+                  </label>
+                  <label>
+                    {bippoT('التليفون (اختياري)')}
+                    <input
+                      type="tel"
+                      dir="ltr"
+                      inputMode="tel"
+                      maxLength={20}
+                      autoComplete="off"
+                      placeholder="0550 12 34 56"
+                      value={patient.phone}
+                      onChange={(e) => setPatient({ ...patient, phone: e.target.value })}
+                    />
+                  </label>
+                  <button className="button outline" disabled={busy}>
+                    <Plus size={18} />
+                    {bippoT('أضف رقم دور')}
+                  </button>
+                </form>
               </div>
             ) : (
               <form className="merchant-entry panel" onSubmit={addOrder}>

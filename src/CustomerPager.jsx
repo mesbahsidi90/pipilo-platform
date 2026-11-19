@@ -36,7 +36,7 @@ export default function CustomerPager({
     : !number
       ? bippoT('الرابط غير متاح')
       : status === 'cancelled'
-        ? bippoT('الطلب تلغى')
+        ? bippoT(clinic ? 'دورك تلغى' : 'الطلب تلغى')
         : finished
           ? bippoT(clinic ? 'انتهى دورك' : 'بالصحة والراحة!')
           : calling
@@ -113,7 +113,11 @@ export default function CustomerPager({
           {number && (
             <p>
               {status === 'cancelled'
-                ? bippoT('تواصل مع المحل إذا تحتاج مساعدة.')
+                ? bippoT(
+                    clinic
+                      ? 'إذا مازلت هنا، توجّه للاستقبال باش يرجّعوك للانتظار.'
+                      : 'تواصل مع المحل إذا تحتاج مساعدة.',
+                  )
                 : finished
                   ? bippoT('يعطيك الصحة على الزيارة.')
                   : status === 'ready'

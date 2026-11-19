@@ -32,7 +32,7 @@ const ResetPassword = lazy(() => import('./ResetPassword'));
 const Admin = lazy(() => import('./Admin'));
 import { ticketBranding } from './shopSettings';
 import WaitingBoard from './WaitingBoard';
-import ClinicQueue from './ClinicQueue';
+import ClinicQueue, { QueuePlace } from './ClinicQueue';
 const Orders = lazy(() => import('./Orders'));
 import OrderAlerts from './OrderAlerts';
 import FollowTicket from './FollowTicket';
@@ -554,6 +554,7 @@ function Customer({ token }) {
       error={error || (!o && last ? bippoT('راجع موظف المحل باش يعطيك رابط الطلب.') : '')}
       loyalty={
         <>
+          <QueuePlace queue={o?.queue} />
           <OnlineOrderSummary online={o?.online} status={o?.status} />
           <LoyaltyCard card={card} />
           {hasMenu && (

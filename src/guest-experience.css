@@ -337,3 +337,23 @@
 .star-rating p {
   margin: 6px 0 0;
 }
+.queue-place {
+  display: grid;
+  gap: 4px;
+  width: 100%;
+  max-width: 440px;
+  margin: 16px auto 0;
+  padding: 16px 18px;
+  border: 1px solid #dce7d9;
+  border-radius: 20px;
+  background: #fffefa;
+  color: #173e32;
+  text-align: center;
+}
+.queue-place strong {
+  font-size: 22px;
+}
+.queue-place span {
+  font-size: 13px;
+  color: #5f7366;
+}

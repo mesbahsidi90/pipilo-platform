@@ -141,8 +141,9 @@ export function claimLocalCounterTicket(requestKey) {
   );
   return pending.token;
 }
-export async function transition(order, status) {
-  if (!validTransition(order.status, status)) throw new Error(bippoT('تغيير الحالة غير مسموح'));
+export async function transition(order, status, { clinic = false } = {}) {
+  if (!validTransition(order.status, status, { clinic }))
+    throw new Error(bippoT('تغيير الحالة غير مسموح'));
   if (!cloud) {
     const rows = read();
     const current = rows.find((o) => o.id === order.id);

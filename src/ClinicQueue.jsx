@@ -130,3 +130,59 @@ export default function ClinicQueue({ branch }) {
     </main>
   );
 }
+
+// Reception: add a patient with an optional name and phone. Returns the ticket,
+// { error: 'phone' } for a bad number, or null when the queue is full.
+export async function addPatient(name, phone) {
+  if (cloud) {
+    const { data, error } = await db.rpc('clinic_add_patient', {
+      guest: name || null,
+      phone: phone || null,
+    });
+    if (error?.message === 'BIPILO_MONTHLY_TICKET_LIMIT')
+      throw new Error(t('وصلت للحد الشهري. تقدر تكمّل الطلبات المفتوحة أو تطلب تفعيل الاحترافية.'));
+    if (error) throw error;
+    return data;
+  }
+  const ticket = await clinicAction('add');
+  if (!ticket) return null;
+  const guest_name = (name || '').replace(/\s+/g, ' ').trim().slice(0, 40) || null;
+  const guest_phone = phone || null;
+  try {
+    const rows = JSON.parse(localStorage.getItem('nawba-demo-v1') || '[]');
+    localStorage.setItem(
+      'nawba-demo-v1',
+      JSON.stringify(
+        rows.map((row) => (row.id === ticket.id ? { ...row, guest_name, guest_phone } : row)),
+      ),
+    );
+  } catch {
+    // Demo only.
+  }
+  return { ...ticket, guest_name, guest_phone };
+}
+
+// Patient's page while waiting: people ahead and a rough estimate.
+export function QueuePlace({ queue }) {
+  if (!queue || typeof queue.ahead !== 'number') return null;
+  const minutes = queue.minutes_each > 0 ? Math.max(1, queue.ahead * queue.minutes_each) : null;
+  return (
+    <section className="queue-place" aria-live="polite">
+      {queue.ahead === 0 ? (
+        <>
+          <strong>{t('دورك الجاي')}</strong>
+          <span>{t('قرّب للاستقبال، راهم ينادوك دروك.')}</span>
+        </>
+      ) : (
+        <>
+          <strong>{t('قدّامك {0}', [queue.ahead])}</strong>
+          <span>
+            {minutes
+              ? t('حوالي {0} دقيقة حسب وتيرة اليوم.', [minutes])
+              : t('نحدّثو العدد وحدو كي ينادو على اللي قبلك.')}
+          </span>
+        </>
+      )}
+    </section>
+  );
+}

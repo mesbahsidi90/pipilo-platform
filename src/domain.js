@@ -12,10 +12,12 @@ export function normalizeNumber(value) {
   if (!/^[0-9]{1,4}$/.test(n) || Number(n) < 1) throw new Error(bippoT('أدخل رقمًا من 1 إلى 9999'));
   return String(Number(n));
 }
-export function validTransition(from, to) {
+// Clinics may also mark a called patient as absent (ready → cancelled).
+export function validTransition(from, to, { clinic = false } = {}) {
   return (
     (from === 'preparing' && ['ready', 'cancelled'].includes(to)) ||
     (from === 'ready' && to === 'collected') ||
+    (clinic && from === 'ready' && to === 'cancelled') ||
     (from === 'cancelled' && to === 'preparing')
   );
 }

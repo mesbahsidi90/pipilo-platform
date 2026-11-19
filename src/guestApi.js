@@ -1,4 +1,4 @@
-import { cloud, db, track } from './store';
+import { cloud, db, listOrders, track } from './store';
 import { getSettings } from './shopSettings';
 import { demoOnlineDetails } from './ordering';
 const key = 'bippo-guest-signals';
@@ -52,6 +52,16 @@ export async function guestExtras(ticket) {
         o.status === 'collected' && Boolean(settings.private_feedback_enabled),
       feedback_sent: Boolean(readFeedback()[o.id]),
       rating: readRatings()[o.id]?.stars || null,
+      queue: await (async () => {
+        if (settings.kind !== 'clinic' || o.status !== 'preparing') return null;
+        const since = (row) => row.restored_at || row.created_at;
+        const day = Date.now() - 86400000;
+        const rows = (await listOrders()).filter(
+          (row) => row.status === 'preparing' && Date.parse(since(row)) > day,
+        );
+        const key = (row) => since(row) + row.id;
+        return { ahead: rows.filter((row) => key(row) < key(o)).length, minutes_each: null };
+      })(),
       online: (() => {
         const online = demoOnlineDetails(o.id);
         return online && { ...online, currency: settings.menu_currency || 'DZD' };

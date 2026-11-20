@@ -1,4 +1,5 @@
 import { cloud, db, listOrders, track } from './store';
+import { queueCompare } from './clinicRules';
 import { getSettings } from './shopSettings';
 import { demoOnlineDetails } from './ordering';
 const key = 'bippo-guest-signals';
@@ -52,6 +53,7 @@ export async function guestExtras(ticket) {
         o.status === 'collected' && Boolean(settings.private_feedback_enabled),
       feedback_sent: Boolean(readFeedback()[o.id]),
       rating: readRatings()[o.id]?.stars || null,
+      room: o.status === 'ready' ? o.room || null : null,
       queue: await (async () => {
         if (settings.kind !== 'clinic' || o.status !== 'preparing') return null;
         const since = (row) => row.restored_at || row.created_at;
@@ -59,8 +61,11 @@ export async function guestExtras(ticket) {
         const rows = (await listOrders()).filter(
           (row) => row.status === 'preparing' && Date.parse(since(row)) > day,
         );
-        const key = (row) => since(row) + row.id;
-        return { ahead: rows.filter((row) => key(row) < key(o)).length, minutes_each: null };
+        return {
+          ahead: rows.filter((row) => row.id !== o.id && queueCompare(row, o) < 0).length,
+          priority: Boolean(o.priority),
+          minutes_each: null,
+        };
       })(),
       online: (() => {
         const online = demoOnlineDetails(o.id);

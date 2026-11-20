@@ -77,7 +77,24 @@ export default function ShopSettings({ onSaved, branchOnly = false }) {
               </p>
             )}
             {form.kind === 'clinic' ? (
-              <p>{bippoT('QR ثابت للاستقبال يعطي للمريض رقم دور.')}</p>
+              <>
+                <p>{bippoT('QR ثابت للاستقبال يعطي للمريض رقم دور.')}</p>
+                <label>
+                  {bippoT('القاعات أو الأطباء')}
+                  <input
+                    disabled={busy}
+                    maxLength={330}
+                    placeholder={bippoT('مثلًا القاعة 1، د. سعاد')}
+                    value={form.rooms_text ?? (form.clinic_rooms || []).join('، ')}
+                    onChange={(e) => update('rooms_text', e.target.value)}
+                  />
+                </label>
+                <p>
+                  {bippoT(
+                    'افصل بينهم بفاصلة، حتى 10. يبان زرّ «نادِ التالي» لكل واحد، والمريض يشوف وين يروح. خليه فاضي إذا عندك طبيب واحد.',
+                  )}
+                </p>
+              </>
             ) : (
               <>
                 <label>

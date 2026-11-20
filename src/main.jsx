@@ -598,6 +598,7 @@ function Customer({ token }) {
       branding={branding}
       number={o?.number}
       status={o?.status}
+      room={o?.room}
       acknowledged={ack || Boolean(o?.coming_at)}
       loading={!o && !last && !error}
       error={error || (!o && last ? bippoT('راجع موظف المحل باش يعطيك رابط الطلب.') : '')}

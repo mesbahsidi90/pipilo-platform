@@ -6,6 +6,7 @@ export function orderPayload(order, route = 'track', language, settings, siteOri
   const vars = {
     number: String(order.number),
     venue: settings?.name || (french ? 'le comptoir' : 'الكونتوار'),
+    room: order.room || '',
   };
   const copy = settings?.alert_copy;
   function field(key, fallback, limit) {
@@ -13,7 +14,7 @@ export function orderPayload(order, route = 'track', language, settings, siteOri
     const clean =
       typeof template === 'string' ? template.replace(/[\u0000-\u001f\u007f]/g, ' ').trim() : '';
     return (clean || fallback)
-      .replace(/\{(number|venue)\}/g, (_, name) => vars[name])
+      .replace(/\{(number|venue|room)\}/g, (_, name) => vars[name])
       .slice(0, limit);
   }
   const clinic = route === 'track' && order.shops?.kind === 'clinic';
@@ -32,8 +33,12 @@ export function orderPayload(order, route = 'track', language, settings, siteOri
     'body',
     clinic
       ? french
-        ? 'Ticket {number} · Présentez-vous à l’accueil.'
-        : 'رقم الدور {number} · توجّه للاستقبال.'
+        ? order.room
+          ? 'Ticket {number} · Allez à : {room}.'
+          : 'Ticket {number} · Présentez-vous à l’accueil.'
+        : order.room
+          ? 'رقم الدور {number} · توجّه لـ {room}.'
+          : 'رقم الدور {number} · توجّه للاستقبال.'
       : french
         ? 'Commande {number} · Retirez-la au comptoir.'
         : 'الطلب {number} واجد. تقدر تجي تديه من الكونتوار.',
@@ -71,6 +76,32 @@ export function orderPayload(order, route = 'track', language, settings, siteOri
       icon: origin + '/icon-192.png',
       vibrate: [250, 100, 250, 100, 500],
       data: { url },
+    },
+  };
+}
+
+// «قرب دورك»: a softer reminder while the patient still waits.
+export function nearPayload(order, language, siteOrigin) {
+  const french = language === 'fr';
+  const lang = french ? 'fr' : 'ar';
+  const base = orderPayload(order, 'track', language, null, siteOrigin);
+  const title = french ? 'Votre tour approche !' : 'قرب دورك!';
+  const body = french
+    ? `Ticket ${order.number} · Rapprochez-vous de l’accueil.`
+    : `رقم الدور ${order.number} · قرّب للاستقبال.`;
+  return {
+    ...base,
+    type: 'QUEUE_NEAR',
+    title,
+    body,
+    notification: {
+      ...base.notification,
+      title,
+      body,
+      lang: lang + '-DZ',
+      tag: 'near-' + order.token,
+      requireInteraction: false,
+      vibrate: [200, 100, 200],
     },
   };
 }

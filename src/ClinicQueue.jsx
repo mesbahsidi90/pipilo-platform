@@ -1,19 +1,49 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { t, ticketLink } from './i18n';
 import { cloud, db, createOrder, listOrders, track, transition } from './store';
 import { getSettings } from './shopSettings';
 import { active } from './domain';
 import Brand from './Brand';
+import { becameNear, queueCompare, queuePaused, algiersToday } from './clinicRules';
+const vibrate = (pattern) => {
+  try {
+    navigator.vibrate?.(pattern);
+  } catch {
+    // Not every phone vibrates.
+  }
+};
 
 export const clinicRoute = (id) => 'queue/' + (id || 'local');
 const uuid = /^[0-9a-f]{8}(?:-[0-9a-f]{4}){3}-[0-9a-f]{12}$/i;
 
-export async function clinicAction(operation, branch, requestToken) {
+const demoPauseKey = 'bipilo-demo-clinic-pause';
+const readDemoPause = () => {
+  try {
+    return localStorage.getItem(demoPauseKey);
+  } catch {
+    return null;
+  }
+};
+function patchDemoRow(id, patch) {
+  try {
+    const rows = JSON.parse(localStorage.getItem('nawba-demo-v1') || '[]');
+    localStorage.setItem(
+      'nawba-demo-v1',
+      JSON.stringify(rows.map((row) => (row.id === id ? { ...row, ...patch } : row))),
+    );
+    window.dispatchEvent(new Event('nawba-change'));
+  } catch {
+    // Demo only.
+  }
+}
+
+export async function clinicAction(operation, branch, requestToken, room) {
   if (cloud) {
     const { data, error } = await db.rpc('clinic_queue', {
       operation,
       branch: branch || null,
       request_token: requestToken || null,
+      room: room || null,
     });
     if (error?.message === 'BIPILO_MONTHLY_TICKET_LIMIT' && operation === 'add') {
       throw new Error(t('وصلت للحد الشهري. تقدر تكمّل الطلبات المفتوحة أو تطلب تفعيل الاحترافية.'));
@@ -23,7 +53,9 @@ export async function clinicAction(operation, branch, requestToken) {
   }
   const shop = await getSettings();
   if (shop.kind !== 'clinic' || (branch && branch !== 'local')) return null;
-  if (operation === 'info') return { name: shop.name };
+  const paused = queuePaused(readDemoPause());
+  if (operation === 'info') return { name: shop.name, paused };
+  if (operation === 'join' && paused) return { paused: true };
   const rows = await listOrders();
   if (operation === 'next') {
     const waiting = rows
@@ -32,14 +64,11 @@ export async function clinicAction(operation, branch, requestToken) {
           row.status === 'preparing' &&
           Date.parse(row.restored_at || row.created_at) > Date.now() - 86400000,
       )
-      .sort(
-        (a, b) =>
-          (a.restored_at || a.created_at).localeCompare(b.restored_at || b.created_at) ||
-          a.id.localeCompare(b.id),
-      );
+      .sort(queueCompare);
     if (!waiting.length) return null;
     await transition(waiting[0], 'ready');
-    return waiting[0];
+    patchDemoRow(waiting[0].id, { room: room || null });
+    return { ...waiting[0], room: room || null };
   }
   if (!['join', 'add'].includes(operation)) return null;
   const used = new Set(rows.filter(active).map((row) => row.number));
@@ -83,6 +112,7 @@ export default function ClinicQueue({ branch }) {
   }, [branch]);
 
   async function join() {
+    if (venue?.paused) return;
     setBusy(true);
     setError('');
     try {
@@ -96,6 +126,11 @@ export default function ClinicQueue({ branch }) {
       const request = (!previous.order && previous.request) || crypto.randomUUID();
       sessionStorage.setItem(key, JSON.stringify({ request }));
       const ticket = await clinicAction('join', branch, request);
+      if (ticket?.paused) {
+        sessionStorage.removeItem(key);
+        setVenue((value) => ({ ...value, paused: true }));
+        return;
+      }
       if (!ticket?.token) throw new Error();
       sessionStorage.setItem(key, JSON.stringify({ order: ticket.token }));
       location.assign(ticketLink('track/' + ticket.token));
@@ -114,10 +149,18 @@ export default function ClinicQueue({ branch }) {
         {venue && (
           <>
             <p>{venue.name}</p>
-            <p>{t('خذ رقمك وفعّل التنبيه باش تعرف كي يجي دورك.')}</p>
-            <button className="button full" type="button" disabled={busy} onClick={join}>
-              {t('خذ رقم دور')}
-            </button>
+            {venue.paused ? (
+              <p role="status" className="queue-closed">
+                {t('الأرقام وقفت لليوم. توجّه للاستقبال.')}
+              </p>
+            ) : (
+              <>
+                <p>{t('خذ رقمك وفعّل التنبيه باش تعرف كي يجي دورك.')}</p>
+                <button className="button full" type="button" disabled={busy} onClick={join}>
+                  {t('خذ رقم دور')}
+                </button>
+              </>
+            )}
           </>
         )}
         {!venue && <p role="status">{t(failed ? 'الطابور غير متاح حاليًا.' : 'جارٍ الاتصال…')}</p>}
@@ -162,12 +205,53 @@ export async function addPatient(name, phone) {
   return { ...ticket, guest_name, guest_phone };
 }
 
+// Reception: put a waiting patient first (pregnant, elderly, urgent) or back in order.
+export async function setPriority(order, urgent) {
+  if (cloud) {
+    const { data, error } = await db.rpc('clinic_set_priority', {
+      ticket: order.id,
+      urgent: Boolean(urgent),
+    });
+    if (error) throw error;
+    return data;
+  }
+  if (order.status !== 'preparing') return false;
+  patchDemoRow(order.id, { priority: Boolean(urgent) });
+  return true;
+}
+
+// Reception: «وقّف الأرقام» stops the QR from giving numbers until tomorrow.
+export async function setQueuePaused(paused) {
+  if (cloud) {
+    const { error } = await db.rpc('clinic_pause', { paused: Boolean(paused) });
+    if (error) throw error;
+  } else {
+    try {
+      if (paused) localStorage.setItem(demoPauseKey, algiersToday());
+      else localStorage.removeItem(demoPauseKey);
+    } catch {
+      // Demo only.
+    }
+  }
+  return paused ? algiersToday() : null;
+}
+export const demoQueuePausedOn = () => (cloud ? null : readDemoPause());
+
 // Patient's page while waiting: people ahead and a rough estimate.
 export function QueuePlace({ queue }) {
-  if (!queue || typeof queue.ahead !== 'number') return null;
+  const previous = useRef(null);
+  const ahead = typeof queue?.ahead === 'number' ? queue.ahead : null;
+  useEffect(() => {
+    if (becameNear(previous.current, ahead)) vibrate([200, 100, 200]);
+    previous.current = ahead;
+  }, [ahead]);
+  if (ahead === null) return null;
   const minutes = queue.minutes_each > 0 ? Math.max(1, queue.ahead * queue.minutes_each) : null;
+  const near = ahead > 0 && ahead <= 2;
   return (
-    <section className="queue-place" aria-live="polite">
+    <section className={'queue-place' + (near ? ' queue-near' : '')} aria-live="polite">
+      {queue.priority && <small className="queue-priority">{t('عندك أولوية في الدور')}</small>}
+      {near && <strong className="queue-near-title">{t('قرب دورك!')}</strong>}
       {queue.ahead === 0 ? (
         <>
           <strong>{t('دورك الجاي')}</strong>
@@ -177,9 +261,11 @@ export function QueuePlace({ queue }) {
         <>
           <strong>{t('قدّامك {0}', [queue.ahead])}</strong>
           <span>
-            {minutes
-              ? t('حوالي {0} دقيقة حسب وتيرة اليوم.', [minutes])
-              : t('نحدّثو العدد وحدو كي ينادو على اللي قبلك.')}
+            {near
+              ? t('ما تبعدش، رجع قريب من الاستقبال.')
+              : minutes
+                ? t('حوالي {0} دقيقة حسب وتيرة اليوم.', [minutes])
+                : t('نحدّثو العدد وحدو كي ينادو على اللي قبلك.')}
           </span>
         </>
       )}

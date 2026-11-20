@@ -4,6 +4,7 @@ import { shopActivity } from './shopActivities';
 import { cleanCustomerOptions, themeKey } from './customerThemes';
 import { toneKey } from './alertTones';
 import { reviewUrl } from './guestExperience';
+import { parseRooms } from './clinicRules';
 const key = 'bippo-shop-settings';
 export const defaults = {
   name: bippoT('محلي'),
@@ -29,6 +30,7 @@ export const defaults = {
   menu_currency: 'DZD',
   ordering_enabled: false,
   ordering_modes: ['pickup'],
+  clinic_rooms: [],
 };
 export async function getSettings() {
   if (!cloud)
@@ -96,6 +98,9 @@ export async function saveSettings(value) {
     }),
     ...(Array.isArray(value.ordering_modes) && {
       ordering_modes: ['pickup', 'table', 'car'].filter((m) => value.ordering_modes.includes(m)),
+    }),
+    ...(value.kind === 'clinic' && {
+      clinic_rooms: parseRooms(value.rooms_text ?? (value.clinic_rooms || []).join(',')),
     }),
     waiting_mode: value.waiting_mode,
     tracking_mode: ['counter', 'invoice'].includes(value.tracking_mode)

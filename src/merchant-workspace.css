@@ -811,3 +811,29 @@
   gap: 4px;
   color: #2f7d5b;
 }
+.clinic-calls {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.clinic-priority {
+  background: #fff1d6 !important;
+  color: #8a5200 !important;
+}
+.clinic-priority-on {
+  border-color: #e9a23b;
+  color: #8a5200;
+}
+.clinic-paused {
+  border-color: #c9573f;
+  color: #a33b24;
+}
+.clinic-paused-note {
+  flex-basis: 100%;
+  margin: 0;
+  font-size: 12px;
+  color: #a33b24;
+}
+.merchant-entry:has(.clinic-paused-note) {
+  flex-wrap: wrap;
+}

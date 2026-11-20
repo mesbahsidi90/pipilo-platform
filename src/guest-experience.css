@@ -357,3 +357,37 @@
   font-size: 13px;
   color: #5f7366;
 }
+.queue-place.queue-near {
+  border-color: #e9a23b;
+  background: #fff6e6;
+  animation: queue-near-pulse 1.6s ease-in-out 3;
+}
+.queue-place .queue-near-title {
+  color: #a35a00;
+}
+.queue-priority {
+  justify-self: center;
+  padding: 2px 10px;
+  border-radius: 999px;
+  background: #e3f1ea;
+  color: #1d5b43;
+  font-size: 12px;
+  font-weight: 700;
+}
+.queue-closed {
+  padding: 12px;
+  border-radius: 12px;
+  background: #fff3e6;
+  color: #8a4a00;
+  font-weight: 700;
+}
+@keyframes queue-near-pulse {
+  50% {
+    box-shadow: 0 0 0 6px rgb(233 162 59 / 22%);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .queue-place.queue-near {
+    animation: none;
+  }
+}

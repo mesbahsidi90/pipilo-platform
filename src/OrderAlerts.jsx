@@ -182,13 +182,15 @@ export default function OrderAlerts({
         if (live) setPush('unavailable');
       });
     const message = (e) =>
-      handleReadyPush(
-        e.data,
-        ticket,
-        true,
-        () => session.current?.setReady(true),
-        () => callbacks.current.onRefresh?.(),
-      );
+      e.data?.type === 'QUEUE_NEAR' && e.data.ticket === ticket
+        ? callbacks.current.onRefresh?.()
+        : handleReadyPush(
+            e.data,
+            ticket,
+            true,
+            () => session.current?.setReady(true),
+            () => callbacks.current.onRefresh?.(),
+          );
     navigator.serviceWorker.addEventListener('message', message);
     return () => {
       live = false;

@@ -21,6 +21,7 @@ export default function CustomerPager({
   children,
   extra,
   loyalty = null,
+  room = null,
 }) {
   const lang = previewLanguage || language;
   const bippoT = (text) => translate(text, lang);
@@ -28,7 +29,11 @@ export default function CustomerPager({
   const copy = activityCopy(branding?.kind);
   const pickup = branding?.pickup_message;
   const pickupMessage =
-    clinic || !pickup || defaultPickups.has(pickup) ? bippoT(copy.pickup) : pickup;
+    clinic && room
+      ? bippoT('توجّه لـ {0}.').replace('{0}', room)
+      : clinic || !pickup || defaultPickups.has(pickup)
+        ? bippoT(copy.pickup)
+        : pickup;
   const calling = status === 'ready' && !acknowledged,
     finished = status === 'collected';
   const title = loading

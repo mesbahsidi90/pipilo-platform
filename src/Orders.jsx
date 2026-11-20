@@ -27,6 +27,9 @@ import {
   X,
   Phone,
   UserX,
+  CirclePause,
+  CirclePlay,
+  Star,
 } from 'lucide-react';
 import {
   cloud,
@@ -56,8 +59,14 @@ import MerchantAssistant from './MerchantAssistant';
 import MerchantTeam, { BranchSelector, workspaceAction } from './MerchantTeam';
 import { rememberBranch } from './merchantBranches';
 import './merchant-workspace.css';
-import { addPatient, clinicAction } from './ClinicQueue';
-import { cleanPhone, waitedMinutes, whatsappLink } from './clinicRules';
+import {
+  addPatient,
+  clinicAction,
+  demoQueuePausedOn,
+  setPriority,
+  setQueuePaused,
+} from './ClinicQueue';
+import { cleanPhone, queueCompare, queuePaused, waitedMinutes, whatsappLink } from './clinicRules';
 import { usePanelTitle } from './pageTitle';
 import { retryPush } from './OrderAlerts';
 import { staffSignals } from './guestApi';
@@ -93,7 +102,8 @@ export default function Orders({ Share, workspace }) {
     [paidPlan, setPaidPlan] = useState(null),
     [workspaceData, setWorkspaceData] = useState(null),
     [workspaceError, setWorkspaceError] = useState(''),
-    [staffSound, setStaffSound] = useState(false);
+    [staffSound, setStaffSound] = useState(false),
+    [pausedOn, setPausedOn] = useState(null);
   const cueState = useRef(null);
   const cueAudio = useRef(null);
 
@@ -121,6 +131,14 @@ export default function Orders({ Share, workspace }) {
     };
   }, [shop?.shop_id]);
   const activity = shopActivity(shop?.kind);
+  useEffect(() => {
+    // A settings save returns only the edited fields: keep the pause we know.
+    if (!shop) return;
+    if (!cloud) setPausedOn(demoQueuePausedOn());
+    else if ('queue_paused_on' in shop) setPausedOn(shop.queue_paused_on || null);
+  }, [shop]);
+  const rooms = activity.clinic && Array.isArray(shop?.clinic_rooms) ? shop.clinic_rooms : [];
+  const paused = activity.clinic && queuePaused(pausedOn);
   // Laundries, car washes, tailors…: a service is «worked on», not «prepared».
   const service = !activity.clinic && !activity.foodService;
   useEffect(() => {
@@ -335,18 +353,55 @@ export default function Orders({ Share, workspace }) {
     }
   }
 
-  async function manageQueue(operation) {
+  async function manageQueue(operation, room) {
     setBusy(true);
     setNotice('');
     try {
-      const ticket = await clinicAction(operation);
+      const ticket = await clinicAction(operation, undefined, undefined, room);
       if (operation === 'add' && ticket) setSelected(ticket);
       setNotice(
         ticket
-          ? bippoT(operation === 'next' ? 'نادينا الرقم {0}.' : 'تزاد رقم الدور {0}.', [
-              ticket.number,
-            ])
+          ? room
+            ? bippoT('نادينا الرقم {0} لـ {1}.', [ticket.number, room])
+            : bippoT(operation === 'next' ? 'نادينا الرقم {0}.' : 'تزاد رقم الدور {0}.', [
+                ticket.number,
+              ])
           : bippoT(operation === 'next' ? 'ما كاش مريض يستنّى.' : 'تعذر إضافة رقم دور.'),
+      );
+    } catch {
+      setNotice(bippoT('تعذر تحديث الطابور. عاود المحاولة.'));
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  async function togglePriority(order) {
+    setBusy(true);
+    setNotice('');
+    try {
+      const done = await setPriority(order, !order.priority);
+      if (!done) return setNotice(bippoT('تغيرت حالة الطلب، حدّث الصفحة'));
+      setNotice(
+        order.priority
+          ? bippoT('الرقم {0} رجع لبلاصتو في الدور.', [order.number])
+          : bippoT('الرقم {0} عندو أولوية، راه قدّام الدور.', [order.number]),
+      );
+    } catch {
+      setNotice(bippoT('تعذر تحديث الطابور. عاود المحاولة.'));
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  async function togglePause() {
+    setBusy(true);
+    setNotice('');
+    try {
+      setPausedOn(await setQueuePaused(!paused));
+      setNotice(
+        paused
+          ? bippoT('رمز QR رجع يعطي أرقام.')
+          : bippoT('وقّفنا الأرقام لليوم. اللي عندهم رقم يكمّلو، وتقدر تزيد من هنا.'),
       );
     } catch {
       setNotice(bippoT('تعذر تحديث الطابور. عاود المحاولة.'));
@@ -378,12 +433,7 @@ export default function Orders({ Share, workspace }) {
             Date.now() - 7 * 86400000),
     ),
   };
-  if (activity.clinic)
-    groups.preparing.sort(
-      (a, b) =>
-        (a.restored_at || a.created_at).localeCompare(b.restored_at || b.created_at) ||
-        a.id.localeCompare(b.id),
-    );
+  if (activity.clinic) groups.preparing.sort(queueCompare);
   const prepTimes = rows
     .map((order) =>
       secondsBetween(
@@ -464,7 +514,13 @@ export default function Orders({ Share, workspace }) {
             {activity.clinic && order.status === 'preparing' && (
               <span className="clinic-place">
                 <b>#{groups.preparing.findIndex((row) => row.id === order.id) + 1}</b>
+                {order.priority && <b className="clinic-priority">{bippoT('أولوية')}</b>}
                 {bippoT('يستنّى من {0} د', [waitedMinutes(order)])}
+              </span>
+            )}
+            {activity.clinic && order.status === 'ready' && order.room && (
+              <span className="clinic-place">
+                <b>{order.room}</b>
               </span>
             )}
             {order.guest_phone && (
@@ -597,6 +653,18 @@ export default function Orders({ Share, workspace }) {
                 >
                   <UserX size={15} />
                   {bippoT('ما جاش')}
+                </button>
+              )}
+              {activity.clinic && order.status === 'preparing' && (
+                <button
+                  type="button"
+                  className={'button outline small' + (order.priority ? ' clinic-priority-on' : '')}
+                  disabled={busy}
+                  aria-pressed={Boolean(order.priority)}
+                  onClick={() => togglePriority(order)}
+                >
+                  <Star size={15} />
+                  {bippoT(order.priority ? 'نحّي الأولوية' : 'أولوية')}
                 </button>
               )}
               {order.status === 'preparing' && (
@@ -989,15 +1057,47 @@ export default function Orders({ Share, workspace }) {
             </div>
             {activity.clinic ? (
               <div className="merchant-entry panel">
-                <button
-                  className="button"
-                  type="button"
-                  disabled={busy || !groups.preparing.length}
-                  onClick={() => manageQueue('next')}
-                >
-                  <BellRing size={18} />
-                  {bippoT('نادِ التالي')}
-                </button>
+                <div className="clinic-calls">
+                  {rooms.length ? (
+                    rooms.map((room) => (
+                      <button
+                        key={room}
+                        className="button"
+                        type="button"
+                        disabled={busy || !groups.preparing.length}
+                        onClick={() => manageQueue('next', room)}
+                      >
+                        <BellRing size={18} />
+                        {bippoT('نادِ التالي لـ {0}', [room])}
+                      </button>
+                    ))
+                  ) : (
+                    <button
+                      className="button"
+                      type="button"
+                      disabled={busy || !groups.preparing.length}
+                      onClick={() => manageQueue('next')}
+                    >
+                      <BellRing size={18} />
+                      {bippoT('نادِ التالي')}
+                    </button>
+                  )}
+                  <button
+                    className={'button outline' + (paused ? ' clinic-paused' : '')}
+                    type="button"
+                    disabled={busy}
+                    aria-pressed={paused}
+                    onClick={togglePause}
+                  >
+                    {paused ? <CirclePlay size={18} /> : <CirclePause size={18} />}
+                    {paused ? bippoT('عاود افتح الأرقام') : bippoT('وقّف الأرقام')}
+                  </button>
+                </div>
+                {paused && (
+                  <p className="clinic-paused-note" role="status">
+                    {bippoT('رمز QR موقف لليوم: المرضى الجدد ما ياخذوش رقم من التليفون.')}
+                  </p>
+                )}
                 <form className="clinic-add" onSubmit={addToQueue}>
                   <label>
                     {bippoT('اسم المريض (اختياري)')}

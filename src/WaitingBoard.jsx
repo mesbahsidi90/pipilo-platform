@@ -16,6 +16,7 @@ function BoardColumn({ title, orders, ready, empty }) {
           {orders.map((order) => (
             <li key={order.number}>
               <DotNumber value={order.number} />
+              {ready && order.room && <small className="waiting-board-room">{order.room}</small>}
             </li>
           ))}
         </ul>
@@ -66,7 +67,16 @@ export default function WaitingBoard({ orders, error }) {
         .then(() => {
           // Let the chime finish, then say the number(s).
           speechTimer.current = setTimeout(
-            () => speakCalls(called, { lang: language, clinic }),
+            () =>
+              speakCalls(called, {
+                lang: language,
+                clinic,
+                rooms: Object.fromEntries(
+                  orders
+                    .filter((order) => order.status === 'ready' && order.room)
+                    .map((order) => [order.number, order.room]),
+                ),
+              }),
             1300,
           );
         })

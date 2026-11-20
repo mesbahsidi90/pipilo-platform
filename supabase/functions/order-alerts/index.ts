@@ -1,6 +1,6 @@
 import { createClient } from 'npm:@supabase/supabase-js@2.57.4';
 import webpush from 'npm:web-push@3.6.7';
-import { orderPayload } from './payload.js';
+import { nearPayload, orderPayload } from './payload.js';
 import { demoTicket, sendDemo, handleDemo } from './demo.ts';
 const db = createClient(Deno.env.get('SUPABASE_URL')!, Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!, {
   auth: { persistSession: false, autoRefreshToken: false },
@@ -38,7 +38,7 @@ async function config() {
   }
   return value;
 }
-const orderFields = 'id,number,status,token,shop_id,created_at,restored_at,shops(kind)';
+const orderFields = 'id,number,status,token,shop_id,created_at,restored_at,room,shops(kind)';
 const recent = (order: { created_at: string; restored_at: string | null }) =>
   Date.parse(order.restored_at ?? order.created_at) >= Date.parse(cutoff());
 
@@ -118,6 +118,49 @@ async function send(order: any, cfg: any, resend = false) {
     }
   }
   return { sent, failed, cooldown };
+}
+// «قرب دورك»: never touches sent_at, so the «جا دورك» alert still goes out later.
+async function sendNear(order: any, cfg: any) {
+  if (order.status !== 'preparing' || order.shops?.kind !== 'clinic' || !recent(order))
+    return { sent: 0, failed: 0 };
+  const subscriptions = check(
+    await db
+      .from('push_subscriptions')
+      .select('*')
+      .eq('order_id', order.id)
+      .gte('created_at', cutoff())
+      .limit(3),
+  );
+  let sent = 0,
+    failed = 0;
+  for (const sub of subscriptions || []) {
+    if (!validEndpoint(sub.endpoint)) {
+      failed++;
+      continue;
+    }
+    try {
+      await webpush.sendNotification(
+        { endpoint: sub.endpoint, keys: { p256dh: sub.p256dh, auth: sub.auth_key } },
+        JSON.stringify(nearPayload(order, sub.language || undefined, sub.site_origin)),
+        {
+          TTL: 900,
+          urgency: 'high',
+          timeout: 8000,
+          vapidDetails: {
+            subject: cfg.subject,
+            publicKey: cfg.public_key,
+            privateKey: cfg.private_key,
+          },
+        },
+      );
+      sent++;
+    } catch (err: any) {
+      failed++;
+      if ([404, 410].includes(err.statusCode))
+        await db.from('push_subscriptions').delete().eq('id', sub.id);
+    }
+  }
+  return { sent, failed };
 }
 Deno.serve(async (req) => {
   const origin = req.headers.get('origin');
@@ -243,6 +286,16 @@ Deno.serve(async (req) => {
             : await send(order, cfg)
           : null;
       return reply({ ok: true, delivery });
+    }
+    if (route === 'near') {
+      if (req.headers.get('x-bippo-webhook') !== cfg.webhook_secret)
+        return reply({ error: 'Not authorized' }, 401);
+      if (!uuid.test(body.order_id || '')) return reply({ error: 'Invalid order' }, 400);
+      const order = check(
+        await db.from('orders').select(orderFields).eq('id', body.order_id).maybeSingle(),
+      );
+      if (!order) return reply({ error: 'Order not found' }, 404);
+      return reply(await sendNear(order, cfg));
     }
     if (route === 'notify' || route === 'renotify') {
       if (!uuid.test(body.order_id || '')) return reply({ error: 'Invalid order' }, 400);

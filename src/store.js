@@ -202,9 +202,10 @@ export async function display(token) {
   if (!cloud)
     return read()
       .filter(active)
-      .map(({ number, status }) => ({
+      .map(({ number, status, room }) => ({
         number,
         status,
+        room: status === 'ready' ? room || null : null,
       }));
   const { data, error } = await db.rpc('display_orders', {
     ticket: token,

@@ -1,10 +1,14 @@
 // Spoken calls for the waiting screen (TV browser speech synthesis).
-export function announcementText(number, { lang = 'ar', clinic = false } = {}) {
+export function announcementText(number, { lang = 'ar', clinic = false, room = '' } = {}) {
   const n = String(number).trim();
+  const where = String(room || '').trim();
   if (lang === 'fr')
     return clinic
-      ? `Numéro ${n}, présentez-vous à l’accueil.`
+      ? where
+        ? `Numéro ${n}, allez à : ${where}.`
+        : `Numéro ${n}, présentez-vous à l’accueil.`
       : `Commande numéro ${n}, votre commande est prête.`;
+  if (clinic && where) return `الرقم ${n}، تفضّل لـ ${where}.`;
   return clinic ? `الرقم ${n}، تفضّل للاستقبال.` : `الطلب رقم ${n}، طلبك واجد.`;
 }
 
@@ -25,7 +29,9 @@ export function speakCalls(numbers, options, synth = globalThis.speechSynthesis)
   const voice = pickVoice(synth.getVoices(), options.lang);
   if (!voice) return false;
   for (const number of numbers.slice(0, 4)) {
-    const utterance = new SpeechSynthesisUtterance(announcementText(number, options));
+    const utterance = new SpeechSynthesisUtterance(
+      announcementText(number, { ...options, room: options.rooms?.[number] }),
+    );
     utterance.voice = voice;
     utterance.lang = voice.lang;
     utterance.rate = 0.92;

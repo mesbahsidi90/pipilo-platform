@@ -77,3 +77,26 @@ export function guestActivity(guest, now = Date.now()) {
           minute: '2-digit',
         });
 }
+
+// The ready alert's journey, shown on the staff board once an order is ready:
+// «انرسل» → «وصل» → «شافه» → «جاي». A later step implies the earlier ones.
+// Without notifications enabled, the first two make no sense: the board says so.
+export function guestSteps(order) {
+  if (order?.status !== 'ready') return [];
+  const s = order.guest || {};
+  const coming = Boolean(s.coming_at);
+  const seen = coming || Boolean(s.ready_seen_at);
+  const steps = [];
+  if (s.push_enabled_at) {
+    const delivered = seen || Boolean(s.push_delivered_at);
+    steps.push(
+      { key: 'sent', label: bippoT('انرسل'), done: delivered || Boolean(s.push_sent_at) },
+      { key: 'delivered', label: bippoT('وصل'), done: delivered },
+    );
+  } else steps.push({ key: 'nopush', label: bippoT('ما فعّلش التنبيه'), warn: true });
+  steps.push(
+    { key: 'seen', label: bippoT('شافه'), done: seen },
+    { key: 'coming', label: bippoT('جاي'), done: coming },
+  );
+  return steps;
+}

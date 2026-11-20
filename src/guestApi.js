@@ -116,7 +116,7 @@ export async function staffSignals(ids = []) {
   const { data, error } = await db
     .from('order_guest_signals')
     .select(
-      'order_id,opened_at,sound_enabled_at,push_enabled_at,ready_seen_at,coming_at,last_seen_at',
+      'order_id,opened_at,sound_enabled_at,push_enabled_at,ready_seen_at,coming_at,last_seen_at,push_sent_at,push_delivered_at',
     )
     .eq('shop_id', shop)
     .in('order_id', ids)

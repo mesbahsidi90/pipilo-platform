@@ -45,3 +45,37 @@ test('last activity remains a timestamp, not a false live connection claim', () 
     /2 د/,
   );
 });
+
+test('the ready alert journey on the staff board', async () => {
+  const { guestSteps } = await import('../src/guestExperience.js');
+  const keys = (order) =>
+    guestSteps(order).map((step) => step.key + (step.done ? '+' : step.warn ? '!' : '-'));
+  assert.deepEqual(guestSteps({ status: 'preparing', guest: {} }), []);
+  const base = { status: 'ready', guest: { push_enabled_at: 'x' } };
+  assert.deepEqual(keys(base), ['sent-', 'delivered-', 'seen-', 'coming-']);
+  assert.deepEqual(keys({ ...base, guest: { ...base.guest, push_sent_at: 'x' } }), [
+    'sent+',
+    'delivered-',
+    'seen-',
+    'coming-',
+  ]);
+  assert.deepEqual(keys({ ...base, guest: { ...base.guest, push_delivered_at: 'x' } }), [
+    'sent+',
+    'delivered+',
+    'seen-',
+    'coming-',
+  ]);
+  // «جاي» means everything before it happened.
+  assert.deepEqual(keys({ ...base, guest: { ...base.guest, coming_at: 'x' } }), [
+    'sent+',
+    'delivered+',
+    'seen+',
+    'coming+',
+  ]);
+  // Without notifications, the board says so instead of «انرسل/وصل».
+  assert.deepEqual(keys({ status: 'ready', guest: { ready_seen_at: 'x' } }), [
+    'nopush!',
+    'seen+',
+    'coming-',
+  ]);
+});

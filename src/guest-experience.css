@@ -391,3 +391,34 @@
     animation: none;
   }
 }
+.guest-steps {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 5px;
+  padding: 0;
+  margin: 0;
+  list-style: none;
+}
+.guest-steps li {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 3px 9px;
+  border: 1px solid #d9e3dc;
+  border-radius: 999px;
+  background: #fff;
+  color: #93a198;
+  font-size: 11px;
+  font-weight: 650;
+  line-height: 1.6;
+}
+.guest-steps li.done {
+  border-color: #0c3e38;
+  background: #0c3e38;
+  color: #fff;
+}
+.guest-steps li.warn {
+  border-color: #f0d2a8;
+  background: #fff6e8;
+  color: #8a4a00;
+}

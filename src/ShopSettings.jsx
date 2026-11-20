@@ -12,7 +12,8 @@ export default function ShopSettings({ onSaved, branchOnly = false }) {
     [error, setError] = useState(''),
     [message, setMessage] = useState(''),
     [busy, setBusy] = useState(false),
-    [email, setEmail] = useState('');
+    [email, setEmail] = useState(''),
+    [everywhere, setEverywhere] = useState(false);
   useEffect(() => {
     let alive = true;
     getSettings()
@@ -192,6 +193,37 @@ export default function ShopSettings({ onSaved, branchOnly = false }) {
             <LogOut size={18} />
             {bippoT(' تسجيل الخروج')}
           </button>
+          {cloud && (
+            <>
+              <button
+                type="button"
+                className="button outline logout-everywhere"
+                disabled={busy}
+                onClick={async () => {
+                  if (!everywhere) return setEverywhere(true);
+                  setBusy(true);
+                  setError('');
+                  try {
+                    const { error } = await db.auth.signOut({ scope: 'global' });
+                    if (error) throw error;
+                    rememberBranch(null);
+                  } catch (e) {
+                    setError(e.message);
+                  } finally {
+                    setBusy(false);
+                  }
+                }}
+              >
+                <LogOut size={18} />
+                {everywhere ? bippoT('أكّد: اخرج من كل الأجهزة') : bippoT('اخرج من كل الأجهزة')}
+              </button>
+              <small className="logout-everywhere-note">
+                {bippoT(
+                  'إذا شكّيت بلي واحد آخر داخل بحسابك. كل جهاز يطلب كود جديد، والأجهزة المفتوحة تخرج في أقل من ساعة.',
+                )}
+              </small>
+            </>
+          )}
         </div>
       )}
     </section>

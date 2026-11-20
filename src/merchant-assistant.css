@@ -4,10 +4,30 @@
 .assistant-messages { list-style: none; padding: 0; margin-block: 16px; display: grid; gap: 16px; }
 .assistant-messages li { display: grid; gap: 8px; }
 .assistant-question { justify-self: end; max-width: 90%; padding: 8px 12px; background: var(--bippo-primary-soft); border-radius: 12px; overflow-wrap: anywhere; }
-.assistant-answer { max-width: 85%; padding: 12px; border: 1px solid var(--bippo-border); border-radius: 12px; }
-.assistant-answer small { display: block; margin-top: 6px; color: var(--bippo-muted); }
-.assistant-answer .button { margin-top: 8px; }
-.assistant-suggestions { display: flex; flex-wrap: wrap; gap: 8px; margin-block: 15px; }
+.assistant-answer { max-width: min(560px, 92%); padding: 12px; border: 1px solid var(--bippo-border); border-radius: 12px; display: grid; gap: 8px; }
+.assistant-answer > small { display: block; color: var(--bippo-muted); }
+.assistant-answer > .button { justify-self: start; }
+.assistant-lines { display: grid; gap: 6px; margin: 0; }
+.assistant-lines > div { display: flex; justify-content: space-between; align-items: baseline; gap: 12px; padding: 7px 10px; border-radius: 9px; background: var(--bippo-surface-muted, #f4f5f1); }
+.assistant-lines dt { font-size: 13px; color: var(--bippo-muted); }
+.assistant-lines dd { margin: 0; text-align: end; }
+.assistant-lines dd b { font-size: 16px; }
+.assistant-lines dd small { display: block; font-size: 11px; color: var(--bippo-muted); }
+.assistant-card { display: grid; gap: 8px; padding: 10px; border: 1px dashed var(--bippo-border); border-radius: 10px; }
+.assistant-card label { display: grid; gap: 4px; font-size: 13px; }
+.assistant-card textarea { width: 100%; min-height: 110px; padding: 9px; border: 1px solid var(--bippo-border); border-radius: 9px; font: inherit; font-size: 14px; resize: vertical; }
+.assistant-card input, .assistant-card select { min-width: 0; }
+.assistant-card .button { justify-self: start; }
+.assistant-card-actions { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; }
+.assistant-card-actions input { flex: 1 1 200px; font-size: 12px; }
+.assistant-check { display: flex !important; align-items: center; gap: 8px; }
+.assistant-check input { width: auto; }
+.assistant-done { display: flex; align-items: center; gap: 6px; margin: 0; color: #1d5b43; font-weight: 600; font-size: 14px; }
+.assistant-menu-preview { display: grid; gap: 8px; max-height: 240px; overflow: auto; font-size: 13px; }
+.assistant-menu-preview ul { list-style: none; padding: 0; margin: 4px 0 0; display: grid; gap: 2px; }
+.assistant-menu-preview li { display: flex; justify-content: space-between; gap: 12px; padding: 3px 6px; border-radius: 6px; background: var(--bippo-surface-muted, #f4f5f1); }
+.assistant-suggestions { display: flex; flex-wrap: wrap; gap: 8px; margin-block: 12px; }
 .assistant-suggestions .button { white-space: normal; text-align: start; }
-.merchant-assistant form { display: flex; gap: 8px; }
-.merchant-assistant input { flex: 1; min-width: 0; }
+.assistant-ask { display: flex; gap: 8px; }
+.assistant-ask input { flex: 1; min-width: 0; }
+.assistant-note { display: block; margin-top: 8px; font-size: 11px; color: var(--bippo-muted); }

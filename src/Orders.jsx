@@ -871,6 +871,9 @@ export default function Orders({ Share, workspace }) {
                 )
               }
               feedbackEnabled={tabs.some(([id]) => id === 'feedback')}
+              canManage={Boolean(managerActions)}
+              paid={!cloud || (paidPlan?.branch === shop?.shop_id && Boolean(paidPlan?.enabled))}
+              onSaved={setShop}
               navigate={(target, period) => {
                 setAssistantReportPeriod(period || null);
                 setTab(target);

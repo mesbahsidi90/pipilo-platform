@@ -15,6 +15,7 @@ const origins = new Set([
 ]);
 import { uuid, validEndpoint } from './validation.js';
 const cutoff = () => new Date(Date.now() - 86400000).toISOString();
+const ackUrl = Deno.env.get('SUPABASE_URL') + '/functions/v1/order-alerts/delivered';
 function check<T>(r: { data: T; error: unknown }) {
   if (r.error) throw new Error('Database request failed');
   return r.data;
@@ -93,9 +94,10 @@ async function send(order: any, cfg: any, resend = false) {
     try {
       await webpush.sendNotification(
         { endpoint: sub.endpoint, keys: { p256dh: sub.p256dh, auth: sub.auth_key } },
-        JSON.stringify(
-          orderPayload(order, 'track', sub.language || undefined, prefs?.data, sub.site_origin),
-        ),
+        JSON.stringify({
+          ...orderPayload(order, 'track', sub.language || undefined, prefs?.data, sub.site_origin),
+          ack: ackUrl,
+        }),
         {
           TTL: 3600,
           urgency: 'high',
@@ -108,6 +110,12 @@ async function send(order: any, cfg: any, resend = false) {
         },
       );
       sent++;
+      // «انرسل» on the staff board: the push service accepted the alert.
+      await db
+        .from('order_guest_signals')
+        .update({ push_sent_at: stamp })
+        .eq('order_id', order.id)
+        .is('push_sent_at', null);
     } catch (err: any) {
       failed++;
       const subscriptions = db.from('push_subscriptions');
@@ -286,6 +294,23 @@ Deno.serve(async (req) => {
             : await send(order, cfg)
           : null;
       return reply({ ok: true, delivery });
+    }
+    // «وصل»: the customer's phone received the ready alert (sent by its service worker).
+    if (route === 'delivered') {
+      const order = await orderFor(body.ticket);
+      if (!order || order.status !== 'ready') return reply({ ok: false });
+      const stamp = new Date().toISOString();
+      await db
+        .from('order_guest_signals')
+        .update({ push_delivered_at: stamp })
+        .eq('order_id', order.id)
+        .is('push_delivered_at', null);
+      await db
+        .from('order_guest_signals')
+        .update({ push_sent_at: stamp })
+        .eq('order_id', order.id)
+        .is('push_sent_at', null);
+      return reply({ ok: true });
     }
     if (route === 'near') {
       if (req.headers.get('x-bippo-webhook') !== cfg.webhook_secret)

@@ -16,6 +16,10 @@ self.addEventListener('push',event=>event.waitUntil((async()=>{
   tag:(near?'near-':'order-')+data.ticket,renotify:true,requireInteraction:!near,silent:false,
   vibrate:near?[200,100,200]:[250,100,250,100,500],data:{url:url.href}
  });
+ // «وصل» on the staff board: tell our alerts function this phone got the ready alert.
+ if(!near&&typeof data.ack==='string'&&/^https:\/\/[a-z0-9]+\.supabase\.co\/functions\/v1\/order-alerts\/delivered$/.test(data.ack)){
+  try{await fetch(data.ack,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({ticket:data.ticket}),keepalive:true});}catch{/* Delivery stays «انرسل». */}
+ }
  try{
   const windows=await self.clients.matchAll({type:'window',includeUncontrolled:true});
   for(const c of windows){const current=new URL(c.url);if(current.origin===url.origin&&current.hash===url.hash)c.postMessage({...data,background:c.visibilityState!=='visible'});}

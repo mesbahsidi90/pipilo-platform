@@ -3,6 +3,7 @@ import { createClient } from '@supabase/supabase-js';
 import { normalizeNumber, validTransition, active, cleanGuestName } from './domain';
 import { branchFetch } from './merchantBranches';
 import { sandboxActive, sandboxFlag } from './sandboxRules';
+import { authStorage, expireIdleSession } from './sessionRules';
 const url = import.meta.env.VITE_SUPABASE_URL;
 const key = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY;
 // The no-account trial at /jarreb runs on local sample data (see sandboxRules).
@@ -19,7 +20,22 @@ export const sandbox = (() => {
 })();
 export const cloud = Boolean(url && key) && !sandbox;
 export const authLinkError = new URLSearchParams(location.hash.slice(1)).get('error_description');
-export const db = cloud ? createClient(url, key, { global: { fetch: branchFetch(url) } }) : null;
+// «تذكّرني على هذا الجهاز» and the 30-day expiry (see sessionRules).
+const authStore = (() => {
+  if (!cloud) return undefined;
+  try {
+    expireIdleSession(localStorage);
+    return authStorage(localStorage, sessionStorage);
+  } catch {
+    return undefined;
+  }
+})();
+export const db = cloud
+  ? createClient(url, key, {
+      global: { fetch: branchFetch(url) },
+      auth: authStore ? { storage: authStore } : undefined,
+    })
+  : null;
 const STORAGE = 'nawba-demo-v1';
 const seed = [101, 102, 103].map((number, i) => ({
   id: crypto.randomUUID(),

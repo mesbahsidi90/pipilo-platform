@@ -55,12 +55,18 @@ export async function addSection(name) {
   if (!row.name) throw new Error(t('اكتب اسم القسم.'));
   if (!cloud) {
     const state = readDemo();
-    state.sections.push({ id: crypto.randomUUID(), name_fr: '', ...row });
+    const id = crypto.randomUUID();
+    state.sections.push({ id, name_fr: '', ...row });
     writeDemo(state);
-    return;
+    return id;
   }
-  const { error } = await db.from('menu_sections').insert({ ...row, shop_id: await branchId() });
+  const { data, error } = await db
+    .from('menu_sections')
+    .insert({ ...row, shop_id: await branchId() })
+    .select('id')
+    .single();
   if (error) throw menuError(error);
+  return data.id;
 }
 
 export async function updateSection(id, patch) {

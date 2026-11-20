@@ -1,4 +1,5 @@
 import { t as bippoT, language, ticketLink } from './i18n.js';
+import { remembered, setRemembered } from './sessionRules';
 import React, { useState, useEffect, lazy, Suspense } from 'react';
 import { createRoot } from 'react-dom/client';
 import { QRCodeSVG } from 'qrcode.react';
@@ -263,6 +264,21 @@ function Login() {
   const [error, setError] = useState('');
   const [busy, setBusy] = useState(false);
   const [method, setMethod] = useState('whatsapp');
+  const [remember, setRemember] = useState(() => {
+    try {
+      return remembered(localStorage);
+    } catch {
+      return true;
+    }
+  });
+  function chooseRemember(on) {
+    setRemember(on);
+    try {
+      setRemembered(localStorage, on);
+    } catch {
+      // Without storage the sign-in stays in this tab only.
+    }
+  }
 
   async function submit(event) {
     event.preventDefault();
@@ -335,6 +351,21 @@ function Login() {
             </form>
           </>
         )}
+        <label className="remember-device">
+          <input
+            type="checkbox"
+            checked={remember}
+            onChange={(event) => chooseRemember(event.target.checked)}
+          />
+          <span>
+            {bippoT('تذكّرني على هذا الجهاز')}
+            <small>
+              {remember
+                ? bippoT('ما نطلبوش كود في كل مرة. إذا ما فتحتش 30 يوم، نطلبوه.')
+                : bippoT('جهاز مشترك: تخرج وحدك كي تسكّر المتصفح.')}
+            </small>
+          </span>
+        </label>
         <div className="merchant-login-links">
           <a href="/forgot-password">{bippoT('نسيت كلمة المرور؟')}</a>
           <a href="/signup">{bippoT('إنشاء حساب')}</a>

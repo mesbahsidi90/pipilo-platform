@@ -77,6 +77,7 @@ import { createOrderAudio } from './orderAudio';
 import { toneSource } from './alertTones';
 import { branchLoyalty, redeemLoyalty } from './loyalty';
 import MerchantFeatures from './MerchantFeatures';
+import { ShopAnnouncements } from './PlatformAnnouncements';
 import OnlineOrderInfo from './OnlineOrderInfo';
 import { acceptOnlineOrder } from './ordering';
 import './loyalty-card.css';
@@ -818,6 +819,7 @@ export default function Orders({ Share, workspace }) {
             )}
           </header>
         )}
+        {tab === 'orders' && <ShopAnnouncements key={shop?.shop_id || 'shop'} />}
         {workspaceError && (
           <p role="alert" className="error">
             {workspaceError}

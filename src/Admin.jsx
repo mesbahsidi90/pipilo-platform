@@ -23,9 +23,11 @@ import {
   BarChart3,
   Download,
   FileText,
+  Megaphone,
 } from 'lucide-react';
 import Brand from './Brand';
 import AdminOrderActivity from './AdminOrderActivity';
+import { AdminAnnouncements } from './PlatformAnnouncements';
 import { AlertList, ShopSheet, StatsTab, exportShops } from './AdminInsights';
 import { adminAlerts } from './adminDomain';
 import { cloud, db } from './store';
@@ -56,6 +58,7 @@ const nav = [
   ['plans', bippoT('الخطط والأسعار'), Layers],
   ['team', bippoT('حسابات المحلات'), Users],
   ['stats', bippoT('الإحصائيات'), BarChart3],
+  ['announcements', bippoT('الإعلانات'), Megaphone],
   ['activity', bippoT('سجل التغييرات'), History],
 ];
 const formatDate = (d) =>
@@ -381,6 +384,7 @@ function AdminPanel({ session }) {
       'محلات طلبت الاحترافية، تجارب قريبة تكمل، ومحلات قريبة من حد الباقة المجانية.',
     ),
     stats: bippoT('الطلبات والتسجيلات واستعمال المزايا.'),
+    announcements: bippoT('اكتب رسالة تبان في لوحة كل المحلات، كيما ميزة جديدة ولا صيانة.'),
     activity: bippoT('سجل التغييرات'),
   }[tab];
 
@@ -914,6 +918,7 @@ function AdminPanel({ session }) {
                 </div>
               ))}
             {tab === 'activity' && <Activity rows={data.audit} shops={shops} />}
+            {tab === 'announcements' && <AdminAnnouncements />}
           </>
         )}
         {edit && (
@@ -1364,6 +1369,7 @@ function Activity({ rows, shops, compact = false }) {
       subscriptions: bippoT('اشتراك'),
       plans: bippoT('خطة'),
       memberships: bippoT('ربط حساب'),
+      announcements: bippoT('إعلان'),
     },
     actions = {
       INSERT: bippoT('إضافة'),

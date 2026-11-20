@@ -1,6 +1,6 @@
 import { t as bippoT } from './i18n.js';
-export const supportPhone = '+905535132920';
-export const supportWhatsApp = 'https://wa.me/905535132920';
+export const supportPhone = '+213551621070';
+export const supportWhatsApp = 'https://wa.me/213551621070';
 export function contactMessage({
   name = '',
   shop = '',

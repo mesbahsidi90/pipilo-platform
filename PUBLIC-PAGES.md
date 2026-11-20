@@ -2,7 +2,7 @@
 
 Published routes: #guide, #cafes, #restaurants, #contact, #privacy, #terms. The shared footer appears on the landing page and every public content page. Account creation links to the terms, privacy and contact pages. Existing shop/admin navigation stays unchanged.
 
-The support number +905535132920 was supplied explicitly for public publication. Contact form fields stay in component memory. The button opens a WhatsApp draft containing the supplied name, shop, subject and message; sending remains the visitor's action in WhatsApp. No email, ticket backend, automatic message or fake delivery confirmation is used.
+The support number +213551621070 was supplied explicitly for public publication. Contact form fields stay in component memory. The button opens a WhatsApp draft containing the supplied name, shop, subject and message; sending remains the visitor's action in WhatsApp. No email, ticket backend, automatic message or fake delivery confirmation is used.
 
 Public content reflects implemented functionality. It does not advertise POS, WhatsApp order alerts, clinic queues or payment processing as active. Privacy describes account/order/push data, local storage, service providers, retained reports and the difference between ticket-link expiry and deletion. Terms do not import another provider's jurisdiction, prices or entitlement to use merchant logos for advertising.
 

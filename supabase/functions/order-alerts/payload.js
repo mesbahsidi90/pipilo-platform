@@ -17,7 +17,7 @@ export function orderPayload(order, route = 'track', language, settings, siteOri
       .replace(/\{(number|venue|room)\}/g, (_, name) => vars[name])
       .slice(0, limit);
   }
-  const clinic = route === 'track' && order.shops?.kind === 'clinic';
+  const clinic = (route === 'track' || route === 'trial') && order.shops?.kind === 'clinic';
   const title = field(
     'title',
     clinic

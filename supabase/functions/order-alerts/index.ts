@@ -2,6 +2,7 @@ import { createClient } from 'npm:@supabase/supabase-js@2.57.4';
 import webpush from 'npm:web-push@3.6.7';
 import { nearPayload, orderPayload } from './payload.js';
 import { demoTicket, sendDemo, handleDemo } from './demo.ts';
+import { handleTrial } from './trial.ts';
 const db = createClient(Deno.env.get('SUPABASE_URL')!, Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!, {
   auth: { persistSession: false, autoRefreshToken: false },
 });
@@ -16,6 +17,7 @@ const origins = new Set([
 import { uuid, validEndpoint } from './validation.js';
 const cutoff = () => new Date(Date.now() - 86400000).toISOString();
 const ackUrl = Deno.env.get('SUPABASE_URL') + '/functions/v1/order-alerts/delivered';
+const trialAckUrl = Deno.env.get('SUPABASE_URL') + '/functions/v1/order-alerts/trial-delivered';
 function check<T>(r: { data: T; error: unknown }) {
   if (r.error) throw new Error('Database request failed');
   return r.data;
@@ -203,6 +205,8 @@ Deno.serve(async (req) => {
       return reply({ error: 'Invalid JSON' }, 400);
     }
     if (route?.startsWith('demo-')) return await handleDemo(route, body, req, db, cfg, reply);
+    if (route?.startsWith('trial-'))
+      return await handleTrial(route, body, req, db, cfg, reply, origin, trialAckUrl);
     if (route === 'subscribe' || route === 'unsubscribe') {
       const demo = body.demo === true;
       const table = demo ? 'demo_push_subscriptions' : 'push_subscriptions';

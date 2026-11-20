@@ -21,7 +21,6 @@ import {
   Star,
 } from 'lucide-react';
 import {
-  sandbox,
   cloud,
   db,
   listOrders,
@@ -30,6 +29,7 @@ import {
   track,
   display,
   subscribe,
+  sandbox,
 } from './store';
 import { statuses } from './domain';
 import './style.css';
@@ -41,6 +41,7 @@ captureVisit();
 const Account = lazy(() => import('./Account'));
 const Signup = lazy(() => import('./Signup'));
 const TryShop = lazy(() => import('./TryShop'));
+const TrialCustomer = lazy(() => import('./TrialCustomer'));
 const SandboxBar = lazy(() => import('./TryShop').then((m) => ({ default: m.SandboxBar })));
 import PublicPages from './PublicPages';
 import { publicRoutes, pageInfo } from './publicContent';
@@ -147,6 +148,8 @@ function App() {
     <Signup key={token} initialKind={Object.hasOwn(shopTypes, token) ? token : 'cafe'} />
   ) : page === 'demo' ? (
     <DemoCustomer key={token} token={token} />
+  ) : page === 'trial' ? (
+    <TrialCustomer key={token} token={token} />
   ) : page === 'queue' ? (
     <ClinicQueue key={token} branch={token} />
   ) : page === 'invoice' ? (
@@ -381,7 +384,11 @@ function Share({ order, close }) {
     [width, setWidth] = useState('80'),
     [preview, setPreview] = useState(false),
     [printError, setPrintError] = useState('');
-  const url = link('track/' + order.token);
+  // In the trial, the ticket is opened from the server copy (works on any phone).
+  const url = link((sandbox ? 'trial/' : 'track/') + order.token);
+  useEffect(() => {
+    if (sandbox) void import('./trialSync').then((m) => m.mirrorTrialOrder(order));
+  }, [order.token]);
   const fixed = branding?.kind !== 'clinic' && branding?.tracking_mode === 'counter';
   const counterUrl = fixed && order.counter_pending ? link(counterRoute(branding.shop_id)) : null;
   const code = fixed && order.counter_pending == null ? trackingCode(order) : '';

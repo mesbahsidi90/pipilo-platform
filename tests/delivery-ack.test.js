@@ -62,3 +62,13 @@ test('the phone never reports to another address, nor for the «قرب دورك�
   assert.equal(near.shown.length, 1);
   assert.equal(near.posted.length, 0);
 });
+
+test('a trial ticket alert opens #trial and reports to the trial route', async () => {
+  const { posted, shown } = await receive({
+    ...ready,
+    url: 'https://bipilo.app/#trial/t1',
+    ack: 'https://kdvtqlqiervznhzbpjcx.supabase.co/functions/v1/order-alerts/trial-delivered',
+  });
+  assert.equal(shown.length, 1);
+  assert.equal(posted.length, 1);
+});

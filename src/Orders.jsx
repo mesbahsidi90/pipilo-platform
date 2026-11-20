@@ -39,6 +39,7 @@ import {
   transition,
   subscribe,
   counterScanRequired,
+  sandbox,
 } from './store';
 import { active, statuses } from './domain';
 import DotNumber from './DotNumber';
@@ -693,7 +694,7 @@ export default function Orders({ Share, workspace }) {
     const url = fixed
       ? ticketLink(counterRoute(shop.shop_id))
       : selectedOrder
-        ? ticketLink('track/' + selectedOrder.token)
+        ? ticketLink((sandbox ? 'trial/' : 'track/') + selectedOrder.token)
         : null;
     return (
       <main className="branch-tablet">

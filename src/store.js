@@ -37,6 +37,10 @@ export const db = cloud
     })
   : null;
 const STORAGE = 'nawba-demo-v1';
+// Trial orders are copied to the server so a second phone can open them.
+const mirror = (order) => {
+  if (sandbox && order) void import('./trialSync').then((m) => m.mirrorTrialOrder(order));
+};
 const seed = [101, 102, 103].map((number, i) => ({
   id: crypto.randomUUID(),
   token: crypto.randomUUID(),
@@ -134,6 +138,7 @@ export async function createOrder(
       created_at: new Date().toISOString(),
     };
     save([o, ...rows]);
+    mirror(o);
     return o;
   }
   const { data, error } = await db
@@ -190,7 +195,9 @@ export async function transition(order, status, { clinic = false } = {}) {
       cancelled: { counter_pending: current.counter_pending == null ? null : false },
       preparing: { restored_at: now },
     };
-    save(rows.map((o) => (o.id === current.id ? { ...o, status, ...timestamps[status] } : o)));
+    const next = { ...current, status, ...timestamps[status] };
+    save(rows.map((o) => (o.id === current.id ? next : o)));
+    mirror(next);
     return;
   }
   const { data, error } = await db

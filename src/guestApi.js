@@ -1,4 +1,4 @@
-import { cloud, db, listOrders, track } from './store';
+import { cloud, db, listOrders, sandbox, track } from './store';
 import { queueCompare } from './clinicRules';
 import { getSettings } from './shopSettings';
 import { demoOnlineDetails } from './ordering';
@@ -109,7 +109,20 @@ export async function branchOrderFeedback() {
 }
 // One bounded guest payload; no subscription addresses, staff identity or other orders.
 export async function staffSignals(ids = []) {
-  if (!cloud) return read();
+  if (!cloud) {
+    const local = read();
+    if (!sandbox) return local;
+    try {
+      const remote = await (await import('./trialSync')).trialSignals();
+      for (const order of await listOrders()) {
+        const signal = remote[order.token];
+        if (signal) local[order.id] = { ...local[order.id], ...signal };
+      }
+    } catch {
+      // The board keeps the local signals.
+    }
+    return local;
+  }
   const { data: shop, error: e } = await db.rpc('current_shop_id');
   if (e) throw e;
   if (!shop || !ids.length) return {};

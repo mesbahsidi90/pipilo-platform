@@ -66,6 +66,7 @@ export default function OrderAlerts({
   onRefresh,
   offline = false,
   demo = false,
+  trial = false,
   tone,
   onEnabled,
   onPushEnabled,
@@ -133,7 +134,7 @@ export default function OrderAlerts({
     if (status === 'collected') session.current?.acknowledge();
   }, [ticket, status, tone]);
   useEffect(() => {
-    if (!cloud) {
+    if (!cloud && !trial) {
       setPush('local');
       return;
     }
@@ -169,7 +170,7 @@ export default function OrderAlerts({
         });
         const subscription = await reg.pushManager.getSubscription();
         if (subscription && Notification.permission === 'granted') {
-          await pushRequest('subscribe', {
+          await pushRequest(trial ? 'trial-subscribe' : 'subscribe', {
             ticket,
             demo,
             language,
@@ -196,7 +197,7 @@ export default function OrderAlerts({
       live = false;
       navigator.serviceWorker.removeEventListener('message', message);
     };
-  }, [ticket, demo]);
+  }, [ticket, demo, trial]);
   async function enablePush() {
     if (!ready) return;
     setPushBusy(true);
@@ -205,7 +206,7 @@ export default function OrderAlerts({
         userVisibleOnly: true,
         applicationServerKey: keyBytes(ready.key),
       });
-      await pushRequest('subscribe', {
+      await pushRequest(trial ? 'trial-subscribe' : 'subscribe', {
         ticket,
         demo,
         language,

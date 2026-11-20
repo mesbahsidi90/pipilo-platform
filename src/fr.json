@@ -1757,5 +1757,18 @@
   "تنحّات صلاحية الأدمين.": "Rôle d'administrateur retiré.",
   "ما تقدرش تنحّي روحك. خلّي أدمين آخر يديرها.": "Vous ne pouvez pas vous retirer vous-même. Demandez à un autre administrateur.",
   "لازم يبقى أدمين واحد على الأقل.": "Il doit rester au moins un administrateur.",
-  "هاذ الحساب ماشي أدمين.": "Ce compte n'est pas administrateur."
+  "هاذ الحساب ماشي أدمين.": "Ce compte n'est pas administrateur.",
+  "الاحترافية": "Pro",
+  "سعر الاحترافية": "Prix de l'offre Pro",
+  "خصم الدعوة": "Remise d'invitation",
+  "رصيد الإحالة": "Crédit de parrainage",
+  "تخلّص": "À payer",
+  "تعذر حساب سعر الاحترافية.": "Impossible de calculer le prix de l'offre Pro.",
+  "الاحترافية مفعّلة قبل نظام الإحالة.": "Pro activé avant le système de parrainage.",
+  "خلّص {0} يوم {1}.": "A payé {0} le {1}.",
+  "قبل ما تفعّل الاحترافية، الفرع يخلّص:": "Avant d’activer Pro, la succursale paie :",
+  "ربح من الإحالة: {0} في المجموع.": "Gagné grâce au parrainage : {0} au total.",
+  "جرّب Bipilo لمحلك: الزبون ياخذ رقم ويتبّع دورو من تيليفونو. سجّل من هذا الرابط وعندك خصم {0} على الاحترافية: {1}": "Essayez Bipilo pour votre commerce : le client prend un numéro et suit son tour sur son téléphone. Inscrivez-vous avec ce lien et obtenez {0} de remise sur Pro : {1}",
+  "كل محل يتسجّل من رابطك ويخلّص الاحترافية، تربح {0} تنقص من سعر الاحترافية تاعك، حتى توصل للصفر. وهو ياخذ {1} خصم.": "Pour chaque commerce inscrit avec votre lien qui paie Pro, vous gagnez {0} déduits de votre propre prix Pro, jusqu'à zéro. Lui obtient {1} de remise.",
+  "رصيدك": "Votre crédit"
 }

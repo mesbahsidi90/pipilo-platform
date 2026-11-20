@@ -99,7 +99,7 @@
 }
 .billing-referral-stats {
   display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(90px, 1fr));
   gap: 8px;
   margin: 0;
 }
@@ -126,4 +126,38 @@
   font-weight: 700;
   letter-spacing: 0.08em;
   color: var(--bippo-text);
+}
+.billing-referral .billing-referral-reward {
+  padding: 10px 12px;
+  border-radius: 10px;
+  background: #f1f8f3;
+  color: #1d5b43;
+  font-weight: 600;
+  line-height: 1.7;
+}
+.pro-quote {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 4px 16px;
+  max-width: 360px;
+  margin: 6px 0;
+  font-size: 13px;
+}
+.pro-quote dt,
+.pro-quote dd {
+  margin: 0;
+}
+.pro-quote dd {
+  text-align: end;
+  direction: ltr;
+  unicode-bidi: isolate;
+}
+.pro-quote .pro-quote-total {
+  padding-top: 4px;
+  border-top: 1px solid var(--bippo-border);
+  font-weight: 700;
+  font-size: 15px;
+}
+.admin-pro-quote p {
+  margin: 0 0 4px;
 }

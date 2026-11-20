@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { Copy, Gift, MessageCircle } from 'lucide-react';
 import { t } from './i18n.js';
-import { myReferral } from './referral';
+import { dzd, myReferral } from './referral';
 import { inviteLink } from './signupSourceRules';
 
 // The owner's invite link for other shop owners, and what it brought so far.
@@ -19,10 +19,13 @@ export default function ReferralCard() {
   }, []);
   if (!referral?.code) return null;
   const link = inviteLink(location.origin, referral.code);
-  const message = t(
-    'جرّب Bipilo لمحلك: الزبون ياخذ رقم ويتبّع دورو من تيليفونو. سجّل من هنا: {0}',
-    [link],
-  );
+  const message =
+    Number(referral.invite_discount) > 0
+      ? t(
+          'جرّب Bipilo لمحلك: الزبون ياخذ رقم ويتبّع دورو من تيليفونو. سجّل من هذا الرابط وعندك خصم {0} على الاحترافية: {1}',
+          [dzd(referral.invite_discount), link],
+        )
+      : t('جرّب Bipilo لمحلك: الزبون ياخذ رقم ويتبّع دورو من تيليفونو. سجّل من هنا: {0}', [link]);
   return (
     <section className="panel billing-referral" aria-labelledby="referral-title">
       <h3 id="referral-title">
@@ -30,6 +33,14 @@ export default function ReferralCard() {
         {t('ادعُ صاحب محل آخر')}
       </h3>
       <p>{t('ابعث رابطك لأصحاب المحلات اللي تعرفهم. كل محل يتسجّل منو يتحسب لك هنا.')}</p>
+      {Number(referral.reward) > 0 && (
+        <p className="billing-referral-reward">
+          {t(
+            'كل محل يتسجّل من رابطك ويخلّص الاحترافية، تربح {0} تنقص من سعر الاحترافية تاعك، حتى توصل للصفر. وهو ياخذ {1} خصم.',
+            [dzd(referral.reward), dzd(referral.invite_discount)],
+          )}
+        </p>
+      )}
       <div className="billing-referral-link">
         <input
           dir="ltr"
@@ -77,6 +88,12 @@ export default function ReferralCard() {
           <dt>{t('خلّصو')}</dt>
           <dd>{referral.paid}</dd>
         </div>
+        {referral.credit != null && (
+          <div>
+            <dt>{t('رصيدك')}</dt>
+            <dd>{dzd(referral.credit)}</dd>
+          </div>
+        )}
       </dl>
       <p className="billing-referral-code">
         {t('كود الإحالة')} <code dir="ltr">{referral.code}</code>

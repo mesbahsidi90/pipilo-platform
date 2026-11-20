@@ -1,4 +1,5 @@
 import { t as bippoT, locale } from './i18n.js';
+import { AdminProQuote } from './ProQuote';
 import React, { useState } from 'react';
 import { Bell, Copy, Mail, MessageCircle, Phone, Store } from 'lucide-react';
 import { shopTypes, subStates } from './adminData';
@@ -183,6 +184,10 @@ export function ShopSheet({
               </dd>
             </>
           )}
+          <dt>{bippoT('الاحترافية')}</dt>
+          <dd>
+            <AdminProQuote shopId={shop.id} />
+          </dd>
           <dt>{bippoT('آخر دخول')}</dt>
           <dd>{dateTime(row?.owner?.last_sign_in_at)}</dd>
           <dt>{bippoT('الحسابات')}</dt>

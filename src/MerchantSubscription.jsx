@@ -8,6 +8,7 @@ import { PlanCards } from './PlanCards';
 import { professionalPlanId } from './planConfig';
 import { myPlanRequest, requestPlanUpgrade } from './planRequest';
 import ReferralCard from './ReferralCard';
+import { ProQuote } from './ProQuote';
 
 export default function MerchantSubscription({ shopId, shopError, branchCount }) {
   const [result, setResult] = useState(null);
@@ -135,6 +136,7 @@ function PlanRequest() {
             new Date(request.created_at).toLocaleDateString(locale),
           ])}
         </p>
+        <ProQuote />
       </section>
     );
   async function send(event) {
@@ -155,6 +157,7 @@ function PlanRequest() {
     <form className="panel billing-request" onSubmit={send}>
       <h3>{t('تحب الاحترافية؟')}</h3>
       <p>{t('ابعث طلب وفريق Bipilo يتصل بيك باش يفعّلها لمحلك.')}</p>
+      <ProQuote />
       <label>
         {t('ملاحظة — اختياري')}
         <textarea

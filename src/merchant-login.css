@@ -45,6 +45,6 @@
 .signup-steps li span { display: grid; place-items: center; width: 22px; height: 22px; border-radius: 50%; background: var(--bippo-bg); font-size: .8rem; font-weight: 700; }
 .signup-steps li.current { border-color: var(--bippo-primary); color: var(--bippo-primary-deep); font-weight: 600; }
 .signup-steps li.current span, .signup-steps li.done span { background: var(--bippo-primary); color: #fff; }
-.remember-device { display: flex; align-items: flex-start; gap: 10px; font-size: 14px; font-weight: 600; cursor: pointer; }
-.remember-device input { width: 18px; height: 18px; margin-top: 3px; flex: none; accent-color: var(--bippo-primary); }
+.merchant-login .remember-device { display: flex; align-items: flex-start; gap: 10px; font-size: 14px; font-weight: 600; cursor: pointer; }
+.merchant-login .remember-device input { width: 18px; height: 18px; margin-top: 3px; flex: none; accent-color: var(--bippo-primary); }
 .remember-device small { display: block; margin-top: 2px; font-size: 12px; font-weight: 400; color: var(--bippo-muted); }

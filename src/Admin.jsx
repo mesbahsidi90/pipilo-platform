@@ -24,10 +24,12 @@ import {
   Download,
   FileText,
   Megaphone,
+  KeyRound,
 } from 'lucide-react';
 import Brand from './Brand';
 import AdminOrderActivity from './AdminOrderActivity';
 import { AdminAnnouncements } from './PlatformAnnouncements';
+import AdminAccess from './AdminAccess';
 import { AlertList, ShopSheet, StatsTab, exportShops } from './AdminInsights';
 import { adminAlerts } from './adminDomain';
 import { cloud, db } from './store';
@@ -57,6 +59,7 @@ const nav = [
   ['subscriptions', bippoT('الاشتراكات'), CreditCard],
   ['plans', bippoT('الخطط والأسعار'), Layers],
   ['team', bippoT('حسابات المحلات'), Users],
+  ['admins', bippoT('الأدمين'), KeyRound],
   ['stats', bippoT('الإحصائيات'), BarChart3],
   ['announcements', bippoT('الإعلانات'), Megaphone],
   ['activity', bippoT('سجل التغييرات'), History],
@@ -380,6 +383,7 @@ function AdminPanel({ session }) {
     subscriptions: bippoT('تابع الاشتراكات وبدّل الخطط وفترات الصلاحية.'),
     plans: bippoT('الخطط والأسعار'),
     team: bippoT('حسابات المحلات'),
+    admins: bippoT('زيد ولا نحّي اللي يقدرو يدخلو لإدارة المنصة.'),
     requests: bippoT(
       'محلات طلبت الاحترافية، تجارب قريبة تكمل، ومحلات قريبة من حد الباقة المجانية.',
     ),
@@ -884,7 +888,7 @@ function AdminPanel({ session }) {
                   <Users size={19} />
                   <p>
                     {bippoT(
-                      'الحساب لازم يكون مسجّل في Bipilo. اكتب الإيميل ولا رقم التليفون تاعو باش تربطو. إدارة كلمات المرور ومنح صلاحية أدمين تبقى خارج هاذ الصفحة.',
+                      'الحساب لازم يكون مسجّل في Bipilo. اكتب الإيميل ولا رقم التليفون تاعو باش تربطو. صلاحية الأدمين تتعطى من قسم «الأدمين».',
                     )}
                   </p>
                 </div>
@@ -919,6 +923,7 @@ function AdminPanel({ session }) {
               ))}
             {tab === 'activity' && <Activity rows={data.audit} shops={shops} />}
             {tab === 'announcements' && <AdminAnnouncements />}
+            {tab === 'admins' && <AdminAccess />}
           </>
         )}
         {edit && (
@@ -1370,6 +1375,7 @@ function Activity({ rows, shops, compact = false }) {
       plans: bippoT('خطة'),
       memberships: bippoT('ربط حساب'),
       announcements: bippoT('إعلان'),
+      platform_admins: bippoT('صلاحية أدمين'),
     },
     actions = {
       INSERT: bippoT('إضافة'),

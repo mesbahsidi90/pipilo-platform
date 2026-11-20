@@ -1875,5 +1875,18 @@
   "تيكي تجربة Bipilo · يتمسح بعد 6 ساعات.": "Ticket d’essai Bipilo · supprimé après 6 heures.",
   "المزيد": "Plus",
   "التنقل السريع": "Navigation rapide",
-  "المساعد": "Assistant"
+  "المساعد": "Assistant",
+  "تابع طلبي": "Suivre ma commande",
+  "عاود المسح": "Réessayer",
+  "هذا الرقم عندو تيكي من قبل. تأكد من رقم الفاتورة.": "Ce numéro a déjà un ticket. Vérifiez le numéro de la facture.",
+  "مرتين": "Deux fois",
+  "النداء مرتين": "Annoncer l'appel deux fois",
+  "الصوت راه موقف. اضغط في أي بلاصة باش يرجع.": "Le son est coupé. Touchez n'importe où pour le rétablir.",
+  "الرقم المنادى": "Numéro appelé",
+  "آخر طلب واجد": "Dernière commande prête",
+  "تفضّل إلى {0}": "Présentez-vous à {0}",
+  "تفضّل للاستقبال": "Présentez-vous à l'accueil",
+  "النداءات السابقة": "Appels précédents",
+  "ما كاش طلب واجد دروك.": "Aucune commande prête pour l'instant.",
+  "ما كاش نداء دروك.": "Aucun appel pour l'instant."
 }

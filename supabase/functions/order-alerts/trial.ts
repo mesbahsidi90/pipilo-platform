@@ -17,7 +17,9 @@ const kinds = new Set([
 ]);
 const statuses = new Set(['preparing', 'ready', 'collected', 'cancelled']);
 const signalFields =
-  'token,opened_at,last_seen_at,push_enabled_at,push_sent_at,push_delivered_at,ready_seen_at,coming_at';
+  'token,number,status,counter_pending,origin,created_at,opened_at,last_seen_at,push_enabled_at,push_sent_at,push_delivered_at,ready_seen_at,coming_at';
+const modes = new Set(['order', 'counter', 'invoice']);
+const sessionPattern = /^[A-Za-z0-9_-]{32,100}$/;
 const take = (r: any) => {
   if (r.error) throw r.error;
   return r.data;
@@ -34,6 +36,35 @@ const clean = (value: unknown, max: number) =>
     .trim()
     .slice(0, max);
 const live = (ticket: any) => ticket && Date.parse(ticket.expires_at) > Date.now();
+
+async function placeFor(db: any, place: string) {
+  if (!uuid.test(place || '')) return null;
+  const row = take(await db.from('trial_places').select('*').eq('place', place).maybeSingle());
+  return live(row) ? row : null;
+}
+
+// A ticket created from a phone (number taken, counter claimed, invoice typed).
+async function createFromPhone(db: any, place: any, fields: Record<string, unknown>) {
+  const since = new Date(Date.now() - 6 * 3600000).toISOString();
+  const { count } = await db
+    .from('trial_tickets')
+    .select('token', { count: 'exact', head: true })
+    .eq('session_hash', place.session_hash)
+    .gte('created_at', since);
+  if ((count || 0) >= 300) return null;
+  const token = crypto.randomUUID();
+  take(
+    await db.from('trial_tickets').insert({
+      token,
+      session_hash: place.session_hash,
+      shop_name: place.shop_name,
+      kind: place.kind,
+      status: 'preparing',
+      ...fields,
+    }),
+  );
+  return token;
+}
 
 async function ticketFor(db: any, token: string) {
   if (!uuid.test(token || '')) return null;
@@ -131,6 +162,7 @@ export async function handleTrial(
     const name = clean(body.name, 100) || 'Bipilo';
     const kind = kinds.has(body.kind) ? body.kind : 'cafe';
     const status = statuses.has(body.status) ? body.status : 'preparing';
+    const counterPending = body.counter_pending === true;
     if (!number) return reply({ error: 'Invalid number' }, 400);
     const sessionHash = await sha(session);
     const existing = take(
@@ -172,6 +204,7 @@ export async function handleTrial(
           shop_name: name,
           kind,
           status,
+          counter_pending: counterPending,
           ...stamps,
         }),
       );
@@ -180,7 +213,15 @@ export async function handleTrial(
     take(
       await db
         .from('trial_tickets')
-        .update({ number, shop_name: name, kind, status, ...stamps })
+        .update({
+          number,
+          shop_name: name,
+          kind,
+          status,
+          // A phone that claimed the order clears it; the owner never sets it back.
+          counter_pending: existing.counter_pending && counterPending,
+          ...stamps,
+        })
         .eq('token', body.token),
     );
     if (status === 'preparing' && existing.status !== 'preparing')
@@ -192,10 +233,129 @@ export async function handleTrial(
     return reply({ ok: true, delivery });
   }
 
+  // Owner's trial dashboard: the public place printed on its fixed QR codes.
+  if (route === 'trial-place-save') {
+    const session = String(body.session || '');
+    if (!sessionPattern.test(session)) return reply({ error: 'Invalid session' }, 400);
+    if (!uuid.test(body.place || '')) return reply({ error: 'Invalid place' }, 400);
+    const sessionHash = await sha(session);
+    const fields = {
+      place: body.place,
+      shop_name: clean(body.name, 100) || 'Bipilo',
+      kind: kinds.has(body.kind) ? body.kind : 'cafe',
+      tracking_mode: modes.has(body.tracking_mode) ? body.tracking_mode : 'order',
+      paused: body.paused === true,
+      expires_at: new Date(Date.now() + 6 * 3600000).toISOString(),
+    };
+    const taken = take(
+      await db.from('trial_places').select('session_hash').eq('place', body.place).maybeSingle(),
+    );
+    if (taken && taken.session_hash !== sessionHash) return reply({ error: 'Not authorized' }, 403);
+    await db.from('trial_places').delete().lt('expires_at', now);
+    take(
+      await db
+        .from('trial_places')
+        .upsert({ ...fields, session_hash: sessionHash }, { onConflict: 'session_hash' }),
+    );
+    return reply({ ok: true });
+  }
+
+  // Customer's phone at a fixed QR code.
+  if (['trial-place', 'trial-join', 'trial-claim', 'trial-invoice'].includes(route)) {
+    const place = await placeFor(db, body.place);
+    if (!place) return reply({ error: 'Place unavailable' }, 404);
+    const info = {
+      name: place.shop_name,
+      kind: place.kind,
+      tracking_mode: place.tracking_mode,
+      paused: place.paused,
+    };
+    if (route === 'trial-place') return reply(info);
+    const request = uuid.test(body.request || '') ? body.request : null;
+    if (!request) return reply({ error: 'Invalid request' }, 400);
+    const earlier = take(
+      await db
+        .from('trial_tickets')
+        .select('token,expires_at')
+        .eq('session_hash', place.session_hash)
+        .eq('request_key', request)
+        .maybeSingle(),
+    );
+    if (earlier && live(earlier)) return reply({ token: earlier.token });
+
+    if (route === 'trial-join') {
+      if (place.kind !== 'clinic') return reply({ error: 'Not a clinic' }, 400);
+      if (place.paused) return reply({ paused: true });
+      const recent = take(
+        await db
+          .from('trial_tickets')
+          .select('number')
+          .eq('session_hash', place.session_hash)
+          .gt('expires_at', now)
+          .limit(300),
+      );
+      const top = Math.max(0, ...(recent || []).map((row: any) => Number(row.number) || 0));
+      const token = await createFromPhone(db, place, {
+        number: String(top + 1).slice(0, 8),
+        origin: 'join',
+        request_key: request,
+      });
+      return token ? reply({ token }) : reply({ error: 'Too many trial tickets' }, 429);
+    }
+
+    if (route === 'trial-claim') {
+      const since = new Date(Date.now() - 3600000).toISOString();
+      const pending = take(
+        await db
+          .from('trial_tickets')
+          .select('token')
+          .eq('session_hash', place.session_hash)
+          .eq('counter_pending', true)
+          .eq('status', 'preparing')
+          .gte('created_at', since)
+          .order('created_at', { ascending: false })
+          .limit(1)
+          .maybeSingle(),
+      );
+      if (!pending) return reply({ waiting: true });
+      const claimed = take(
+        await db
+          .from('trial_tickets')
+          .update({ counter_pending: false, request_key: request, origin: 'counter' })
+          .eq('token', pending.token)
+          .eq('counter_pending', true)
+          .select('token'),
+      );
+      return claimed?.length ? reply({ token: pending.token }) : reply({ waiting: true });
+    }
+
+    // trial-invoice: the number printed on the receipt.
+    const number = clean(body.number, 8);
+    if (!/^[0-9A-Za-z]{1,8}$/.test(number)) return reply({ error: 'Invalid number' }, 400);
+    const active = take(
+      await db
+        .from('trial_tickets')
+        .select('token')
+        .eq('session_hash', place.session_hash)
+        .eq('number', number)
+        .in('status', ['preparing', 'ready'])
+        .gt('expires_at', now)
+        .limit(1)
+        .maybeSingle(),
+    );
+    if (active) return reply({ taken: true });
+    const token = await createFromPhone(db, place, {
+      number,
+      origin: 'invoice',
+      request_key: request,
+    });
+    return token ? reply({ token }) : reply({ error: 'Too many trial tickets' }, 429);
+  }
+
   // Owner's trial dashboard: the customer signals of all its tickets.
   if (route === 'trial-signals') {
     const session = String(body.session || '');
-    if (!/^[A-Za-z0-9_-]{32,100}$/.test(session)) return reply({ error: 'Invalid session' }, 400);
+    if (!sessionPattern.test(session)) return reply({ error: 'Invalid session' }, 400);
     const rows = take(
       await db
         .from('trial_tickets')

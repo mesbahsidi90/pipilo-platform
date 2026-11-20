@@ -13,12 +13,15 @@ import {
   normalizeTrackingCode,
 } from './counterAccess.js';
 import './counter-ticket.css';
+import { sandbox } from './store';
+import { trialPlaceId } from './trialSync';
 
 export function CounterPoster({ shop, clinic = false, enabled = true }) {
   const preview = useRef(null);
   const invoice = !clinic && shop.tracking_mode === 'invoice';
   const route = clinic ? clinicRoute : invoice ? invoiceRoute : counterRoute;
-  const url = ticketLink(route(shop.shop_id));
+  // In the trial, any phone reaches the trial's server copy.
+  const url = ticketLink(sandbox ? 'trial-place/' + trialPlaceId() : route(shop.shop_id));
   function downloadCode() {
     const svg = preview.current?.querySelector('svg');
     if (!svg) return;

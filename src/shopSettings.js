@@ -1,5 +1,5 @@
 import { t as bippoT } from './i18n.js';
-import { cloud, db } from './store';
+import { cloud, db, sandbox } from './store';
 import { shopActivity } from './shopActivities';
 import { cleanCustomerOptions, themeKey } from './customerThemes';
 import { toneKey } from './alertTones';
@@ -110,6 +110,7 @@ export async function saveSettings(value) {
   if (!data.name || data.name.length > 100) throw new Error(bippoT('دخل اسم المحل، حتى 100 حرف.'));
   if (!cloud) {
     localStorage.setItem(key, JSON.stringify({ ...data, kind: value.kind }));
+    if (sandbox) void import('./trialSync').then((m) => m.saveTrialPlace(true));
     return { ...data, kind: value.kind };
   }
   const { error } = await db.from('shop_settings').upsert(

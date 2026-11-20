@@ -28,6 +28,7 @@ import {
   transition,
   track,
   display,
+  displayBranding,
   subscribe,
   sandbox,
 } from './store';
@@ -42,6 +43,7 @@ const Account = lazy(() => import('./Account'));
 const Signup = lazy(() => import('./Signup'));
 const TryShop = lazy(() => import('./TryShop'));
 const TrialCustomer = lazy(() => import('./TrialCustomer'));
+const TrialPlace = lazy(() => import('./TrialPlace'));
 const SandboxBar = lazy(() => import('./TryShop').then((m) => ({ default: m.SandboxBar })));
 import PublicPages from './PublicPages';
 import { publicRoutes, pageInfo } from './publicContent';
@@ -67,6 +69,7 @@ import { shopActivity, shopTypes } from './shopActivities';
 import CounterTicket from './CounterTicket';
 import InvoiceTicket from './InvoiceTicket';
 import { counterRoute, trackingCode } from './counterAccess.js';
+import { trialPlaceId } from './trialSync';
 import ReviewCard from './ReviewCard';
 import { getSettings } from './shopSettings';
 import { signalGuest, guestExtras } from './guestApi';
@@ -150,6 +153,8 @@ function App() {
     <DemoCustomer key={token} token={token} />
   ) : page === 'trial' ? (
     <TrialCustomer key={token} token={token} />
+  ) : page === 'trial-place' ? (
+    <TrialPlace key={token} place={token} />
   ) : page === 'queue' ? (
     <ClinicQueue key={token} branch={token} />
   ) : page === 'invoice' ? (
@@ -390,7 +395,10 @@ function Share({ order, close }) {
     if (sandbox) void import('./trialSync').then((m) => m.mirrorTrialOrder(order));
   }, [order.token]);
   const fixed = branding?.kind !== 'clinic' && branding?.tracking_mode === 'counter';
-  const counterUrl = fixed && order.counter_pending ? link(counterRoute(branding.shop_id)) : null;
+  const counterUrl =
+    fixed && order.counter_pending
+      ? link(sandbox ? 'trial-place/' + trialPlaceId() : counterRoute(branding.shop_id))
+      : null;
   const code = fixed && order.counter_pending == null ? trackingCode(order) : '';
   useEffect(() => {
     let live = true;
@@ -687,7 +695,17 @@ function Customer({ token }) {
 }
 function Display({ token }) {
   const { data, error } = useLive(() => display(token), [token]);
-  return <WaitingBoard orders={data} error={error} />;
+  const [branding, setBranding] = useState(null);
+  useEffect(() => {
+    let alive = true;
+    displayBranding(token)
+      .then((value) => alive && setBranding(value))
+      .catch(() => {});
+    return () => {
+      alive = false;
+    };
+  }, [token]);
+  return <WaitingBoard orders={data} error={error} branding={branding} />;
 }
 createRoot(document.getElementById('root')).render(
   <>

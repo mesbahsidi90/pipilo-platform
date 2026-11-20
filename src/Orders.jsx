@@ -53,6 +53,7 @@ import { duration, secondsBetween } from './reporting';
 import Brand from './Brand';
 import { QRCodeSVG } from 'qrcode.react';
 import { counterRoute } from './counterAccess';
+import { trialPlaceId } from './trialSync';
 import { supportPhone, supportWhatsApp } from './contactDetails';
 import MerchantCodes from './MerchantCodes';
 import MerchantSubscription from './MerchantSubscription';
@@ -706,7 +707,7 @@ export default function Orders({ Share, workspace }) {
     const selectedOrder = activeOrders.find((order) => order.id === screenOrderId);
     const fixed = shop?.tracking_mode === 'counter';
     const url = fixed
-      ? ticketLink(counterRoute(shop.shop_id))
+      ? ticketLink(sandbox ? 'trial-place/' + trialPlaceId() : counterRoute(shop.shop_id))
       : selectedOrder
         ? ticketLink((sandbox ? 'trial/' : 'track/') + selectedOrder.token)
         : null;

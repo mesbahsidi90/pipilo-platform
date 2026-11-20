@@ -1,6 +1,6 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { t, ticketLink } from './i18n';
-import { cloud, db, createOrder, listOrders, track, transition } from './store';
+import { cloud, db, createOrder, listOrders, sandbox, track, transition } from './store';
 import { getSettings } from './shopSettings';
 import { active } from './domain';
 import Brand from './Brand';
@@ -232,6 +232,7 @@ export async function setQueuePaused(paused) {
     } catch {
       // Demo only.
     }
+    if (sandbox) void import('./trialSync').then((m) => m.saveTrialPlace(true));
   }
   return paused ? algiersToday() : null;
 }

@@ -225,15 +225,35 @@ export async function display(token) {
   if (!cloud)
     return read()
       .filter(active)
-      .map(({ number, status, room }) => ({
+      .map(({ number, status, room, ready_at }) => ({
         number,
         status,
         room: status === 'ready' ? room || null : null,
+        ready_at: status === 'ready' ? ready_at || null : null,
       }));
   const { data, error } = await db.rpc('display_orders', {
     ticket: token,
   });
   if (error) throw error;
+  return data;
+}
+// The waiting screen's header and sound: shop name, logo, activity, tone.
+export async function displayBranding(token) {
+  if (!cloud) {
+    try {
+      const shop = JSON.parse(localStorage.getItem('bippo-shop-settings') || '{}');
+      return {
+        name: shop.name || '',
+        kind: shop.kind || 'cafe',
+        logo: shop.logo || '',
+        alert_tone: shop.alert_tone || 'pager',
+      };
+    } catch {
+      return null;
+    }
+  }
+  const { data, error } = await db.rpc('display_branding', { ticket: token });
+  if (error) return null;
   return data;
 }
 export function subscribe(fn) {

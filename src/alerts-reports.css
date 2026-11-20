@@ -590,6 +590,7 @@
   fill: var(--bippo-primary);
 }
 .analytics-heat-scroll {
+  position: relative;
   overflow-x: auto;
 }
 .analytics-heat {
@@ -744,4 +745,9 @@
 }
 .analytics-methods li:last-child {
   border-bottom: 0;
+}
+/* The history table scrolls inside its card on phones (admin.css is not loaded here). */
+.report-history .admin-table-scroll {
+  position: relative;
+  overflow-x: auto;
 }

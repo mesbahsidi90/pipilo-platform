@@ -652,6 +652,7 @@
   padding: 0;
   text-align: start;
   width: min(100%, 440px);
+  margin-inline: auto;
 }
 .merchant-signup .login > .brand {
   justify-self: start;
@@ -836,4 +837,122 @@
 }
 .merchant-entry:has(.clinic-paused-note) {
   flex-wrap: wrap;
+}
+
+/* ---- Phones: a short header and a bottom tab bar instead of the side menu ---- */
+.merchant-tabbar,
+.merchant-more {
+  display: none;
+}
+@media (max-width: 750px) {
+  .merchant-sidebar {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    gap: 10px;
+    flex-wrap: nowrap;
+    padding: 8px 12px;
+  }
+  .merchant-sidebar > .brand {
+    align-self: center;
+    flex: none;
+  }
+  .merchant-sidebar .merchant-shop-menu {
+    flex: 1;
+    min-width: 0;
+    margin: 0;
+  }
+  .merchant-sidebar > nav,
+  .merchant-sidebar > .merchant-sidebar-footer {
+    display: none;
+  }
+  .merchant-main {
+    padding-bottom: calc(86px + env(safe-area-inset-bottom));
+  }
+  .merchant-tabbar {
+    position: fixed;
+    inset-inline: 0;
+    bottom: 0;
+    z-index: 50;
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    padding: 6px 6px calc(6px + env(safe-area-inset-bottom));
+    border-top: 1px solid var(--bippo-border);
+    background: color-mix(in srgb, var(--bippo-surface) 94%, transparent);
+    backdrop-filter: blur(12px);
+  }
+  .merchant-tabbar button {
+    display: grid;
+    justify-items: center;
+    gap: 3px;
+    min-height: 54px;
+    padding: 6px 2px;
+    border: 0;
+    border-radius: 14px;
+    background: transparent;
+    color: var(--bippo-muted);
+    font: inherit;
+    font-size: 11px;
+    font-weight: 650;
+    line-height: 1.3;
+  }
+  .merchant-tabbar button span {
+    max-width: 100%;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+  .merchant-tabbar button[aria-current='page'],
+  .merchant-tabbar button[aria-expanded='true'] {
+    background: var(--bippo-primary-soft);
+    color: var(--bippo-primary);
+  }
+  .merchant-more {
+    position: fixed;
+    inset: 0;
+    z-index: 49;
+    display: flex;
+    align-items: flex-end;
+    background: rgb(18 40 34 / 35%);
+  }
+  .merchant-more-sheet {
+    display: grid;
+    gap: 2px;
+    width: 100%;
+    max-height: 70vh;
+    overflow-y: auto;
+    padding: 12px 12px calc(84px + env(safe-area-inset-bottom));
+    border-radius: 20px 20px 0 0;
+    background: var(--bippo-surface);
+    box-shadow: 0 -10px 30px rgb(18 40 34 / 15%);
+  }
+  .merchant-more-sheet button,
+  .merchant-more-sheet a {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    min-height: 48px;
+    padding: 10px 12px;
+    border: 0;
+    border-radius: 12px;
+    background: transparent;
+    color: var(--bippo-text);
+    font: inherit;
+    font-size: 15px;
+    font-weight: 600;
+    text-align: start;
+  }
+  .merchant-more-sheet [aria-current='page'] {
+    background: var(--bippo-primary-soft);
+    color: var(--bippo-primary);
+  }
+  .merchant-more-sheet .merchant-more-signout {
+    color: var(--bippo-danger);
+  }
+  body:has(.merchant-tabbar) .language-switcher {
+    bottom: calc(80px + env(safe-area-inset-bottom));
+  }
+  body:has(.merchant-more) .language-switcher {
+    display: none;
+  }
 }

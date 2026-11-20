@@ -30,6 +30,7 @@ import {
   CirclePause,
   CirclePlay,
   Star,
+  Ellipsis,
 } from 'lucide-react';
 import {
   cloud,
@@ -485,6 +486,19 @@ export default function Orders({ Share, workspace }) {
   const pendingCounterOrder =
     fixedCounter && rows.find((order) => order.counter_pending && active(order));
 
+  async function signOut() {
+    try {
+      if (cloud) {
+        const { error } = await db.auth.signOut();
+        if (error) throw error;
+      }
+      rememberBranch(null);
+      if (!cloud) location.assign('/');
+    } catch {
+      setWorkspaceError(bippoT('تعذر حفظ التغيير. عاود المحاولة.'));
+    }
+  }
+
   async function addOrder(event) {
     event.preventDefault();
     if (pendingCounterOrder) {
@@ -784,27 +798,23 @@ export default function Orders({ Share, workspace }) {
               <small dir="ltr">{supportPhone}</small>
             </span>
           </a>
-          <button
-            type="button"
-            className="merchant-signout"
-            onClick={async () => {
-              try {
-                if (cloud) {
-                  const { error } = await db.auth.signOut();
-                  if (error) throw error;
-                }
-                rememberBranch(null);
-                if (!cloud) location.assign('/');
-              } catch {
-                setWorkspaceError(bippoT('تعذر حفظ التغيير. عاود المحاولة.'));
-              }
-            }}
-          >
+          <button type="button" className="merchant-signout" onClick={signOut}>
             <LogOut size={17} />
             {bippoT(' تسجيل الخروج')}
           </button>
         </div>
       </aside>
+      <MobileTabBar
+        tabs={tabs}
+        current={tab}
+        onOpen={(id) => {
+          setAddingBranch(false);
+          setAssistantReportPeriod(null);
+          setTab(id);
+          window.scrollTo?.(0, 0);
+        }}
+        onSignOut={signOut}
+      />
       <main className={tab === 'orders' ? 'merchant-main merchant-orders-main' : 'merchant-main'}>
         {(tab !== 'reports' || freeBranch) && (
           <header className="merchant-heading">
@@ -1241,5 +1251,81 @@ export default function Orders({ Share, workspace }) {
         )}
       </main>
     </div>
+  );
+}
+
+// Phones only (CSS): the main tabs stay one tap away at the bottom of the
+// screen; the rest open from «المزيد».
+const barTabs = ['orders', 'assistant', 'reports'];
+function MobileTabBar({ tabs, current, onOpen, onSignOut }) {
+  const [more, setMore] = useState(false);
+  useEffect(() => {
+    if (!more) return;
+    const close = (event) => event.key === 'Escape' && setMore(false);
+    document.addEventListener('keydown', close);
+    return () => document.removeEventListener('keydown', close);
+  }, [more]);
+  const main = barTabs.map((id) => tabs.find(([tab]) => tab === id)).filter(Boolean);
+  const rest = tabs.filter(([id]) => !barTabs.includes(id));
+  const inMore = rest.some(([id]) => id === current);
+  const open = (id) => {
+    setMore(false);
+    onOpen(id);
+  };
+  return (
+    <>
+      <nav className="merchant-tabbar" aria-label={bippoT('التنقل السريع')}>
+        {main.map(([id, label, Icon]) => (
+          <button
+            key={id}
+            type="button"
+            aria-current={current === id ? 'page' : undefined}
+            onClick={() => open(id)}
+          >
+            <Icon size={21} aria-hidden="true" />
+            <span>{id === 'assistant' ? bippoT('المساعد') : label}</span>
+          </button>
+        ))}
+        <button
+          type="button"
+          aria-expanded={more}
+          aria-current={inMore && !more ? 'page' : undefined}
+          onClick={() => setMore((value) => !value)}
+        >
+          <Ellipsis size={21} aria-hidden="true" />
+          <span>{bippoT('المزيد')}</span>
+        </button>
+      </nav>
+      {more && (
+        <div className="merchant-more" role="presentation" onClick={() => setMore(false)}>
+          <div
+            className="merchant-more-sheet"
+            role="dialog"
+            aria-label={bippoT('المزيد')}
+            onClick={(event) => event.stopPropagation()}
+          >
+            {rest.map(([id, label, Icon]) => (
+              <button
+                key={id}
+                type="button"
+                aria-current={current === id ? 'page' : undefined}
+                onClick={() => open(id)}
+              >
+                <Icon size={19} aria-hidden="true" />
+                <span>{label}</span>
+              </button>
+            ))}
+            <a href={supportWhatsApp} target="_blank" rel="noopener noreferrer">
+              <MessageCircle size={19} aria-hidden="true" />
+              <span>{bippoT('تواصل معنا')}</span>
+            </a>
+            <button type="button" className="merchant-more-signout" onClick={onSignOut}>
+              <LogOut size={19} aria-hidden="true" />
+              <span>{bippoT(' تسجيل الخروج')}</span>
+            </button>
+          </div>
+        </div>
+      )}
+    </>
   );
 }

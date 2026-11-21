@@ -4,6 +4,7 @@
 import webpush from 'npm:web-push@3.6.7';
 import { uuid, validEndpoint } from './validation.js';
 import { orderPayload } from './payload.js';
+import { later } from './later.ts';
 
 const kinds = new Set([
   'cafe',
@@ -141,6 +142,14 @@ export async function sendTrial(db: any, ticket: any, cfg: any, ackUrl: string) 
   return { sent, failed };
 }
 
+// The second ring of a trial ticket: still «جاهز» and no «راني جاي».
+async function ringTrialAgain(db: any, token: string, cfg: any, ackUrl: string) {
+  const ticket = await ticketFor(db, token);
+  if (!ticket || ticket.status !== 'ready' || ticket.coming_at) return;
+  await db.from('trial_push_subscriptions').update({ sent_at: null }).eq('token', token);
+  await sendTrial(db, ticket, cfg, ackUrl);
+}
+
 export async function handleTrial(
   route: string,
   body: any,
@@ -230,6 +239,7 @@ export async function handleTrial(
       status === 'ready' && existing.status !== 'ready'
         ? await sendTrial(db, { ...existing, number, shop_name: name, kind, status }, cfg, ackUrl)
         : null;
+    if (delivery?.sent) later(() => ringTrialAgain(db, body.token, cfg, ackUrl));
     return reply({ ok: true, delivery });
   }
 

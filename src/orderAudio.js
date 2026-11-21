@@ -6,12 +6,13 @@ export function handleReadyPush(data, ticket, armed, ring, refresh) {
 }
 
 // A user-unlocked Web Audio session remains available between the sample and
-// the ready event. No silent audio loop or microphone permission is required.
+// the ready event. No microphone permission is required.
 export function createOrderAudio(url, env = globalThis) {
   const Context = env.AudioContext || env.webkitAudioContext;
   if (!Context) {
     const audio = new env.Audio(url);
     audio.dispose = () => audio.pause();
+    audio.keepAlive = () => false;
     audio.isPlaying = () => !audio.paused && !audio.ended;
     return audio;
   }
@@ -20,6 +21,7 @@ export function createOrderAudio(url, env = globalThis) {
     loading = null,
     source = null,
     gain = null,
+    idle = null,
     generation = 0,
     disposed = false;
   const events = new EventTarget();
@@ -100,8 +102,36 @@ export function createOrderAudio(url, env = globalThis) {
       }
       events.dispatchEvent(new Event('pause'));
     },
+    // iPhone Safari freezes a locked page unless it is playing sound. A very
+    // quiet loop keeps the page awake while the customer waits, so the ready
+    // ring can start; it never plays before the customer's own tap.
+    keepAlive(on) {
+      if (!on || disposed) {
+        if (idle) {
+          idle.onended = null;
+          try {
+            idle.stop();
+            idle.disconnect();
+          } catch {}
+          idle = null;
+        }
+        return false;
+      }
+      if (idle || context?.state !== 'running') return Boolean(idle);
+      const length = context.sampleRate;
+      const quiet = context.createBuffer(1, length, context.sampleRate);
+      const data = quiet.getChannelData(0);
+      for (let i = 0; i < length; i++) data[i] = (Math.random() * 2 - 1) * 0.0004;
+      idle = context.createBufferSource();
+      idle.buffer = quiet;
+      idle.loop = true;
+      idle.connect(context.destination);
+      idle.start(0);
+      return true;
+    },
     dispose() {
       disposed = true;
+      player.keepAlive(false);
       player.pause();
       context?.close().catch(() => {});
     },

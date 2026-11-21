@@ -6,6 +6,7 @@ import { createVibrationLoop } from './vibration';
 import { toneSource } from './alertTones';
 import { createOrderAudio, handleReadyPush } from './orderAudio';
 import { createAlertSession } from './alertSession';
+import { iosBrowser, keepScreenAwake } from './screenAwake';
 const base = import.meta.env.VITE_SUPABASE_URL,
   apiKey = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY;
 async function pushRequest(route, body) {
@@ -73,6 +74,7 @@ export default function OrderAlerts({
   onAcknowledge,
 }) {
   const session = useRef(null),
+    sound = useRef(null),
     callbacks = useRef({});
   callbacks.current = {
     onRefresh,
@@ -98,6 +100,7 @@ export default function OrderAlerts({
     const audio = createOrderAudio(toneSource(tone));
     audio.loop = true;
     audio.volume = 1;
+    sound.current = audio;
     const vibration = createVibrationLoop((pattern) => navigator.vibrate?.(pattern));
     const current = createAlertSession({
       audio,
@@ -127,8 +130,22 @@ export default function OrderAlerts({
       window.removeEventListener('focus', resume);
       current.dispose();
       session.current = null;
+      sound.current = null;
     };
   }, [ticket, tone]);
+  // While the customer waits with the alert on: the screen stays on, and on an
+  // iPhone browser a quiet sound keeps the page alive so the ring can start.
+  const waiting = view.armed && !view.acknowledged && status !== 'collected';
+  useEffect(() => {
+    if (!waiting) return;
+    const release = keepScreenAwake();
+    const audio = sound.current;
+    if (iosBrowser()) audio?.keepAlive?.(true);
+    return () => {
+      release();
+      audio?.keepAlive?.(false);
+    };
+  }, [waiting, ticket, tone]);
   useEffect(() => {
     session.current?.setReady(status === 'ready');
     if (status === 'collected') session.current?.acknowledge();
@@ -138,10 +155,7 @@ export default function OrderAlerts({
       setPush('local');
       return;
     }
-    const ios =
-      /iPad|iPhone|iPod/.test(navigator.userAgent) ||
-      (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
-    if (ios && !window.matchMedia('(display-mode: standalone)').matches && !navigator.standalone) {
+    if (iosBrowser()) {
       setPush('ios-install');
       return;
     }
@@ -278,6 +292,14 @@ export default function OrderAlerts({
               ? bippoT('اسمح بإشعار الهاتف')
               : bippoT('فعّل التنبيه')}
         </button>
+      )}
+      {!isReady && view.armed && !view.acknowledged && push === 'ios-install' && (
+        <p className="pager-hint pager-hint-ios">
+          <Smartphone size={18} aria-hidden="true" />
+          {bippoT(
+            'على iPhone: خلّي هاذ الصفحة محلولة وما تبدّلش لتطبيق آخر، باش يرنّ كي يوجد طلبك.',
+          )}
+        </p>
       )}
       {!isReady && !view.armed && (
         <p className="pager-hint">

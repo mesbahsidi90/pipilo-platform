@@ -3,6 +3,7 @@ import webpush from 'npm:web-push@3.6.7';
 import { nearPayload, orderPayload } from './payload.js';
 import { demoTicket, sendDemo, handleDemo } from './demo.ts';
 import { handleTrial } from './trial.ts';
+import { later } from './later.ts';
 const db = createClient(Deno.env.get('SUPABASE_URL')!, Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!, {
   auth: { persistSession: false, autoRefreshToken: false },
 });
@@ -171,6 +172,16 @@ async function sendNear(order: any, cfg: any) {
     }
   }
   return { sent, failed };
+}
+// The second ring: only if the order is still «جاهز» and nobody answered.
+async function ringAgain(orderId: string, cfg: any) {
+  const order = check(await db.from('orders').select(orderFields).eq('id', orderId).maybeSingle());
+  if (!order || order.status !== 'ready') return;
+  const signal = check(
+    await db.from('order_guest_signals').select('coming_at').eq('order_id', orderId).maybeSingle(),
+  );
+  if (signal?.coming_at) return;
+  await send(order, cfg, true);
 }
 Deno.serve(async (req) => {
   const origin = req.headers.get('origin');
@@ -346,6 +357,7 @@ Deno.serve(async (req) => {
       }
       if (resend && order.status !== 'ready') return reply({ error: 'Order is not ready' }, 409);
       const delivery = await send(order, cfg, resend);
+      if (!resend && delivery.sent) later(() => ringAgain(order.id, cfg));
       return reply(
         delivery,
         resend && !delivery.sent && !delivery.failed && delivery.cooldown ? 429 : 200,

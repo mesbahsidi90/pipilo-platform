@@ -3,6 +3,7 @@
 // alert and answer «راني جاي» (see supabase/functions/order-alerts/trial.ts).
 
 import { mergeTrialTickets } from './trialRules';
+import { t } from './i18n.js';
 
 const base = import.meta.env.VITE_SUPABASE_URL;
 const apiKey = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY;
@@ -97,6 +98,19 @@ export async function trialRequest(route, body) {
   if (!res.ok)
     throw Object.assign(new Error(data.error || 'Trial request failed'), { status: res.status });
   return data;
+}
+
+// «بيبيلو مرة تانية» in the trial: ring the customer's phone again.
+export async function ringTrialOrder(token) {
+  const session = trialSession();
+  if (!trialAvailable || !session) return { sent: 0, failed: 0 };
+  try {
+    return await trialRequest('trial-ring', { session, ticket: token });
+  } catch (error) {
+    if (error.status === 429) throw new Error(t('استنّى شوية قبل ما تعاود الرنّة.'));
+    if (error.status === 409 || error.status === 404) return { sent: 0, failed: 0 };
+    throw new Error(t('تعذر إرسال الإشعار. نادِ الزبون من المحل.'));
+  }
 }
 
 // Copy one trial order (new or changed) to the server. Never blocks the board.

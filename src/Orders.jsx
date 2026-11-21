@@ -53,7 +53,7 @@ import { duration, secondsBetween } from './reporting';
 import Brand from './Brand';
 import { QRCodeSVG } from 'qrcode.react';
 import { counterRoute } from './counterAccess';
-import { trialPlaceId } from './trialSync';
+import { ringTrialOrder, trialAvailable, trialPlaceId } from './trialSync';
 import { supportPhone, supportWhatsApp } from './contactDetails';
 import MerchantCodes from './MerchantCodes';
 import MerchantSubscription from './MerchantSubscription';
@@ -318,7 +318,7 @@ export default function Orders({ Share, workspace }) {
   async function ringAgain(order) {
     setBusy(true);
     try {
-      const result = await retryPush(order.id, true);
+      const result = sandbox ? await ringTrialOrder(order.token) : await retryPush(order.id, true);
       setNotice(
         result.sent > 0
           ? bippoT('أُرسل طلب الإشعار إلى {0} جهاز. هذا ما يثبتش أن الزبون سمعه.', [result.sent])
@@ -650,7 +650,7 @@ export default function Orders({ Share, workspace }) {
                   <Check size={15} />
                 </button>
               )}
-              {order.status === 'ready' && cloud && (
+              {order.status === 'ready' && (cloud || (sandbox && trialAvailable)) && (
                 <button
                   type="button"
                   className="button outline small"
@@ -658,7 +658,7 @@ export default function Orders({ Share, workspace }) {
                   onClick={() => ringAgain(order)}
                 >
                   <BellRing size={16} />
-                  {bippoT('رنّ مرة ثانية')}
+                  {bippoT('بيبيلو مرة تانية')}
                 </button>
               )}
               {activity.clinic && order.status === 'ready' && (

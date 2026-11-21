@@ -362,6 +362,24 @@ export async function handleTrial(
     return token ? reply({ token }) : reply({ error: 'Too many trial tickets' }, 429);
   }
 
+  // Owner's trial dashboard: «بيبيلو مرة تانية» rings the customer's phone again.
+  if (route === 'trial-ring') {
+    const session = String(body.session || '');
+    if (!sessionPattern.test(session)) return reply({ error: 'Invalid session' }, 400);
+    const ticket = await ticketFor(db, body.ticket);
+    if (!ticket || ticket.session_hash !== (await sha(session)))
+      return reply({ error: 'Ticket unavailable' }, 404);
+    if (ticket.status !== 'ready') return reply({ error: 'Order is not ready' }, 409);
+    const subs = take(
+      await db.from('trial_push_subscriptions').select('sent_at').eq('token', ticket.token),
+    );
+    if (!subs?.length) return reply({ sent: 0, failed: 0 });
+    const last = Math.max(0, ...subs.map((sub: any) => Date.parse(sub.sent_at || '') || 0));
+    if (Date.now() - last < 20000) return reply({ error: 'Cooldown' }, 429);
+    await db.from('trial_push_subscriptions').update({ sent_at: null }).eq('token', ticket.token);
+    return reply(await sendTrial(db, ticket, cfg, ackUrl));
+  }
+
   // Owner's trial dashboard: the customer signals of all its tickets.
   if (route === 'trial-signals') {
     const session = String(body.session || '');

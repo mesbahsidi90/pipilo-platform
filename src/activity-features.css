@@ -1,0 +1,193 @@
+/* Landing: features by activity (restaurants, clinics, services, all shops). */
+.activity-features {
+  padding-block: 75px 85px;
+  background: var(--bippo-bg, #f7f7f3);
+  direction: rtl;
+}
+.activity-features .section-heading {
+  margin-bottom: 34px;
+}
+
+.activity-status-band {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1.4fr);
+  gap: 24px;
+  align-items: center;
+  padding: 26px;
+  margin-bottom: 34px;
+  border-radius: 30px;
+  background: var(--bippo-dark-surface, #1a1a1d);
+  color: #fff;
+}
+.activity-status-copy {
+  display: flex;
+  gap: 14px;
+  align-items: flex-start;
+}
+.activity-status-copy svg {
+  flex: 0 0 auto;
+  margin-top: 4px;
+  color: #7ee2a8;
+}
+.activity-status-copy h3 {
+  margin: 0 0 6px;
+  font-size: 21px;
+  font-weight: 600;
+}
+.activity-status-copy p {
+  margin: 0;
+  font-size: 14px;
+  line-height: 1.9;
+  color: #c9cfcb;
+}
+.activity-status-steps {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 10px;
+  counter-reset: step;
+}
+.activity-status-steps li {
+  position: relative;
+  padding: 14px 12px;
+  border-radius: 18px;
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+.activity-status-steps b {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 15px;
+  color: #7ee2a8;
+}
+.activity-status-steps b::before {
+  counter-increment: step;
+  content: counter(step);
+  display: inline-grid;
+  place-items: center;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background: #7ee2a8;
+  color: #0b352f;
+  font-size: 12px;
+}
+.activity-status-steps span {
+  display: block;
+  margin-top: 6px;
+  font-size: 12.5px;
+  line-height: 1.7;
+  color: #c9cfcb;
+}
+
+.activity-tabs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 18px;
+}
+.activity-tabs button {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 44px;
+  padding: 0 18px;
+  border-radius: 999px;
+  border: 1px solid var(--bippo-border, #e2e3dc);
+  background: var(--bippo-surface, #fff);
+  color: var(--bippo-text, #192a27);
+  font: inherit;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+}
+.activity-tabs button:hover {
+  border-color: var(--bippo-primary, #0c3e38);
+}
+.activity-tabs button.active {
+  background: var(--bippo-primary, #0c3e38);
+  border-color: var(--bippo-primary, #0c3e38);
+  color: #fff;
+}
+.activity-tabs button:focus-visible {
+  outline: 2px solid var(--bippo-primary, #0c3e38);
+  outline-offset: 3px;
+}
+
+.activity-intro {
+  margin: 0 0 18px;
+  font-size: 15px;
+  line-height: 1.9;
+  color: var(--bippo-muted, #54645f);
+}
+.activity-grid {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 14px;
+}
+.activity-grid li {
+  padding: 20px;
+  border-radius: 24px;
+  background: var(--bippo-surface, #fff);
+  border: 1px solid #dae6dc;
+}
+.activity-icon {
+  display: inline-grid;
+  place-items: center;
+  width: 40px;
+  height: 40px;
+  border-radius: 12px;
+  background: var(--bippo-primary-soft, #edf5f0);
+  color: var(--bippo-primary, #0c3e38);
+}
+.activity-grid h3 {
+  margin: 14px 0 6px;
+  font-size: 17px;
+  font-weight: 600;
+}
+.activity-grid p {
+  margin: 0;
+  font-size: 13.5px;
+  line-height: 1.85;
+  color: var(--bippo-muted, #54645f);
+}
+
+@media (max-width: 1000px) {
+  .activity-status-band {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .activity-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+@media (max-width: 640px) {
+  .activity-features {
+    padding-block: 55px 60px;
+  }
+  .activity-status-band {
+    padding: 20px 16px;
+    border-radius: 24px;
+  }
+  .activity-status-steps {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+  .activity-tabs {
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    margin-inline: -16px;
+    padding-inline: 16px;
+    scrollbar-width: none;
+  }
+  .activity-tabs button {
+    flex: 0 0 auto;
+  }
+  .activity-grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}

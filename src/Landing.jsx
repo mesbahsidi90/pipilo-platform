@@ -21,6 +21,7 @@ import {
 import { QRCodeSVG } from 'qrcode.react';
 import DotNumber from './DotNumber';
 import LiveDemo from './LiveDemo';
+import ActivityFeatures from './ActivityFeatures';
 import { CallboardHero, Moments } from './Callboard';
 import './landing-scan.css';
 export { default as Brand } from './Brand';
@@ -274,7 +275,7 @@ function HowItWorks() {
 export default function Landing() {
   useEffect(() => {
     const target = location.hash.slice(1);
-    if (['try', 'how', 'features', 'faq', 'plans'].includes(target)) {
+    if (['try', 'how', 'features', 'activities', 'faq', 'plans'].includes(target)) {
       const id = requestAnimationFrame(() => document.getElementById(target)?.scrollIntoView());
       return () => cancelAnimationFrame(id);
     }
@@ -291,6 +292,9 @@ export default function Landing() {
             </a>
             <a href="#features" onClick={jump('features')}>
               {bippoT('المزايا')}
+            </a>
+            <a href="#activities" onClick={jump('activities')}>
+              {bippoT('حسب نشاطك')}
             </a>
             <a href="#try" onClick={jump('try')}>
               {bippoT('جرّبها')}
@@ -410,6 +414,7 @@ export default function Landing() {
             </div>
           </div>
         </section>
+        <ActivityFeatures />
         <LiveDemo />
         <section className="setup-section">
           <div className="wrap setup-grid">
@@ -548,12 +553,14 @@ export default function Landing() {
                 [
                   bippoT('يوصل التنبيه والتليفون مغلوق؟'),
                   bippoT(
-                    'الرنة المخصصة تخدم كي تفعّل الصوت وتخلّي الصفحة محلولة. إشعارات الخلفية تحتاج دعم الجهاز وإذن الزبون وخدمة إشعارات مفعّلة؛ على iPhone يلزم إضافة الصفحة للشاشة الرئيسية. صوت الإشعار يرجع لإعدادات الهاتف.',
+                    'على Android يوصل إشعار بالصوت والاهتزاز حتى والتليفون مقفول. على iPhone خلّي صفحة الطلب محلولة: الشاشة تقعد شاعلة والرنة تخرج، ولا زيد الصفحة للشاشة الرئيسية باش يوصلك الإشعار. وإذا ما جاش، Bipilo يعاود يرنّ بعد دقيقة.',
                   ),
                 ],
                 [
                   bippoT('تخدم مع نظام الكاشير؟'),
-                  bippoT('تقدر تدخل نمرة التيكي يدويًا. الربط الآلي مع الكاشير نخلوه لمرحلة جاية.'),
+                  bippoT(
+                    'نعم. الزبون يكتب رقم الفاتورة اللي طبعها الكاشير، ولا يمسح كود الكونتوار. وإذا عندك كاشير يقبل الربط، واجهة API ترنّ تليفون الزبون وحدها كي يوجد الطلب.',
+                  ),
                 ],
                 [
                   bippoT('نحتاج أجهزة خاصة؟'),

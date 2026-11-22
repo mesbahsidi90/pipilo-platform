@@ -80,3 +80,33 @@ test('French worker keeps the ticket private and shows a French notification wit
   assert.match(shown[0][1].data.url, /lang=fr/);
   assert.equal(shown[0][1].silent, false);
 });
+
+test('tapping the alert focuses the open ticket page even when its link has ?lang=', async () => {
+  const handlers = {},
+    opened = [],
+    focused = [];
+  const page = {
+    url: 'https://bipilo.app/?lang=ar#trial/ticket',
+    focus: async () => focused.push(page.url),
+  };
+  const self = {
+    location: { origin: 'https://bipilo.app' },
+    addEventListener: (name, fn) => (handlers[name] = fn),
+    clients: {
+      matchAll: async () => [{ url: 'https://bipilo.app/#track/other', focus() {} }, page],
+      openWindow: async (url) => opened.push(url),
+      claim: async () => {},
+    },
+    registration: { showNotification: async () => {} },
+    skipWaiting: () => {},
+  };
+  vm.runInNewContext(script, { self, URL });
+  await new Promise((resolve, reject) =>
+    handlers.notificationclick({
+      notification: { close() {}, data: { url: 'https://bipilo.app/#trial/ticket' } },
+      waitUntil: (p) => p.then(resolve, reject),
+    }),
+  );
+  assert.deepEqual(focused, [page.url]);
+  assert.equal(opened.length, 0);
+});

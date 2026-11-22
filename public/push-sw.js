@@ -1,38 +1,119 @@
-self.addEventListener('push',event=>event.waitUntil((async()=>{
- let data;try{data=event.data.json();}catch{return;}
- const near=data.type==='QUEUE_NEAR';
- if((data.type!=='ORDER_READY'&&!near)||!data.ticket)return;
- let url;try{url=new URL(data.url,self.location.origin);}catch{return;}
- if(url.origin!==self.location.origin||!['#track/'+data.ticket,'#demo/'+data.ticket,'#trial/'+data.ticket].includes(url.hash))return;
- const localized=data.language==='ar'||data.language==='fr';
- const french=localized?data.language==='fr':new URL(self.location.href||self.location.origin).searchParams.get('lang')==='fr';
- if(french)url.searchParams.set('lang','fr');
- const title=french&&!localized?(near?'Votre tour approche !':'Votre commande est prête !'):data.title;
- const number=String(data.body||'').match(/[0-9٠-٩]+/)?.[0]||'';
- const body=near?(french&&!localized?'Ticket '+number+' · Rapprochez-vous de l’accueil.':data.body):french&&!localized?(number?'Commande '+number+' · Retirez-la au comptoir.':'Retirez votre commande au comptoir.'):data.body;
- // Display first: client discovery failures must not suppress the alert.
- await self.registration.showNotification(title,{
-  body,lang:french?'fr-DZ':'ar-DZ',dir:french?'ltr':'rtl',icon:'/icon-192.png',badge:'/icon-192.png',
-  tag:(near?'near-':'order-')+data.ticket,renotify:true,requireInteraction:!near,silent:false,
-  vibrate:near?[200,100,200]:[250,100,250,100,500],data:{url:url.href}
- });
- // «وصل» on the staff board: tell our alerts function this phone got the ready alert.
- if(!near&&typeof data.ack==='string'&&/^https:\/\/[a-z0-9]+\.supabase\.co\/functions\/v1\/order-alerts\/(trial-)?delivered$/.test(data.ack)){
-  try{await fetch(data.ack,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({ticket:data.ticket}),keepalive:true});}catch{/* Delivery stays «انرسل». */}
- }
- try{
-  const windows=await self.clients.matchAll({type:'window',includeUncontrolled:true});
-  for(const c of windows){const current=new URL(c.url);if(current.origin===url.origin&&current.hash===url.hash)c.postMessage({...data,background:c.visibilityState!=='visible'});}
- }catch{/* The system notification has already been displayed. */}
-})()));
-self.addEventListener('notificationclick',event=>{
- event.notification.close();event.waitUntil((async()=>{
-  let url;try{url=new URL(event.notification.data?.url||'/',self.location.origin);}catch{return;}
-  if(url.origin!==self.location.origin)return;
-  const windows=await self.clients.matchAll({type:'window',includeUncontrolled:true});
-  const existing=windows.find(c=>c.url===url.href);
-  if(existing)return existing.focus();return self.clients.openWindow(url.href);
- })());
+self.addEventListener('push', (event) =>
+  event.waitUntil(
+    (async () => {
+      let data;
+      try {
+        data = event.data.json();
+      } catch {
+        return;
+      }
+      const near = data.type === 'QUEUE_NEAR';
+      if ((data.type !== 'ORDER_READY' && !near) || !data.ticket) return;
+      let url;
+      try {
+        url = new URL(data.url, self.location.origin);
+      } catch {
+        return;
+      }
+      if (
+        url.origin !== self.location.origin ||
+        !['#track/' + data.ticket, '#demo/' + data.ticket, '#trial/' + data.ticket].includes(
+          url.hash,
+        )
+      )
+        return;
+      const localized = data.language === 'ar' || data.language === 'fr';
+      const french = localized
+        ? data.language === 'fr'
+        : new URL(self.location.href || self.location.origin).searchParams.get('lang') === 'fr';
+      if (french) url.searchParams.set('lang', 'fr');
+      const title =
+        french && !localized
+          ? near
+            ? 'Votre tour approche !'
+            : 'Votre commande est prête !'
+          : data.title;
+      const number = String(data.body || '').match(/[0-9٠-٩]+/)?.[0] || '';
+      const body = near
+        ? french && !localized
+          ? 'Ticket ' + number + ' · Rapprochez-vous de l’accueil.'
+          : data.body
+        : french && !localized
+          ? number
+            ? 'Commande ' + number + ' · Retirez-la au comptoir.'
+            : 'Retirez votre commande au comptoir.'
+          : data.body;
+      // Display first: client discovery failures must not suppress the alert.
+      await self.registration.showNotification(title, {
+        body,
+        lang: french ? 'fr-DZ' : 'ar-DZ',
+        dir: french ? 'ltr' : 'rtl',
+        icon: '/icon-192.png',
+        badge: '/icon-192.png',
+        tag: (near ? 'near-' : 'order-') + data.ticket,
+        renotify: true,
+        requireInteraction: !near,
+        silent: false,
+        vibrate: near ? [200, 100, 200] : [250, 100, 250, 100, 500],
+        data: { url: url.href },
+      });
+      // «وصل» on the staff board: tell our alerts function this phone got the ready alert.
+      if (
+        !near &&
+        typeof data.ack === 'string' &&
+        /^https:\/\/[a-z0-9]+\.supabase\.co\/functions\/v1\/order-alerts\/(trial-)?delivered$/.test(
+          data.ack,
+        )
+      ) {
+        try {
+          await fetch(data.ack, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ ticket: data.ticket }),
+            keepalive: true,
+          });
+        } catch {
+          /* Delivery stays «انرسل». */
+        }
+      }
+      try {
+        const windows = await self.clients.matchAll({ type: 'window', includeUncontrolled: true });
+        for (const c of windows) {
+          const current = new URL(c.url);
+          if (current.origin === url.origin && current.hash === url.hash)
+            c.postMessage({ ...data, background: c.visibilityState !== 'visible' });
+        }
+      } catch {
+        /* The system notification has already been displayed. */
+      }
+    })(),
+  ),
+);
+self.addEventListener('notificationclick', (event) => {
+  event.notification.close();
+  event.waitUntil(
+    (async () => {
+      let url;
+      try {
+        url = new URL(event.notification.data?.url || '/', self.location.origin);
+      } catch {
+        return;
+      }
+      if (url.origin !== self.location.origin) return;
+      const windows = await self.clients.matchAll({ type: 'window', includeUncontrolled: true });
+      // The open ticket page may carry ?lang=…: match it by its ticket, never open a second ringing page.
+      const existing = windows.find((c) => {
+        try {
+          const current = new URL(c.url);
+          return current.origin === url.origin && current.hash === url.hash;
+        } catch {
+          return false;
+        }
+      });
+      if (existing) return existing.focus();
+      return self.clients.openWindow(url.href);
+    })(),
+  );
 });
-self.addEventListener('install',()=>self.skipWaiting());
-self.addEventListener('activate',event=>event.waitUntil(self.clients.claim()));
+self.addEventListener('install', () => self.skipWaiting());
+self.addEventListener('activate', (event) => event.waitUntil(self.clients.claim()));

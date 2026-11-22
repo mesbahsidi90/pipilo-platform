@@ -135,6 +135,21 @@ export default function OrderAlerts({
       sound.current = null;
     };
   }, [ticket, tone]);
+  const alertChannel = useRef(null);
+  const acknowledgeHere = useRef(null);
+  acknowledgeHere.current = () => acknowledge(true);
+  useEffect(() => {
+    if (typeof BroadcastChannel === 'undefined') return;
+    const channel = new BroadcastChannel('bipilo-alerts');
+    channel.onmessage = (event) => {
+      if (event.data?.type === 'ack' && event.data.ticket === ticket) acknowledgeHere.current?.();
+    };
+    alertChannel.current = channel;
+    return () => {
+      channel.close();
+      alertChannel.current = null;
+    };
+  }, [ticket]);
   // While the customer waits with the alert on: the screen stays on, and on an
   // iPhone browser a quiet sound keeps the page alive so the ring can start.
   const waiting = view.armed && !view.acknowledged && status !== 'collected';
@@ -249,11 +264,14 @@ export default function OrderAlerts({
     });
     if (push === 'available') void enablePush();
   }
-  function acknowledge() {
+  function acknowledge(fromOtherPage = false) {
     session.current?.acknowledge();
     sessionStorage.setItem(ackKey, '1');
     sessionStorage.removeItem('bippo-alert-armed-' + ticket);
     callbacks.current.onAcknowledge?.();
+    // The same ticket may be open twice (a tapped notification opened a second
+    // page): «راني جاي» on one stops the ring on all of them.
+    if (!fromOtherPage) alertChannel.current?.postMessage({ type: 'ack', ticket });
   }
   const isReady = status === 'ready' || view.ringing;
   if (status === 'collected') return null;
@@ -266,7 +284,7 @@ export default function OrderAlerts({
         </div>
       ) : isReady ? (
         <>
-          <button className="pager-action" onClick={acknowledge}>
+          <button className="pager-action" onClick={() => acknowledge()}>
             <Check size={22} />
             {bippoT(' راني جاي 🏃')}
           </button>

@@ -51,8 +51,15 @@ export default function TrialCustomer({ token }) {
     return () => document.removeEventListener('visibilitychange', seen);
   }, [ticket?.status, token]);
 
+  // «بيبيلو مرة تانية»: the shop rings again, so the page calls again.
+  const [again, setAgain] = useState(false);
+  const ringAgain = () => {
+    setAck(false);
+    setAgain(true);
+  };
   const acknowledge = () => {
     setAck(true);
+    setAgain(false);
     trialRequest('trial-signal', { ticket: token, event: 'coming' }).catch(() => {});
   };
 
@@ -61,7 +68,7 @@ export default function TrialCustomer({ token }) {
       branding={ticket ? { name: ticket.name, kind: ticket.kind } : null}
       number={ticket?.number}
       status={ticket?.status}
-      acknowledged={ack || Boolean(ticket?.coming_at)}
+      acknowledged={(ack || Boolean(ticket?.coming_at)) && !again}
       loading={!ticket && !missing}
       error={missing ? t('انتهت هذي التجربة. اطلب من صاحب المحل تيكي جديد.') : ''}
       extra={<p className="trial-ticket-note">{t('تيكي تجربة Bipilo · يتمسح بعد 6 ساعات.')}</p>}
@@ -74,6 +81,7 @@ export default function TrialCustomer({ token }) {
           tone="pager"
           offline={offline}
           onAcknowledge={acknowledge}
+          onRingAgain={ringAgain}
           onRefresh={load}
         />
       )}

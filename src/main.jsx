@@ -629,8 +629,15 @@ function Customer({ token }) {
       localStorage.setItem('bippo-last-ticket-route', 'track');
     }
   }, [token]);
+  // «بيبيلو مرة تانية»: the shop rings again, so the page calls again.
+  const [again, setAgain] = useState(false);
+  const ringAgain = () => {
+    setAck(false);
+    setAgain(true);
+  };
   const acknowledge = () => {
     setAck(true);
+    setAgain(false);
     void signalGuest(token, 'coming')
       .then((ok) => setConfirmError(ok ? '' : bippoT('ما وصلش تأكيدك للمحل، نعاودو الإرسال.')))
       .catch(() => setConfirmError(bippoT('ما وصلش تأكيدك للمحل، نعاودو الإرسال.')));
@@ -645,7 +652,7 @@ function Customer({ token }) {
       number={o?.number}
       status={o?.status}
       room={o?.room}
-      acknowledged={ack || Boolean(o?.coming_at)}
+      acknowledged={(ack || Boolean(o?.coming_at)) && !again}
       loading={!o && !last && !error}
       error={error || (!o && last ? bippoT('راجع موظف المحل باش يعطيك رابط الطلب.') : '')}
       loyalty={
@@ -687,6 +694,7 @@ function Customer({ token }) {
           onEnabled={() => void report('sound_enabled')}
           onPushEnabled={() => void report('push_enabled')}
           onAcknowledge={acknowledge}
+          onRingAgain={ringAgain}
           onRefresh={() => window.dispatchEvent(new Event('nawba-change'))}
         />
       )}

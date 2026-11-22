@@ -127,14 +127,16 @@ export default function CustomerPager({
             </p>
           )}
         </div>
-        {acknowledged && status === 'ready' ? (
+        {acknowledged && status === 'ready' && (
           <div className="pager-confirmed">
             <Check size={22} />
             {bippoT(' راني جاي، الرنة حبست')}
           </div>
-        ) : (
-          children
         )}
+        {/* Stays mounted after «راني جاي» so «بيبيلو مرة تانية» can still ring. */}
+        <div className="pager-alerts-slot" hidden={acknowledged && status === 'ready'}>
+          {children}
+        </div>
         {error && (
           <p className="pager-connection" role="status">
             {number ? bippoT('الاتصال راه يتعاود…') : error}

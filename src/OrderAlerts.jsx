@@ -72,6 +72,7 @@ export default function OrderAlerts({
   onEnabled,
   onPushEnabled,
   onAcknowledge,
+  onRingAgain,
 }) {
   const session = useRef(null),
     sound = useRef(null),
@@ -81,6 +82,7 @@ export default function OrderAlerts({
     onEnabled,
     onPushEnabled,
     onAcknowledge,
+    onRingAgain,
   };
   const [view, setView] = useState({
     armed: false,
@@ -207,6 +209,7 @@ export default function OrderAlerts({
               if (!again) return session.current?.setReady(true);
               sessionStorage.removeItem(ackKey);
               sessionStorage.setItem('bippo-alert-armed-' + ticket, '1');
+              callbacks.current.onRingAgain?.();
               void session.current?.ringAgain();
             },
             () => callbacks.current.onRefresh?.(),

@@ -100,6 +100,8 @@ async function send(order: any, cfg: any, resend = false) {
         JSON.stringify({
           ...orderPayload(order, 'track', sub.language || undefined, prefs?.data, sub.site_origin),
           ack: ackUrl,
+          // «بيبيلو مرة تانية»: the customer's page rings again, even after «راني جاي».
+          again: resend,
         }),
         {
           TTL: 3600,

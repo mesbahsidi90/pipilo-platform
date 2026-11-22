@@ -116,3 +116,13 @@ test('pausing during audio loading cancels the pending playback', async () => {
   assert.equal(started, false);
   player.dispose();
 });
+
+test('a re-ring push reaches the page even when the alert was answered', () => {
+  const calls = [];
+  handleReadyPush({ type: 'ORDER_READY', ticket: 't', again: true }, 't', false, (again) =>
+    calls.push(again),
+  );
+  handleReadyPush({ type: 'ORDER_READY', ticket: 't' }, 't', true, (again) => calls.push(again));
+  handleReadyPush({ type: 'ORDER_READY', ticket: 't' }, 't', false, (again) => calls.push(again));
+  assert.deepEqual(calls, [true, false]);
+});

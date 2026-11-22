@@ -84,6 +84,16 @@ export function createAlertSession({
     resume() {
       if (ready && armed && !acknowledged) void play();
     },
+    // «بيبيلو مرة تانية» from the shop: ring again, even after «راني جاي».
+    ringAgain() {
+      if (disposed) return Promise.resolve(false);
+      acknowledged = false;
+      armed = true;
+      ready = true;
+      ringing = false;
+      clearSample();
+      return play();
+    },
     acknowledge() {
       acknowledged = true;
       armed = false;

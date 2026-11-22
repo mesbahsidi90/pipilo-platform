@@ -1,7 +1,8 @@
 export function handleReadyPush(data, ticket, armed, ring, refresh) {
   if (data?.type !== 'ORDER_READY' || data.ticket !== ticket) return;
   // Delivery in the background is not an acknowledgement that audio was heard.
-  if (armed) ring();
+  // A shop's «بيبيلو مرة تانية» (again) rings even after «راني جاي».
+  if (armed || data.again === true) ring(data.again === true);
   refresh?.();
 }
 

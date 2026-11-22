@@ -74,7 +74,7 @@ async function ticketFor(db: any, token: string) {
 }
 
 // Ring every phone subscribed to this ticket once.
-export async function sendTrial(db: any, ticket: any, cfg: any, ackUrl: string) {
+export async function sendTrial(db: any, ticket: any, cfg: any, ackUrl: string, again = false) {
   if (ticket.status !== 'ready') return { sent: 0, failed: 0 };
   const subscriptions = take(
     await db
@@ -114,6 +114,7 @@ export async function sendTrial(db: any, ticket: any, cfg: any, ackUrl: string) 
             sub.site_origin,
           ),
           ack: ackUrl,
+          again,
         }),
         {
           TTL: 900,
@@ -147,7 +148,7 @@ async function ringTrialAgain(db: any, token: string, cfg: any, ackUrl: string) 
   const ticket = await ticketFor(db, token);
   if (!ticket || ticket.status !== 'ready' || ticket.coming_at) return;
   await db.from('trial_push_subscriptions').update({ sent_at: null }).eq('token', token);
-  await sendTrial(db, ticket, cfg, ackUrl);
+  await sendTrial(db, ticket, cfg, ackUrl, true);
 }
 
 export async function handleTrial(
@@ -377,7 +378,7 @@ export async function handleTrial(
     const last = Math.max(0, ...subs.map((sub: any) => Date.parse(sub.sent_at || '') || 0));
     if (Date.now() - last < 20000) return reply({ error: 'Cooldown' }, 429);
     await db.from('trial_push_subscriptions').update({ sent_at: null }).eq('token', ticket.token);
-    return reply(await sendTrial(db, ticket, cfg, ackUrl));
+    return reply(await sendTrial(db, ticket, cfg, ackUrl, true));
   }
 
   // Owner's trial dashboard: the customer signals of all its tickets.

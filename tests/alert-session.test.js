@@ -95,3 +95,17 @@ test('a rejected synchronous playback attempt can be retried instead of leaving 
   assert.equal(tries, 2);
   session.dispose();
 });
+
+test('«بيبيلو مرة تانية» rings again after «راني جاي», a normal repeat does not', async () => {
+  const f = fixture();
+  await f.session.arm();
+  f.session.setReady(true);
+  await new Promise((r) => setTimeout(r, 0));
+  const before = f.plays;
+  f.session.acknowledge();
+  f.session.setReady(true);
+  await new Promise((r) => setTimeout(r, 0));
+  assert.equal(f.plays, before, 'an ordinary ready signal stays quiet after «راني جاي»');
+  assert.equal(await f.session.ringAgain(), true);
+  assert.equal(f.plays, before + 1, 'the shop asked again: it rings');
+});

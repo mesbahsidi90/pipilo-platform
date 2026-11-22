@@ -203,7 +203,12 @@ export default function OrderAlerts({
             e.data,
             ticket,
             true,
-            () => session.current?.setReady(true),
+            (again) => {
+              if (!again) return session.current?.setReady(true);
+              sessionStorage.removeItem(ackKey);
+              sessionStorage.setItem('bippo-alert-armed-' + ticket, '1');
+              void session.current?.ringAgain();
+            },
             () => callbacks.current.onRefresh?.(),
           );
     navigator.serviceWorker.addEventListener('message', message);

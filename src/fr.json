@@ -1969,5 +1969,9 @@
   "تنادات": "Appelés",
   "الرقم {0} راه في الشاشة.": "Le numéro {0} est déjà à l’écran.",
   "النداءات برك، بلا «قيد التحضير». للمحلات اللي تخدم بـ «نداء سريع».": "Uniquement les appels, sans « En préparation ». Pour les commerces qui utilisent « Appel rapide ».",
-  "تفضّل استلم طلبك": "Votre commande est prête"
+  "تفضّل استلم طلبك": "Votre commande est prête",
+  "كلام برك": "Voix seule",
+  "رنة + كلام": "Sonnerie + voix",
+  "رنة برك": "Sonnerie seule",
+  "بدّل صوت النداء": "Changer le son de l’appel"
 }

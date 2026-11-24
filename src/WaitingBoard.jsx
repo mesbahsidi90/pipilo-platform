@@ -1,15 +1,28 @@
 import React, { useEffect, useRef, useState } from 'react';
-import { Maximize2, Minimize2, Repeat, Volume2, VolumeX } from 'lucide-react';
+import { Bell, Maximize2, Minimize2, Mic, Repeat, Volume2, VolumeX } from 'lucide-react';
 import { t, language } from './i18n';
 import DotNumber from './DotNumber';
 import { createOrderAudio } from './orderAudio';
 import { toneSource } from './alertTones';
 import { newlyReady, speakCalls } from './announce';
 import { boardView } from './boardRules';
+import { createVoiceCaller } from './voiceCall';
 import './waiting-board.css';
 
 const soundKey = 'bipilo-board-sound';
 const repeatKey = 'bipilo-board-repeat';
+const voiceKey = 'bipilo-board-voice';
+// How a call sounds: the voice alone, ring then voice, or the ring alone.
+const voiceModes = ['voice', 'both', 'ring'];
+const voiceLabels = { voice: 'كلام برك', both: 'رنة + كلام', ring: 'رنة برك' };
+const recalledMode = (fallback) => {
+  try {
+    const value = localStorage.getItem(voiceKey);
+    return voiceModes.includes(value) ? value : fallback;
+  } catch {
+    return fallback;
+  }
+};
 const FLASH_MS = 10000;
 const remember = (key, on) => {
   try {
@@ -41,6 +54,12 @@ export default function WaitingBoard({ orders, error, branding }) {
   const clinic = labels.get('queue') === '1' || branding?.kind === 'clinic';
   // «شاشة النداء» (?calls=1): only the called numbers, for «نداء سريع».
   const callsOnly = !clinic && labels.get('calls') === '1';
+  // Recorded Arabic clips («الطلب رقم 57 جاهز») work on TVs without an Arabic
+  // voice. Clinics (rooms) and French keep the browser voice.
+  const canClips = !clinic && language !== 'fr';
+  const [voiceMode, setVoiceMode] = useState(() => recalledMode(callsOnly ? 'voice' : 'both'));
+  const voice = useRef(null);
+  const caller = () => (voice.current ??= createVoiceCaller());
   const name =
     labels.get('venue')?.trim().slice(0, 100) || branding?.name?.trim().slice(0, 100) || 'Bipilo';
   const branch = labels.get('venueBranch')?.trim().slice(0, 100);
@@ -73,6 +92,7 @@ export default function WaitingBoard({ orders, error, branding }) {
       document.removeEventListener('visibilitychange', awake);
       lock?.release?.().catch?.(() => {});
       player.current?.dispose();
+      voice.current?.dispose();
       timers.current.forEach(clearTimeout);
       globalThis.speechSynthesis?.cancel();
     };
@@ -124,15 +144,26 @@ export default function WaitingBoard({ orders, error, branding }) {
     const rooms = Object.fromEntries(
       orders.filter((o) => o.status === 'ready' && o.room).map((o) => [o.number, o.room]),
     );
-    const announce = () => {
+    const clips = canClips && voiceMode !== 'ring';
+    const ring = () => {
       player.current ??= createOrderAudio(toneSource(tone));
       player.current.loop = false;
-      return player.current
-        .play()
+      return player.current.play();
+    };
+    const speak = () =>
+      clips
+        ? caller()
+            .say(called)
+            .then((ok) => {
+              // No clips (offline, blocked): the ring still calls.
+              if (!ok && voiceMode === 'voice') return ring().catch(() => {});
+            })
+        : speakCalls(called, { lang: language, clinic, rooms });
+    const announce = () => {
+      if (clips && voiceMode === 'voice') return speak();
+      return ring()
         .then(() => {
-          timers.current.push(
-            setTimeout(() => speakCalls(called, { lang: language, clinic, rooms }), 1300),
-          );
+          timers.current.push(setTimeout(speak, 1300));
         })
         .catch(() => {
           setSound(false);
@@ -140,22 +171,36 @@ export default function WaitingBoard({ orders, error, branding }) {
         });
     };
     void announce();
-    if (repeat) timers.current.push(setTimeout(announce, 9000));
-  }, [orders, error, sound, clinic, repeat, tone]);
+    if (repeat) timers.current.push(setTimeout(announce, clips ? 7000 : 9000));
+  }, [orders, error, sound, clinic, repeat, tone, voiceMode, canClips]);
 
   async function enableSound() {
     // TV browsers only allow sound and speech after a tap or a remote key.
     globalThis.speechSynthesis?.getVoices();
+    const unlockVoice = canClips ? caller().unlock() : Promise.resolve(true);
     player.current ??= createOrderAudio(toneSource(tone));
     player.current.loop = false;
     try {
-      await player.current.play();
+      if (canClips && voiceMode === 'voice') {
+        if (!(await unlockVoice)) throw new Error('Sound blocked');
+      } else await player.current.play();
       setSound(true);
       setBlocked(false);
       remember(soundKey, true);
     } catch {
       setBlocked(true);
     }
+  }
+  function nextVoiceMode() {
+    setVoiceMode((value) => {
+      const next = voiceModes[(voiceModes.indexOf(value) + 1) % voiceModes.length];
+      try {
+        localStorage.setItem(voiceKey, next);
+      } catch {
+        // The choice lasts this page.
+      }
+      return next;
+    });
   }
   function toggleSound() {
     if (!sound) return void enableSound();
@@ -216,6 +261,17 @@ export default function WaitingBoard({ orders, error, branding }) {
             >
               <Repeat size={18} />
               {t('مرتين')}
+            </button>
+          )}
+          {sound && canClips && (
+            <button
+              type="button"
+              className="waiting-board-repeat enabled"
+              onClick={nextVoiceMode}
+              title={t('بدّل صوت النداء')}
+            >
+              {voiceMode === 'ring' ? <Bell size={18} /> : <Mic size={18} />}
+              {t(voiceLabels[voiceMode])}
             </button>
           )}
           <button

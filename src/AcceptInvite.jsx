@@ -4,6 +4,8 @@ import { t } from './i18n.js';
 import { db } from './store';
 import { isBranchId, rememberBranch } from './merchantBranches';
 import { workspaceAction } from './MerchantTeam';
+import SignInMethod from './SignInMethod';
+import WhatsAppCode from './WhatsAppCode';
 
 export default function AcceptInvite({ token }) {
   const [session, setSession] = useState(undefined);
@@ -11,6 +13,8 @@ export default function AcceptInvite({ token }) {
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const [busy, setBusy] = useState(false);
+  // Workers sign in like owners: a WhatsApp code by default, email if they prefer.
+  const [method, setMethod] = useState('whatsapp');
   const valid = Boolean(db && isBranchId(token));
 
   useEffect(() => {
@@ -29,6 +33,27 @@ export default function AcceptInvite({ token }) {
     };
   }, [valid]);
 
+  // Join the branch with a signed-in account, then open its dashboard.
+  async function join() {
+    await workspaceAction('accept', { invite: token });
+    rememberBranch(null);
+    location.replace('/dashboard');
+  }
+
+  // After the WhatsApp code: the account exists and is signed in, so join at once.
+  async function joinAfterCode(next) {
+    setSession(next);
+    setBusy(true);
+    setError('');
+    try {
+      await join();
+    } catch {
+      setError(t('الدعوة غير متاحة لهذا الحساب.'));
+    } finally {
+      setBusy(false);
+    }
+  }
+
   async function accept(event) {
     event.preventDefault();
     const creating = event.nativeEvent.submitter?.value === 'create';
@@ -46,15 +71,19 @@ export default function AcceptInvite({ token }) {
         }
         setSession(result.data.session);
       }
-      await workspaceAction('accept', { invite: token });
-      rememberBranch(null);
-      location.replace('/dashboard');
+      await join();
     } catch {
       setError(t('الدعوة غير متاحة لهذا الحساب.'));
     } finally {
       setBusy(false);
     }
   }
+
+  const errorLine = error && (
+    <p role="alert" className="error">
+      {error}
+    </p>
+  );
 
   return (
     <main className="merchant-login">
@@ -65,31 +94,48 @@ export default function AcceptInvite({ token }) {
           <p>{t('الدعوة غير متاحة لهذا الحساب.')}</p>
         ) : session === undefined ? (
           <p role="status">{t('جارٍ الاتصال…')}</p>
-        ) : (
+        ) : session ? (
           <form onSubmit={accept}>
-            {session ? (
+            <p dir="ltr">
+              {session.user.email || (session.user.phone ? '+' + session.user.phone : '')}
+            </p>
+            <button className="button" disabled={busy}>
+              {t('اقبل الدعوة')}
+            </button>
+            <button
+              type="button"
+              className="button outline"
+              disabled={busy}
+              onClick={async () => {
+                const result = await db.auth.signOut();
+                if (!result.error) {
+                  rememberBranch(null);
+                  setSession(null);
+                }
+              }}
+            >
+              {t(' تسجيل الخروج')}
+            </button>
+            {errorLine}
+          </form>
+        ) : (
+          <>
+            <SignInMethod
+              value={method}
+              onChange={(value) => {
+                setMethod(value);
+                setError('');
+              }}
+            />
+            {method === 'whatsapp' ? (
               <>
-                <p dir="ltr">{session.user.email}</p>
-                <button className="button" disabled={busy}>
-                  {t('اقبل الدعوة')}
-                </button>
-                <button
-                  type="button"
-                  className="button outline"
-                  disabled={busy}
-                  onClick={async () => {
-                    const result = await db.auth.signOut();
-                    if (!result.error) {
-                      rememberBranch(null);
-                      setSession(null);
-                    }
-                  }}
-                >
-                  {t(' تسجيل الخروج')}
-                </button>
+                <p>{t('اكتب رقم الواتساب تاعك، نبعثولك كود وتدخل للفريق مباشرة.')}</p>
+                <WhatsAppCode onVerified={joinAfterCode} />
+                {busy && <p role="status">{t('جارٍ الاتصال…')}</p>}
+                {errorLine}
               </>
             ) : (
-              <>
+              <form onSubmit={accept}>
                 <label>
                   {t('البريد الإلكتروني')}
                   <input
@@ -119,14 +165,10 @@ export default function AcceptInvite({ token }) {
                 <button className="button outline" value="create" disabled={busy}>
                   {t('إنشاء حساب')}
                 </button>
-              </>
+                {errorLine}
+              </form>
             )}
-            {error && (
-              <p role="alert" className="error">
-                {error}
-              </p>
-            )}
-          </form>
+          </>
         )}
       </div>
     </main>

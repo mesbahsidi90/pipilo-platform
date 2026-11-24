@@ -62,20 +62,20 @@ function ScreenActions({ link, showField = false }) {
   );
 }
 
-function waitingDisplayLink(token, venue, branch, clinic) {
+export function waitingDisplayLink(token, venue, branch, clinic, calls = false) {
   const url = new URL(ticketLink('display/' + token));
   if (clinic) url.searchParams.set('queue', '1');
+  // «شاشة النداء»: only the called numbers, for shops using «نداء سريع».
+  if (calls) url.searchParams.set('calls', '1');
   if (venue) url.searchParams.set('venue', venue);
   if (branch && branch !== venue) url.searchParams.set('venueBranch', branch);
   return url.href;
 }
 
-function WaitingScreen({ canManage, venue, branch, clinic }) {
+// The branch's waiting-screen token ('local' in the trial).
+export function useWaitingToken() {
   const [token, setToken] = useState(cloud ? null : 'local');
-  const link = token ? waitingDisplayLink(token, venue, branch, clinic) : null;
   const [error, setError] = useState('');
-  const [busy, setBusy] = useState(false);
-
   useEffect(() => {
     if (!cloud) return;
     let active = true;
@@ -88,6 +88,14 @@ function WaitingScreen({ canManage, venue, branch, clinic }) {
       active = false;
     };
   }, []);
+  return { token, setToken, error, setError };
+}
+
+function WaitingScreen({ canManage, venue, branch, clinic }) {
+  const { token, setToken, error, setError } = useWaitingToken();
+  const link = token ? waitingDisplayLink(token, venue, branch, clinic) : null;
+  const callsLink = token && !clinic ? waitingDisplayLink(token, venue, branch, false, true) : null;
+  const [busy, setBusy] = useState(false);
 
   async function rotate() {
     if (!window.confirm(t('تبدّل رابط شاشة الانتظار؟ الرابط القديم يتوقف.'))) return;
@@ -118,6 +126,13 @@ function WaitingScreen({ canManage, venue, branch, clinic }) {
       )}
       {!link && !error && <p role="status">{t('جارٍ الاتصال…')}</p>}
       {link && <ScreenActions key={link} link={link} showField />}
+      {callsLink && (
+        <div className="branch-calls-screen">
+          <h4>{t('شاشة النداء')}</h4>
+          <p>{t('النداءات برك، بلا «قيد التحضير». للمحلات اللي تخدم بـ «نداء سريع».')}</p>
+          <ScreenActions key={callsLink} link={callsLink} />
+        </div>
+      )}
       {link && cloud && canManage && (
         <button type="button" className="button outline small" disabled={busy} onClick={rotate}>
           <RefreshCw size={15} />

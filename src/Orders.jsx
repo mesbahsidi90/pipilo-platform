@@ -23,6 +23,7 @@ import {
   Users,
   LogOut,
   BellRing,
+  Megaphone,
   RotateCcw,
   X,
   Phone,
@@ -80,6 +81,8 @@ import { createOrderAudio } from './orderAudio';
 import { toneSource } from './alertTones';
 import { branchLoyalty, redeemLoyalty } from './loyalty';
 import MerchantFeatures from './MerchantFeatures';
+import QuickCall from './QuickCall';
+import { callAction, calledOrders } from './quickCallRules';
 import { ShopAnnouncements } from './PlatformAnnouncements';
 import OnlineOrderInfo from './OnlineOrderInfo';
 import { acceptOnlineOrder } from './ordering';
@@ -333,6 +336,33 @@ export default function Orders({ Share, workspace }) {
     }
   }
 
+  // «نداء سريع»: one number, one press. A new number is added and called at
+  // once; a number already waiting is called; one already called rings again.
+  async function quickCall(number) {
+    const action = callAction(orders || [], number);
+    if (action.type === 'already') {
+      if (cloud || (sandbox && trialAvailable)) await ringAgain(action.order);
+      else setNotice(bippoT('الرقم {0} راه في الشاشة.', [number]));
+      return true;
+    }
+    if (action.type === 'ready') {
+      await mark(action.order, 'ready');
+      return true;
+    }
+    setBusy(true);
+    setNotice('');
+    let order;
+    try {
+      order = await createOrder(number, {});
+    } catch (e) {
+      setNotice(e.message);
+      setBusy(false);
+      return false;
+    }
+    await mark(order, 'ready');
+    return true;
+  }
+
   async function addToQueue(event) {
     event.preventDefault();
     const phone = cleanPhone(patient.phone);
@@ -460,6 +490,7 @@ export default function Orders({ Share, workspace }) {
           : bippoT('التيكيات'),
       List,
     ],
+    ...(!activity.clinic ? [['call', bippoT('نداء سريع'), Megaphone]] : []),
     ...(!workspaceData?.staff ? [['features', bippoT('المزايا'), LayoutGrid]] : []),
     ['reports', bippoT('التحليلات'), BarChart3],
     ...(!cloud ||
@@ -832,6 +863,18 @@ export default function Orders({ Share, workspace }) {
           </header>
         )}
         {tab === 'orders' && <ShopAnnouncements key={shop?.shop_id || 'shop'} />}
+        {tab === 'call' && !activity.clinic && (
+          <QuickCall
+            calls={calledOrders(orders || [])}
+            busy={busy}
+            onCall={quickCall}
+            onCollect={(order) => mark(order, 'collected')}
+            onRingAgain={cloud || (sandbox && trialAvailable) ? ringAgain : null}
+            venue={shop?.name}
+            notice={notice}
+            labelNumber={bippoT('رقم الفاتورة')}
+          />
+        )}
         {workspaceError && (
           <p role="alert" className="error">
             {workspaceError}
@@ -1257,7 +1300,7 @@ export default function Orders({ Share, workspace }) {
 
 // Phones only (CSS): the main tabs stay one tap away at the bottom of the
 // screen; the rest open from «المزيد».
-const barTabs = ['orders', 'assistant', 'reports'];
+const barTabs = ['orders', 'call', 'assistant', 'reports'];
 function MobileTabBar({ tabs, current, onOpen, onSignOut }) {
   const [more, setMore] = useState(false);
   useEffect(() => {

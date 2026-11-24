@@ -1958,5 +1958,16 @@
   "الأنشطة": "Activités",
   "حسب نشاطك": "Par activité",
   "على Android يوصل إشعار بالصوت والاهتزاز حتى والتليفون مقفول. على iPhone خلّي صفحة الطلب محلولة: الشاشة تقعد شاعلة والرنة تخرج، ولا زيد الصفحة للشاشة الرئيسية باش يوصلك الإشعار. وإذا ما جاش، Bipilo يعاود يرنّ بعد دقيقة.": "Sur Android, une notification avec son et vibration arrive même téléphone verrouillé. Sur iPhone, gardez la page de commande ouverte : l’écran reste allumé et la sonnerie retentit, ou ajoutez la page à l’écran d’accueil pour recevoir la notification. Sans réponse, Bipilo sonne à nouveau après une minute.",
-  "نعم. الزبون يكتب رقم الفاتورة اللي طبعها الكاشير، ولا يمسح كود الكونتوار. وإذا عندك كاشير يقبل الربط، واجهة API ترنّ تليفون الزبون وحدها كي يوجد الطلب.": "Oui. Le client saisit le numéro imprimé sur son ticket de caisse ou scanne le code du comptoir. Si votre caisse accepte une intégration, l’API fait sonner le téléphone du client automatiquement quand la commande est prête."
+  "نعم. الزبون يكتب رقم الفاتورة اللي طبعها الكاشير، ولا يمسح كود الكونتوار. وإذا عندك كاشير يقبل الربط، واجهة API ترنّ تليفون الزبون وحدها كي يوجد الطلب.": "Oui. Le client saisit le numéro imprimé sur son ticket de caisse ou scanne le code du comptoir. Si votre caisse accepte une intégration, l’API fait sonner le téléphone du client automatiquement quand la commande est prête.",
+  "نداء سريع": "Appel rapide",
+  "اكتب رقم الفاتورة واضغط «نادي». يبان كبير في الشاشة ويتقال بالصوت.": "Saisissez le numéro du ticket et appuyez sur « Appeler ». Il s’affiche en grand sur l’écran avec annonce vocale.",
+  "افتح شاشة النداء": "Ouvrir l’écran d’appel",
+  "رقم الفاتورة": "Numéro du ticket",
+  "امسح رقم": "Effacer un chiffre",
+  "امسح الكل": "Tout effacer",
+  "نادي": "Appeler",
+  "تنادات": "Appelés",
+  "الرقم {0} راه في الشاشة.": "Le numéro {0} est déjà à l’écran.",
+  "النداءات برك، بلا «قيد التحضير». للمحلات اللي تخدم بـ «نداء سريع».": "Uniquement les appels, sans « En préparation ». Pour les commerces qui utilisent « Appel rapide ».",
+  "تفضّل استلم طلبك": "Votre commande est prête"
 }

@@ -213,3 +213,35 @@ body:has(.waiting-board) .language-switcher { display: none; }
 @media (prefers-reduced-motion: reduce) {
   .waiting-board-latest.fresh { animation: none; background: #1f6b3e; }
 }
+
+/* ---- «شاشة النداء» (?calls=1): only the called numbers, filling the TV ---- */
+.waiting-board.calls-only .waiting-board-grid {
+  grid-template-columns: minmax(0, 1fr);
+}
+.waiting-board.calls-only .waiting-board-called {
+  display: grid;
+  grid-template-columns: minmax(0, 3fr) minmax(0, 2fr);
+  grid-template-rows: auto minmax(0, 1fr);
+  gap: clamp(14px, 2vw, 32px);
+}
+.waiting-board.calls-only .waiting-board-called > h2 {
+  grid-column: 1 / -1;
+}
+.waiting-board.calls-only .waiting-board-latest .dot-number {
+  height: clamp(140px, 42vh, 460px);
+}
+.waiting-board.calls-only .waiting-board-recent {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  align-content: start;
+}
+.waiting-board.calls-only .waiting-board-recent .dot-number {
+  height: clamp(48px, 11vh, 130px);
+}
+@media (max-width: 650px) {
+  .waiting-board.calls-only .waiting-board-called {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .waiting-board.calls-only .waiting-board-latest .dot-number {
+    height: 140px;
+  }
+}

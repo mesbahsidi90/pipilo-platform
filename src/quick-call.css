@@ -1,0 +1,170 @@
+/* «نداء سريع»: one field, a big keypad and one button. */
+.quick-call {
+  display: grid;
+  gap: 20px;
+}
+.quick-call-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+.quick-call-head h1 {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin: 0 0 6px;
+  font-size: 26px;
+}
+.quick-call-head p {
+  margin: 0;
+  color: var(--bippo-muted, #54645f);
+  line-height: 1.8;
+}
+.quick-call-head .button {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+.quick-call-body {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  gap: 20px;
+  align-items: start;
+}
+.quick-call-pad,
+.quick-call-list {
+  background: var(--bippo-surface, #fff);
+  border: 1px solid var(--bippo-border, #e2e3dc);
+  border-radius: 24px;
+  padding: 20px;
+}
+.quick-call-field {
+  display: grid;
+  gap: 8px;
+  font-weight: 600;
+}
+.quick-call-field input {
+  width: 100%;
+  min-height: 84px;
+  border-radius: 18px;
+  border: 2px solid var(--bippo-border, #e2e3dc);
+  background: var(--bippo-surface-muted, #f1f1ed);
+  font: inherit;
+  font-size: 52px;
+  font-weight: 700;
+  letter-spacing: 4px;
+  text-align: center;
+  color: var(--bippo-text, #192a27);
+}
+.quick-call-field input:focus {
+  outline: none;
+  border-color: var(--bippo-primary, #0c3e38);
+}
+.quick-call-keys {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 10px;
+  margin: 16px 0;
+}
+.quick-call-keys button {
+  min-height: 64px;
+  border-radius: 16px;
+  border: 1px solid var(--bippo-border, #e2e3dc);
+  background: var(--bippo-surface, #fff);
+  color: var(--bippo-text, #192a27);
+  font: inherit;
+  font-size: 28px;
+  font-weight: 600;
+  cursor: pointer;
+  display: grid;
+  place-items: center;
+}
+.quick-call-keys button:active {
+  background: var(--bippo-primary-soft, #edf5f0);
+}
+.quick-call-keys .quick-call-delete,
+.quick-call-keys .quick-call-clear {
+  color: var(--bippo-muted, #54645f);
+  font-size: 22px;
+}
+.quick-call-go {
+  width: 100%;
+  min-height: 72px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  font-size: 26px;
+  font-weight: 700;
+  border-radius: 18px;
+}
+.quick-call-notice {
+  margin: 12px 0 0;
+  text-align: center;
+  font-weight: 600;
+}
+.quick-call-list h2 {
+  margin: 0 0 14px;
+  font-size: 19px;
+}
+.quick-call-list ul {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 10px;
+}
+.quick-call-list li {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 12px 14px;
+  border-radius: 16px;
+  background: var(--bippo-surface-muted, #f1f1ed);
+}
+.quick-call-list li .dot-number {
+  height: 40px;
+  width: auto;
+  color: var(--bippo-primary, #0c3e38);
+}
+.quick-call-actions {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+}
+.quick-call-actions .button {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+.quick-call-empty {
+  margin: 0;
+  color: var(--bippo-muted, #54645f);
+}
+@media (max-width: 1100px) {
+  .quick-call-body {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+@media (max-width: 480px) {
+  .quick-call-field input {
+    min-height: 72px;
+    font-size: 44px;
+  }
+  .quick-call-keys button {
+    min-height: 58px;
+  }
+}
+
+.quick-call {
+  min-width: 0;
+  max-width: 980px;
+}
+.quick-call-pad {
+  max-width: 460px;
+}

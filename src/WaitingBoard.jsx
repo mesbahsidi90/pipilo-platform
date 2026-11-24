@@ -39,6 +39,8 @@ export default function WaitingBoard({ orders, error, branding }) {
   const timers = useRef([]);
   const labels = new URLSearchParams(location.search);
   const clinic = labels.get('queue') === '1' || branding?.kind === 'clinic';
+  // «شاشة النداء» (?calls=1): only the called numbers, for «نداء سريع».
+  const callsOnly = !clinic && labels.get('calls') === '1';
   const name =
     labels.get('venue')?.trim().slice(0, 100) || branding?.name?.trim().slice(0, 100) || 'Bipilo';
   const branch = labels.get('venueBranch')?.trim().slice(0, 100);
@@ -186,7 +188,9 @@ export default function WaitingBoard({ orders, error, branding }) {
   const latest = view.latest;
   const fresh = latest && flash[latest.number] > now;
   return (
-    <main className={'waiting-board' + (clinic ? ' clinic' : '')}>
+    <main
+      className={'waiting-board' + (clinic ? ' clinic' : '') + (callsOnly ? ' calls-only' : '')}
+    >
       <header className="waiting-board-header">
         <div className="waiting-board-identity">
           {logo ? (
@@ -252,7 +256,7 @@ export default function WaitingBoard({ orders, error, branding }) {
       )}
       <div className="waiting-board-grid">
         <section className="waiting-board-called" aria-live="polite">
-          <h2>{t(clinic ? 'تم النداء' : 'جاهز')}</h2>
+          <h2>{t(clinic ? 'تم النداء' : callsOnly ? 'تفضّل استلم طلبك' : 'جاهز')}</h2>
           {latest ? (
             <div className={'waiting-board-latest' + (fresh ? ' fresh' : '')}>
               <small>{t(clinic ? 'الرقم المنادى' : 'آخر طلب واجد')}</small>
@@ -281,27 +285,29 @@ export default function WaitingBoard({ orders, error, branding }) {
             </ul>
           )}
         </section>
-        <section className="waiting-board-waiting">
-          <h2>
-            {t(clinic ? 'في الانتظار' : 'قيد التحضير')}
-            {view.preparing.length > 0 && <span>{view.preparing.length}</span>}
-          </h2>
-          {view.preparing.length ? (
-            <ul className="waiting-board-numbers">
-              {view.preparing.slice(0, 24).map((order) => (
-                <li key={order.number}>
-                  <DotNumber value={order.number} />
-                </li>
-              ))}
-            </ul>
-          ) : (
-            <p className="waiting-board-empty">
-              {orders
-                ? t(clinic ? 'ما كاش مريض يستنّى.' : 'ما كاش طلبات قيد التحضير.')
-                : t('جارٍ الاتصال…')}
-            </p>
-          )}
-        </section>
+        {!callsOnly && (
+          <section className="waiting-board-waiting">
+            <h2>
+              {t(clinic ? 'في الانتظار' : 'قيد التحضير')}
+              {view.preparing.length > 0 && <span>{view.preparing.length}</span>}
+            </h2>
+            {view.preparing.length ? (
+              <ul className="waiting-board-numbers">
+                {view.preparing.slice(0, 24).map((order) => (
+                  <li key={order.number}>
+                    <DotNumber value={order.number} />
+                  </li>
+                ))}
+              </ul>
+            ) : (
+              <p className="waiting-board-empty">
+                {orders
+                  ? t(clinic ? 'ما كاش مريض يستنّى.' : 'ما كاش طلبات قيد التحضير.')
+                  : t('جارٍ الاتصال…')}
+              </p>
+            )}
+          </section>
+        )}
       </div>
     </main>
   );

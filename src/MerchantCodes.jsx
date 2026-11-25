@@ -17,6 +17,7 @@ import { CounterPoster } from './CounterTicket';
 import { workspaceAction } from './MerchantTeam';
 import ShopSettings from './ShopSettings.jsx';
 import { saveScreenLanguage } from './shopSettings';
+import ScreenStylePicker from './ScreenStylePicker';
 import './merchant-codes.css';
 
 function screenLink(screen, shopId) {
@@ -124,7 +125,16 @@ export function useWaitingToken() {
   return { token, setToken, code, setCode, error, setError };
 }
 
-function WaitingScreen({ canManage, venue, branch, clinic, language = 'ar', onLanguage }) {
+function WaitingScreen({
+  canManage,
+  venue,
+  branch,
+  clinic,
+  language = 'ar',
+  onLanguage,
+  screenStyle,
+  onStyle,
+}) {
   const { token, setToken, code, setCode, error, setError } = useWaitingToken();
   const [lang, setLang] = useState(language === 'fr' ? 'fr' : 'ar');
   const [langBusy, setLangBusy] = useState(false);
@@ -194,6 +204,7 @@ function WaitingScreen({ canManage, venue, branch, clinic, language = 'ar', onLa
           {t('الكتابة والنداء في التلفاز يتبعو هاذ اللغة. التلفاز يتبدّل وحدو في دقائق.')}
         </small>
       </label>
+      <ScreenStylePicker value={screenStyle} canManage={canManage} onSaved={onStyle} />
       {!link && !error && <p role="status">{t('جارٍ الاتصال…')}</p>}
       {link && <ScreenActions key={link} link={link} showField />}
       {callsLink && (
@@ -291,6 +302,8 @@ function BranchTools({ shop, canManage, onSaved, foodService, venue }) {
           clinic={clinic}
           language={shop.display_language}
           onLanguage={(display_language) => onSaved?.({ ...shop, display_language })}
+          screenStyle={shop.display_style}
+          onStyle={(display_style) => onSaved?.({ ...shop, display_style })}
         />
       </div>
       {canManage && (

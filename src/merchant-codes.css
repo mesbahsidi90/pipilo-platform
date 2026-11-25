@@ -76,3 +76,40 @@
   font-weight: 400;
   color: var(--bippo-muted, #54645f);
 }
+
+/* «شكل الشاشة»: preview + number style + colour sets. */
+.screen-style { display: grid; gap: 12px; margin: 12px 0; }
+.screen-style fieldset { border: 0; margin: 0; padding: 0; min-width: 0; }
+.screen-style legend { font-weight: 600; margin-bottom: 6px; }
+.screen-preview {
+  display: grid; grid-template-columns: 3fr 2fr; gap: 8px; padding: 10px; border-radius: 14px;
+  background: var(--wb-bg); max-width: 320px;
+}
+.screen-preview-latest {
+  display: grid; place-items: center; min-height: 92px; border-radius: 10px;
+  background: var(--wb-latest); color: var(--wb-digit);
+}
+.screen-preview-tiles { display: grid; gap: 8px; }
+.screen-preview-tiles span {
+  display: grid; place-items: center; border-radius: 8px; background: var(--wb-tile); color: var(--wb-tile-digit);
+}
+.screen-preview .dot-number.big { height: 56px; width: auto; }
+.screen-preview .dot-number.small { height: 22px; width: auto; }
+.screen-preview-bold { font-weight: 800; line-height: 1; font-variant-numeric: tabular-nums; }
+.screen-preview-bold.big { font-size: 58px; }
+.screen-preview-bold.small { font-size: 22px; }
+.screen-style-options, .screen-style-swatches { display: flex; flex-wrap: wrap; gap: 8px; }
+.screen-style-options button, .screen-style-swatches button {
+  display: inline-flex; align-items: center; gap: 8px; padding: 6px 12px; border-radius: 999px;
+  border: 1px solid var(--bippo-border, #e2e3dc); background: #fff; color: var(--bippo-text, #192a27);
+  font: inherit; font-size: 13px; cursor: pointer;
+}
+.screen-style-options button.active, .screen-style-swatches button.active {
+  border-color: var(--bippo-primary, #0c3e38); box-shadow: 0 0 0 2px var(--bippo-primary-soft, #edf5f0);
+  font-weight: 700;
+}
+.screen-style-options .dot-number { height: 16px; width: auto; }
+.screen-style-options b { font-size: 17px; font-weight: 800; }
+.screen-style .swatch { display: inline-grid; place-items: center; width: 26px; height: 26px; border-radius: 8px; }
+.screen-style .swatch i { display: grid; place-items: center; width: 16px; height: 16px; border-radius: 5px; }
+.screen-style fieldset:disabled button { cursor: default; opacity: 0.7; }

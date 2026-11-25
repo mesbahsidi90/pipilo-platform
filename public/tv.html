@@ -68,6 +68,7 @@
   .dot.on { background: #8ff0b8; }
   #latest .dot.on { background: #ffffff; }
   .glyph { font-weight: 700; color: #ffffff; vertical-align: middle; }
+  .boldnum { font-weight: 800; line-height: 1; letter-spacing: 0.04em; }
   #notice { position: absolute; bottom: 2vh; left: 2vw; right: 2vw; margin: 0; padding: 1.6vh; text-align: center;
     background: #5a2a1f; color: #ffd7cc; border-radius: 1.4vh; font-size: 2.4vh; }
   #unlock { position: absolute; top: 50%; left: 50%; width: 70vw; margin-left: -35vw; margin-top: -10vh;
@@ -208,6 +209,54 @@
     xhr.send(JSON.stringify(body));
   }
 
+  // ---- look: colour set + number style, from «الفروع والأكواد» -------------
+  // Same values as src/screenThemes.js. Written as a style block (old TVs have
+  // no CSS variables).
+  var THEMES = {
+    dark: { bg: '#101112', panel: '#17191b', latest: '#133a2b', fresh: '#1f6b3e', tile: '#1c2c22', accent: '#7ee2a8', digit: '#ffffff', tileDigit: '#b6f2cc', text: '#f3f6f4', muted: '#9aa59f' },
+    green: { bg: '#0b2a24', panel: '#0f3a32', latest: '#145244', fresh: '#1f7a5c', tile: '#12473c', accent: '#9ff2c6', digit: '#ffffff', tileDigit: '#c9f7dd', text: '#eefaf3', muted: '#a6c9bb' },
+    blue: { bg: '#0b1726', panel: '#102236', latest: '#15365a', fresh: '#1f5a96', tile: '#14304d', accent: '#8cc8ff', digit: '#ffffff', tileDigit: '#cfe6ff', text: '#eef5ff', muted: '#9fb4cc' },
+    burgundy: { bg: '#1d0c10', panel: '#2a1217', latest: '#4a1621', fresh: '#7d2233', tile: '#3a1a20', accent: '#ffb3c0', digit: '#ffffff', tileDigit: '#ffd6dd', text: '#fff3f5', muted: '#c9a3aa' },
+    coffee: { bg: '#1a130e', panel: '#241a13', latest: '#3d2a1c', fresh: '#6b4528', tile: '#33251a', accent: '#f3c98b', digit: '#fff7ea', tileDigit: '#f5dcb6', text: '#fbf3e8', muted: '#c4ad93' },
+    light: { bg: '#eef1ec', panel: '#ffffff', latest: '#0c3e38', fresh: '#157a5c', tile: '#e3ede7', accent: '#0c3e38', digit: '#ffffff', tileDigit: '#0c3e38', text: '#13211e', muted: '#56665f' }
+  };
+  var digitsStyle = 'dots', themeName = '';
+  function applyTheme(name) {
+    var t = THEMES[name] || THEMES.dark;
+    if (name === themeName) return;
+    themeName = THEMES[name] ? name : 'dark';
+    var css =
+      'html, body { background: ' + t.bg + '; color: ' + t.text + '; }' +
+      '#sub, #empty { color: ' + t.muted + '; }' +
+      '#clock { color: ' + t.text + '; }' +
+      '#board { background: ' + t.panel + '; }' +
+      '#label { color: ' + t.accent + '; }' +
+      '#latest { background: ' + t.latest + '; color: ' + t.digit + '; }' +
+      '#latest small { color: ' + t.digit + '; }' +
+      '#recent li { background: ' + t.tile + '; color: ' + t.tileDigit + '; }' +
+      '#recent li.fresh { background: ' + t.fresh + '; color: ' + t.digit + '; }' +
+      '.dot { background: ' + t.tileDigit + '; opacity: 0.13; }' +
+      '.dot.on { opacity: 1; }' +
+      '#latest .dot, #recent li.fresh .dot { background: ' + t.digit + '; }' +
+      '#latest .dot { opacity: 0.16; } #latest .dot.on { opacity: 1; }' +
+      '@-webkit-keyframes call { 50% { background: ' + t.fresh + '; } }' +
+      '@keyframes call { 50% { background: ' + t.fresh + '; } }';
+    var el = document.getElementById('themeCss');
+    if (!el) {
+      el = document.createElement('style');
+      el.id = 'themeCss';
+      document.getElementsByTagName('head')[0].appendChild(el);
+    }
+    if (el.styleSheet) el.styleSheet.cssText = css; else el.innerHTML = css;
+    lastDrawn = '';
+  }
+  function applyDigits(style) {
+    var next = style === 'bold' ? 'bold' : 'dots';
+    if (next === digitsStyle) return;
+    digitsStyle = next;
+    lastDrawn = '';
+  }
+
   // ---- dot-matrix numbers (5 × 7) ----------------------------------------
   var FONT = {
     '0': ['01110', '10001', '10011', '10101', '11001', '10001', '01110'],
@@ -223,6 +272,14 @@
   };
   function drawNumber(el, text, dot) {
     el.innerHTML = '';
+    if (digitsStyle === 'bold') {
+      var plain = document.createElement('span');
+      plain.className = 'num boldnum';
+      plain.style.fontSize = Math.round(dot * 9.6) + 'px';
+      plain.appendChild(document.createTextNode(text));
+      el.appendChild(plain);
+      return;
+    }
     var wrap = document.createElement('span');
     wrap.className = 'num';
     var gap = Math.max(1, Math.round(dot * 0.22));
@@ -509,6 +566,9 @@
       if (err || !data) return;
       if (!q.venue && data.name) setName(data.name);
       if (data.language) setLanguage(data.language);
+      applyTheme(data.theme);
+      applyDigits(data.digits);
+      render();
       if (typeof data.logo === 'string' && /^data:image\/(png|jpeg|webp);base64,/.test(data.logo)) {
         $('logo').src = data.logo; $('logo').hidden = false; $('initial').hidden = true;
       }
@@ -539,6 +599,7 @@
     poll();
   }
   setInterval(function () { if (token) brand(); }, 2 * 60000);
+  applyTheme('dark');
   setInterval(render, 1000);
   window.onresize = function () { lastDrawn = ''; render(); };
 })();

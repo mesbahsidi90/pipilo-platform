@@ -1982,5 +1982,15 @@
   "شارك": "Partager",
   "اكتب هاذ العنوان في متصفح التلفاز:": "Tapez cette adresse dans le navigateur de la TV :",
   "لغة الشاشة": "Langue de l’écran",
-  "الكتابة والنداء في التلفاز يتبعو هاذ اللغة. التلفاز يتبدّل وحدو في دقائق.": "Les textes et l’annonce sur la TV suivent cette langue. La TV change d’elle-même en quelques minutes."
+  "الكتابة والنداء في التلفاز يتبعو هاذ اللغة. التلفاز يتبدّل وحدو في دقائق.": "Les textes et l’annonce sur la TV suivent cette langue. La TV change d’elle-même en quelques minutes.",
+  "شكل الأرقام": "Style des numéros",
+  "نقاط": "Points",
+  "أرقام عادية": "Chiffres pleins",
+  "ألوان الشاشة": "Couleurs de l’écran",
+  "داكن": "Sombre",
+  "أخضر": "Vert",
+  "أزرق": "Bleu",
+  "أحمر قاتم": "Bordeaux",
+  "قهوة": "Café",
+  "فاتح": "Clair"
 }

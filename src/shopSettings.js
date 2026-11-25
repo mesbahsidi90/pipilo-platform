@@ -32,6 +32,7 @@ export const defaults = {
   ordering_modes: ['pickup'],
   clinic_rooms: [],
   display_language: 'ar',
+  display_style: {},
 };
 export async function getSettings() {
   if (!cloud)
@@ -67,6 +68,17 @@ export async function saveScreenLanguage(lang) {
   const { error } = await db.rpc('set_screen_language', { lang });
   if (error) throw new Error(bippoT('تعذر حفظ التغيير. عاود المحاولة.'));
   return lang;
+}
+// The screen's look: number style (dots | bold) and colour set.
+export async function saveScreenStyle(style) {
+  if (!cloud) {
+    const current = JSON.parse(localStorage.getItem(key) || '{}');
+    localStorage.setItem(key, JSON.stringify({ ...current, display_style: style }));
+    return style;
+  }
+  const { error } = await db.rpc('set_screen_style', { digits: style.digits, theme: style.theme });
+  if (error) throw new Error(bippoT('تعذر حفظ التغيير. عاود المحاولة.'));
+  return style;
 }
 export async function saveSettings(value) {
   const data = {

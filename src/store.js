@@ -247,6 +247,9 @@ export async function displayBranding(token) {
         kind: shop.kind || 'cafe',
         logo: shop.logo || '',
         alert_tone: shop.alert_tone || 'pager',
+        language: shop.display_language || 'ar',
+        digits: shop.display_style?.digits || 'dots',
+        theme: shop.display_style?.theme || 'dark',
       };
     } catch {
       return null;

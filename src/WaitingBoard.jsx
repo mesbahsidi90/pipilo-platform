@@ -7,6 +7,7 @@ import { toneSource } from './alertTones';
 import { newlyReady, speakCalls } from './announce';
 import { boardView } from './boardRules';
 import { createVoiceCaller } from './voiceCall';
+import { screenStyle, themeVars } from './screenThemes';
 import './waiting-board.css';
 
 const soundKey = 'bipilo-board-sound';
@@ -69,6 +70,16 @@ export default function WaitingBoard({ orders, error, branding }) {
       ? branding.logo
       : '';
   const view = boardView(orders || [], { clinic, now });
+  // The look chosen in «الفروع والأكواد»: dots or plain digits, and a colour set.
+  const look = screenStyle({ digits: branding?.digits, theme: branding?.theme });
+  const number = (value) =>
+    look.digits === 'bold' ? (
+      <b className="board-number" dir="ltr">
+        {value}
+      </b>
+    ) : (
+      <DotNumber value={value} />
+    );
 
   // Clock, fullscreen state and a screen that never sleeps.
   useEffect(() => {
@@ -234,7 +245,11 @@ export default function WaitingBoard({ orders, error, branding }) {
   const fresh = latest && flash[latest.number] > now;
   return (
     <main
-      className={'waiting-board' + (clinic ? ' clinic' : '') + (callsOnly ? ' calls-only' : '')}
+      className={
+        'waiting-board themed' + (clinic ? ' clinic' : '') + (callsOnly ? ' calls-only' : '')
+      }
+      style={themeVars(look.theme)}
+      data-theme={look.theme}
     >
       <header className="waiting-board-header">
         <div className="waiting-board-identity">
@@ -316,7 +331,7 @@ export default function WaitingBoard({ orders, error, branding }) {
           {latest ? (
             <div className={'waiting-board-latest' + (fresh ? ' fresh' : '')}>
               <small>{t(clinic ? 'الرقم المنادى' : 'آخر طلب واجد')}</small>
-              <DotNumber value={latest.number} />
+              {number(latest.number)}
               {clinic && (
                 <strong>
                   {latest.room ? t('تفضّل إلى {0}', [latest.room]) : t('تفضّل للاستقبال')}
@@ -334,7 +349,7 @@ export default function WaitingBoard({ orders, error, branding }) {
             <ul className="waiting-board-recent" aria-label={t('النداءات السابقة')}>
               {view.recent.map((order) => (
                 <li key={order.number} className={flash[order.number] > now ? 'fresh' : ''}>
-                  <DotNumber value={order.number} />
+                  {number(order.number)}
                   {order.room && <small>{order.room}</small>}
                 </li>
               ))}
@@ -350,9 +365,7 @@ export default function WaitingBoard({ orders, error, branding }) {
             {view.preparing.length ? (
               <ul className="waiting-board-numbers">
                 {view.preparing.slice(0, 24).map((order) => (
-                  <li key={order.number}>
-                    <DotNumber value={order.number} />
-                  </li>
+                  <li key={order.number}>{number(order.number)}</li>
                 ))}
               </ul>
             ) : (

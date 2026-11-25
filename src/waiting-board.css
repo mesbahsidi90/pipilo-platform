@@ -245,3 +245,32 @@ body:has(.waiting-board) .language-switcher { display: none; }
     height: 140px;
   }
 }
+
+/* ---- Colour sets and plain digits chosen in «الفروع والأكواد» (screenThemes.js) ---- */
+.waiting-board.themed { background: var(--wb-bg); color: var(--wb-text); }
+.waiting-board.themed .waiting-board-identity p,
+.waiting-board.themed .waiting-board-empty { color: var(--wb-muted); }
+.waiting-board.themed .waiting-board-actions time { color: var(--wb-text); }
+.waiting-board.themed .waiting-board-called,
+.waiting-board.themed .waiting-board-waiting { background: var(--wb-panel); }
+.waiting-board.themed .waiting-board-called h2 { color: var(--wb-accent); }
+.waiting-board.themed .waiting-board-waiting h2 { color: var(--wb-text); }
+.waiting-board.themed .waiting-board-latest { background: var(--wb-latest); color: var(--wb-digit); }
+.waiting-board.themed .waiting-board-latest small,
+.waiting-board.themed .waiting-board-latest strong { color: var(--wb-digit); }
+.waiting-board.themed .waiting-board-latest.fresh { animation-name: board-call-themed; }
+@keyframes board-call-themed {
+  50% { background: var(--wb-fresh); box-shadow: 0 0 0 10px color-mix(in srgb, var(--wb-accent) 25%, transparent); }
+}
+.waiting-board.themed .waiting-board-recent li,
+.waiting-board.themed .waiting-board-waiting .waiting-board-numbers li { background: var(--wb-tile); color: var(--wb-tile-digit); }
+.waiting-board.themed .waiting-board-recent li.fresh { background: var(--wb-fresh); color: var(--wb-digit); }
+.waiting-board.themed .waiting-board-recent small { color: var(--wb-tile-digit); }
+.board-number { display: block; font-weight: 800; line-height: 1; font-variant-numeric: tabular-nums; letter-spacing: 0.02em; }
+.waiting-board-latest .board-number { font-size: clamp(120px, 34vh, 380px); }
+.waiting-board-recent .board-number { font-size: clamp(40px, 9vh, 110px); }
+.waiting-board-waiting .board-number { font-size: clamp(28px, 6vh, 72px); }
+.waiting-board.calls-only .waiting-board-latest .board-number { font-size: clamp(150px, 46vh, 500px); }
+@media (prefers-reduced-motion: reduce) {
+  .waiting-board.themed .waiting-board-latest.fresh { animation: none; background: var(--wb-fresh); }
+}

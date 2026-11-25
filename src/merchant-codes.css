@@ -38,3 +38,28 @@
 .branch-tablet-qr { padding: 12px; background: #fff; border: 1px solid var(--bippo-border); border-radius: 16px; max-width: 100%; }
 .branch-tablet-qr svg { width: min(280px, 75vw); height: auto; }
 @media (max-width: 750px) { .branch-tools { padding: 12px; } }
+
+/* The short TV address of «شاشة النداء», big enough to copy onto a remote. */
+.branch-calls-screen {
+  margin-top: 14px;
+}
+.branch-tv-address {
+  display: grid;
+  gap: 6px;
+  margin: 10px 0;
+  padding: 14px 16px;
+  border-radius: 14px;
+  background: var(--bippo-primary-soft, #edf5f0);
+  border: 1px dashed var(--bippo-primary, #0c3e38);
+}
+.branch-tv-address span {
+  font-size: 13px;
+  color: var(--bippo-muted, #54645f);
+}
+.branch-tv-address b {
+  font-size: 26px;
+  letter-spacing: 1px;
+  color: var(--bippo-primary, #0c3e38);
+  text-align: left;
+  word-break: break-all;
+}

@@ -20,8 +20,8 @@ export default function QuickCall({
   labelNumber,
 }) {
   const [value, setValue] = useState('');
-  const { token } = useWaitingToken();
-  const screenLink = token ? waitingDisplayLink(token, venue, venue, false, true) : null;
+  const { token, code } = useWaitingToken();
+  const screenLink = token ? waitingDisplayLink(token, venue, venue, false, true, code) : null;
   const input = useRef(null);
   useEffect(() => {
     input.current?.focus();

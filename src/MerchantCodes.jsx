@@ -62,7 +62,13 @@ function ScreenActions({ link, showField = false }) {
   );
 }
 
-export function waitingDisplayLink(token, venue, branch, clinic, calls = false) {
+// The short TV address of a branch's call screen: bipilo.app/tv/k7m2x9.
+export function shortScreenLink(code) {
+  return code ? new URL('/tv/' + code, location.origin).href : null;
+}
+
+export function waitingDisplayLink(token, venue, branch, clinic, calls = false, code = null) {
+  if (calls && !clinic && code) return shortScreenLink(code);
   // «شاشة النداء» on a real branch opens /tv.html: a plain page that old TV
   // browsers can run (the main site needs a recent browser). The trial keeps
   // the in-app screen, which reads this browser's own orders.
@@ -86,6 +92,7 @@ export function waitingDisplayLink(token, venue, branch, clinic, calls = false) 
 // The branch's waiting-screen token ('local' in the trial).
 export function useWaitingToken() {
   const [token, setToken] = useState(cloud ? null : 'local');
+  const [code, setCode] = useState(null);
   const [error, setError] = useState('');
   useEffect(() => {
     if (!cloud) return;
@@ -95,17 +102,23 @@ export function useWaitingToken() {
       if (error || !data) setError(t('تعذر تحميل رابط شاشة الانتظار.'));
       else setToken(data);
     });
+    // The short code for typing on a TV remote; the long link still works without it.
+    db.rpc('waiting_screen_code').then(({ data, error }) => {
+      if (active && !error && typeof data === 'string') setCode(data);
+    });
     return () => {
       active = false;
     };
   }, []);
-  return { token, setToken, error, setError };
+  return { token, setToken, code, setCode, error, setError };
 }
 
 function WaitingScreen({ canManage, venue, branch, clinic }) {
-  const { token, setToken, error, setError } = useWaitingToken();
+  const { token, setToken, code, setCode, error, setError } = useWaitingToken();
   const link = token ? waitingDisplayLink(token, venue, branch, clinic) : null;
-  const callsLink = token && !clinic ? waitingDisplayLink(token, venue, branch, false, true) : null;
+  const callsLink =
+    token && !clinic ? waitingDisplayLink(token, venue, branch, false, true, code) : null;
+  const tvAddress = !clinic && code ? shortScreenLink(code).replace(/^https?:\/\//, '') : null;
   const [busy, setBusy] = useState(false);
 
   async function rotate() {
@@ -116,6 +129,9 @@ function WaitingScreen({ canManage, venue, branch, clinic }) {
       const { data, error } = await db.rpc('waiting_screen_link', { rotate: true });
       if (error || !data) throw error || new Error();
       setToken(data);
+      // The short TV address changes too, so old screens stop.
+      const next = await db.rpc('waiting_screen_code', { rotate: true });
+      if (!next.error && typeof next.data === 'string') setCode(next.data);
     } catch {
       setError(t('تعذر تغيير رابط شاشة الانتظار.'));
     } finally {
@@ -141,6 +157,12 @@ function WaitingScreen({ canManage, venue, branch, clinic }) {
         <div className="branch-calls-screen">
           <h4>{t('شاشة النداء')}</h4>
           <p>{t('النداءات برك، بلا «قيد التحضير». للمحلات اللي تخدم بـ «نداء سريع».')}</p>
+          {tvAddress && (
+            <div className="branch-tv-address">
+              <span>{t('اكتب هاذ العنوان في متصفح التلفاز:')}</span>
+              <b dir="ltr">{tvAddress}</b>
+            </div>
+          )}
           <ScreenActions key={callsLink} link={callsLink} />
         </div>
       )}

@@ -1,0 +1,404 @@
+<!doctype html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="referrer" content="no-referrer">
+<title>شاشة النداء | Bipilo</title>
+<!--
+  «شاشة النداء» for TVs. Old TV browsers (Samsung, LG, Android TV WebView…) cannot
+  run the main site, so this page is plain ES5 + plain CSS, with no build step.
+  It reads the called numbers from the same RPC as the main screen every 3 s,
+  and says «الطلب رقم … جاهز» from the clips in /voice/ar.
+  Keep it ES5: no let/const, arrow functions, template strings or modern APIs.
+-->
+<style>
+  html, body { margin: 0; height: 100%; background: #101112; color: #f3f6f4; overflow: hidden;
+    font-family: "Readex Pro", Tahoma, Arial, sans-serif; }
+  #app { position: absolute; top: 0; right: 0; bottom: 0; left: 0; padding: 2.5vh 2.5vw;
+    -webkit-box-sizing: border-box; box-sizing: border-box; display: -webkit-box; display: -webkit-flex;
+    display: flex; -webkit-box-orient: vertical; -webkit-flex-direction: column; flex-direction: column; }
+  #head { display: -webkit-box; display: -webkit-flex; display: flex; -webkit-box-pack: justify;
+    -webkit-justify-content: space-between; justify-content: space-between; -webkit-box-align: center;
+    -webkit-align-items: center; align-items: center; margin-bottom: 2.5vh; }
+  #who { display: -webkit-box; display: -webkit-flex; display: flex; -webkit-box-align: center;
+    -webkit-align-items: center; align-items: center; }
+  #logo, #initial { width: 7vh; height: 7vh; border-radius: 1.6vh; margin-left: 1.6vh; }
+  #logo { background: #fff; }
+  #initial { background: #0c3e38; color: #b9f2cf; font-weight: 700; font-size: 3.6vh; line-height: 7vh;
+    text-align: center; display: inline-block; }
+  #name { display: block; font-size: 3.4vh; font-weight: 700; }
+  #sub { display: block; font-size: 2vh; color: #9aa59f; }
+  #clock { font-size: 4.2vh; font-weight: 700; color: #d6dcd8; direction: ltr; letter-spacing: 0.2vh; }
+  #board { -webkit-box-flex: 1; -webkit-flex: 1; flex: 1; background: #17191b; border-radius: 2.4vh;
+    padding: 2.6vh 2.6vw; display: -webkit-box; display: -webkit-flex; display: flex;
+    -webkit-box-orient: vertical; -webkit-flex-direction: column; flex-direction: column; min-height: 0; }
+  #label { margin: 0 0 2vh; font-size: 3.6vh; color: #7ee2a8; }
+  #stage { -webkit-box-flex: 1; -webkit-flex: 1; flex: 1; display: -webkit-box; display: -webkit-flex;
+    display: flex; min-height: 0; }
+  #latest { -webkit-box-flex: 3; -webkit-flex: 3; flex: 3; background: #133a2b; border-radius: 2.4vh;
+    display: -webkit-box; display: -webkit-flex; display: flex; -webkit-box-orient: vertical;
+    -webkit-flex-direction: column; flex-direction: column; -webkit-box-align: center;
+    -webkit-align-items: center; align-items: center; -webkit-box-pack: center;
+    -webkit-justify-content: center; justify-content: center; margin-left: 2vw; padding: 2vh; }
+  #latest small { font-size: 3vh; color: #cfeedd; margin-bottom: 3vh; font-weight: 700; }
+  #latest.fresh { -webkit-animation: call 1s ease-in-out infinite; animation: call 1s ease-in-out infinite; }
+  @-webkit-keyframes call { 50% { background: #1f6b3e; } }
+  @keyframes call { 50% { background: #1f6b3e; } }
+  #recent { -webkit-box-flex: 2; -webkit-flex: 2; flex: 2; list-style: none; margin: 0; padding: 0;
+    display: -webkit-box; display: -webkit-flex; display: flex; -webkit-flex-wrap: wrap; flex-wrap: wrap;
+    -webkit-align-content: flex-start; align-content: flex-start; }
+  #recent li { width: 46%; margin: 0 0 2vh 4%; padding: 2.2vh 0; background: #1c2c22; border-radius: 1.8vh;
+    text-align: center; }
+  #recent li.fresh { background: #1f6b3e; }
+  #empty { margin: auto; font-size: 3.4vh; color: #9aa59f; text-align: center; }
+  .num { display: inline-block; direction: ltr; white-space: nowrap; }
+  .digit { display: inline-block; vertical-align: middle; }
+  .row { display: block; white-space: nowrap; line-height: 0; }
+  .dot { display: inline-block; border-radius: 50%; background: rgba(126, 226, 168, 0.12); }
+  .dot.on { background: #8ff0b8; }
+  #latest .dot.on { background: #ffffff; }
+  .glyph { font-weight: 700; color: #ffffff; vertical-align: middle; }
+  #notice { position: absolute; bottom: 2vh; left: 2vw; right: 2vw; margin: 0; padding: 1.6vh; text-align: center;
+    background: #5a2a1f; color: #ffd7cc; border-radius: 1.4vh; font-size: 2.4vh; }
+  #unlock { position: absolute; top: 50%; left: 50%; width: 70vw; margin-left: -35vw; margin-top: -10vh;
+    min-height: 20vh; padding: 3vh; border: 0.6vh solid #7ee2a8; border-radius: 3vh; background: #0c3e38;
+    color: #ffffff; font-family: inherit; font-size: 4.2vh; font-weight: 700; cursor: pointer; }
+  #unlock:focus { outline: 0.6vh solid #ffffff; }
+  [hidden] { display: none !important; }
+</style>
+</head>
+<body>
+<div id="app">
+  <header id="head">
+    <div id="who">
+      <img id="logo" alt="" hidden>
+      <span id="initial">B</span>
+      <div><b id="name">Bipilo</b><small id="sub">شاشة النداء</small></div>
+    </div>
+    <div id="clock"></div>
+  </header>
+  <main id="board">
+    <h2 id="label">تفضّل استلم طلبك</h2>
+    <div id="stage" hidden>
+      <section id="latest"><small id="latestLabel">آخر طلب واجد</small><div id="latestNum"></div></section>
+      <ul id="recent"></ul>
+    </div>
+    <p id="empty">جارٍ الاتصال…</p>
+  </main>
+  <p id="notice" hidden>تعذر تحديث الشاشة. نعيد الاتصال…</p>
+  <button id="unlock" type="button" hidden>اضغط هنا (OK) باش تشغّل الصوت</button>
+</div>
+<script>
+(function () {
+  'use strict';
+  var API = 'https://kdvtqlqiervznhzbpjcx.supabase.co/rest/v1/rpc/';
+  var KEY = 'sb_publishable_ZlS6hWKO4NHYSt0eJnh9gw_Oo0C8VJK';
+  var POLL_MS = 3000, KEEP_MS = 10 * 60000, SHOW = 6, FLASH_MS = 10000;
+
+  function $(id) { return document.getElementById(id); }
+  function params() {
+    var out = {}, query = window.location.search.replace(/^\?/, '').split('&');
+    for (var i = 0; i < query.length; i++) {
+      var pair = query[i].split('=');
+      if (!pair[0]) continue;
+      try { out[decodeURIComponent(pair[0])] = decodeURIComponent((pair[1] || '').replace(/\+/g, ' ')); } catch (e) {}
+    }
+    return out;
+  }
+  var q = params();
+  var token = q.t || '';
+  var french = q.lang === 'fr';
+  var words = french ? {
+    sub: 'Écran d’appel', label: 'Votre commande est prête', latest: 'Dernière commande prête',
+    empty: 'Aucun appel pour l’instant.', connecting: 'Connexion…', notice: 'Écran hors ligne. Reconnexion…',
+    unlock: 'Appuyez ici (OK) pour activer le son', missing: 'Lien de l’écran incomplet.'
+  } : {
+    sub: 'شاشة النداء', label: 'تفضّل استلم طلبك', latest: 'آخر طلب واجد',
+    empty: 'ما كاش نداء دروك.', connecting: 'جارٍ الاتصال…', notice: 'تعذر تحديث الشاشة. نعيد الاتصال…',
+    unlock: 'اضغط هنا (OK) باش تشغّل الصوت', missing: 'رابط الشاشة ناقص.'
+  };
+  if (french) { document.documentElement.lang = 'fr'; document.documentElement.dir = 'ltr'; }
+  $('sub').innerHTML = '';
+  $('sub').appendChild(document.createTextNode(q.venueBranch || words.sub));
+  $('label').firstChild.nodeValue = words.label;
+  $('latestLabel').firstChild.nodeValue = words.latest;
+  $('empty').firstChild.nodeValue = token ? words.connecting : words.missing;
+  $('notice').firstChild.nodeValue = words.notice;
+  $('unlock').firstChild.nodeValue = words.unlock;
+  setName(q.venue || 'Bipilo');
+
+  function setName(name) {
+    name = String(name || 'Bipilo').slice(0, 100);
+    $('name').innerHTML = '';
+    $('name').appendChild(document.createTextNode(name));
+    $('initial').innerHTML = '';
+    $('initial').appendChild(document.createTextNode(name.charAt(0).toUpperCase()));
+    document.title = name + ' | Bipilo';
+  }
+
+  // ---- clock -------------------------------------------------------------
+  function pad(n) { return n < 10 ? '0' + n : String(n); }
+  function tick() { var d = new Date(); $('clock').innerHTML = pad(d.getHours()) + ':' + pad(d.getMinutes()); }
+  tick(); setInterval(tick, 15000);
+
+  // ---- server -------------------------------------------------------------
+  function rpc(name, body, done) {
+    var xhr = new XMLHttpRequest();
+    xhr.open('POST', API + name, true);
+    xhr.setRequestHeader('apikey', KEY);
+    xhr.setRequestHeader('Content-Type', 'application/json');
+    xhr.setRequestHeader('Accept', 'application/json');
+    xhr.timeout = 8000;
+    xhr.onreadystatechange = function () {
+      if (xhr.readyState !== 4) return;
+      if (xhr.status >= 200 && xhr.status < 300) {
+        var data = null;
+        try { data = JSON.parse(xhr.responseText); } catch (e) { return done(e); }
+        done(null, data);
+      } else done(new Error('HTTP ' + xhr.status));
+    };
+    xhr.ontimeout = function () { done(new Error('timeout')); };
+    xhr.send(JSON.stringify(body));
+  }
+
+  // ---- dot-matrix numbers (5 × 7) ----------------------------------------
+  var FONT = {
+    '0': ['01110', '10001', '10011', '10101', '11001', '10001', '01110'],
+    '1': ['00100', '01100', '00100', '00100', '00100', '00100', '01110'],
+    '2': ['01110', '10001', '00001', '00010', '00100', '01000', '11111'],
+    '3': ['11110', '00001', '00001', '01110', '00001', '00001', '11110'],
+    '4': ['00010', '00110', '01010', '10010', '11111', '00010', '00010'],
+    '5': ['11111', '10000', '11110', '00001', '00001', '10001', '01110'],
+    '6': ['00110', '01000', '10000', '11110', '10001', '10001', '01110'],
+    '7': ['11111', '00001', '00010', '00100', '01000', '01000', '01000'],
+    '8': ['01110', '10001', '10001', '01110', '10001', '10001', '01110'],
+    '9': ['01110', '10001', '10001', '01111', '00001', '00010', '01100']
+  };
+  function drawNumber(el, text, dot) {
+    el.innerHTML = '';
+    var wrap = document.createElement('span');
+    wrap.className = 'num';
+    var gap = Math.max(1, Math.round(dot * 0.22));
+    for (var i = 0; i < text.length; i++) {
+      var ch = text.charAt(i), rows = FONT[ch];
+      if (!rows) {
+        var glyph = document.createElement('span');
+        glyph.className = 'glyph';
+        glyph.style.fontSize = dot * 7 + 'px';
+        glyph.appendChild(document.createTextNode(ch));
+        wrap.appendChild(glyph);
+        continue;
+      }
+      var digit = document.createElement('span');
+      digit.className = 'digit';
+      digit.style.margin = '0 ' + dot + 'px';
+      for (var r = 0; r < 7; r++) {
+        var row = document.createElement('span');
+        row.className = 'row';
+        for (var c = 0; c < 5; c++) {
+          var d = document.createElement('i');
+          d.className = rows[r].charAt(c) === '1' ? 'dot on' : 'dot';
+          d.style.width = dot + 'px';
+          d.style.height = dot + 'px';
+          d.style.margin = gap + 'px';
+          row.appendChild(d);
+        }
+        digit.appendChild(row);
+      }
+      wrap.appendChild(digit);
+    }
+    el.appendChild(wrap);
+  }
+
+  // ---- what is on screen --------------------------------------------------
+  var orders = null, previous = null, flash = {}, lastDrawn = '';
+  function calledAt(o) { return Date.parse(o.ready_at || '') || 0; }
+  function view(now) {
+    var ready = [];
+    for (var i = 0; i < (orders || []).length; i++) if (orders[i].status === 'ready') ready.push(orders[i]);
+    ready.sort(function (a, b) { return calledAt(b) - calledAt(a); });
+    var shown = [];
+    for (var j = 0; j < ready.length && shown.length < SHOW; j++)
+      if (!ready[j].ready_at || now - calledAt(ready[j]) <= KEEP_MS) shown.push(ready[j]);
+    return shown;
+  }
+  function render() {
+    var now = new Date().getTime();
+    var shown = view(now);
+    var sig = window.innerWidth + 'x' + window.innerHeight + '|';
+    for (var i = 0; i < shown.length; i++) sig += shown[i].number + (flash[shown[i].number] > now ? '*' : '') + ',';
+    if (orders === null) return;
+    if (sig === lastDrawn) return;
+    lastDrawn = sig;
+    if (!shown.length) {
+      $('stage').hidden = true;
+      $('empty').hidden = false;
+      $('empty').firstChild.nodeValue = words.empty;
+      return;
+    }
+    $('empty').hidden = true;
+    $('stage').hidden = false;
+    var latest = shown[0], len = Math.max(2, String(latest.number).length);
+    var big = Math.max(6, Math.floor(Math.min(window.innerHeight * 0.06, (window.innerWidth * 0.5) / (len * 7.6))));
+    drawNumber($('latestNum'), String(latest.number), big);
+    $('latest').className = flash[latest.number] > now ? 'fresh' : '';
+    var list = $('recent');
+    list.innerHTML = '';
+    for (var k = 1; k < shown.length; k++) {
+      var li = document.createElement('li');
+      if (flash[shown[k].number] > now) li.className = 'fresh';
+      var holder = document.createElement('div');
+      drawNumber(holder, String(shown[k].number), Math.max(3, Math.floor(big * 0.28)));
+      li.appendChild(holder);
+      list.appendChild(li);
+    }
+  }
+
+  // ---- sound: «الطلب رقم … جاهز» from clips, a beep when clips fail ------
+  var Context = window.AudioContext || window.webkitAudioContext;
+  var ctx = null, soundOn = false, clips = {}, queue = [], speaking = false;
+  function startNode(node, at) { if (node.start) node.start(at); else node.noteOn(at); }
+  function stopNode(node, at) { if (node.stop) node.stop(at); else node.noteOff(at); }
+  function remember(on) { try { if (on) localStorage.setItem('bipilo-tv-sound', '1'); else localStorage.removeItem('bipilo-tv-sound'); } catch (e) {} }
+  function recalled() { try { return localStorage.getItem('bipilo-tv-sound') === '1'; } catch (e) { return false; } }
+  function unlock() {
+    if (!Context) { soundOn = true; $('unlock').hidden = true; return; }
+    try {
+      if (!ctx) ctx = new Context();
+      if (ctx.resume) ctx.resume();
+      var buffer = ctx.createBuffer(1, 1, 22050), source = ctx.createBufferSource();
+      source.buffer = buffer; source.connect(ctx.destination); startNode(source, 0);
+      soundOn = true; remember(true);
+      $('unlock').hidden = true;
+    } catch (e) {}
+  }
+  function askForSound() { $('unlock').hidden = false; try { $('unlock').focus(); } catch (e) {} }
+  if (recalled() && Context) {
+    try { ctx = new Context(); } catch (e) { ctx = null; }
+    if (ctx && (!ctx.state || ctx.state === 'running')) soundOn = true; else askForSound();
+  } else askForSound();
+  $('unlock').onclick = unlock;
+  document.addEventListener('keydown', function () { if (!soundOn) unlock(); }, false);
+  document.addEventListener('click', function () { if (!soundOn) unlock(); }, false);
+
+  var UNITS = 20, TENS = 10;
+  function numberClips(text) {
+    text = String(text || '');
+    if (!/^\d{1,8}$/.test(text)) return null;
+    var n = Number(text);
+    if (n === 0) return ['zero'];
+    var parts = [], i;
+    if (n > 9999) { for (i = 0; i < text.length; i++) parts.push(text.charAt(i) === '0' ? 'zero' : 'u' + text.charAt(i)); return parts; }
+    function add(key) { parts.push(parts.length ? 'w' + key : key); }
+    var th = Math.floor(n / 1000), hu = Math.floor((n % 1000) / 100), rest = n % 100;
+    if (th) parts.push('k' + th);
+    if (hu) add('h' + hu);
+    if (rest) {
+      if (rest < UNITS) add('u' + rest);
+      else { if (rest % TENS) add('u' + (rest % TENS)); add('t' + Math.floor(rest / TENS)); }
+    }
+    return parts;
+  }
+  function loadClip(key, done) {
+    if (clips[key]) return done(null, clips[key]);
+    var xhr = new XMLHttpRequest();
+    xhr.open('GET', '/voice/ar/' + key + '.wav', true);
+    xhr.responseType = 'arraybuffer';
+    xhr.onload = function () {
+      if (xhr.status !== 200) return done(new Error('clip'));
+      try {
+        ctx.decodeAudioData(xhr.response, function (buffer) { clips[key] = buffer; done(null, buffer); }, function () { done(new Error('decode')); });
+      } catch (e) { done(e); }
+    };
+    xhr.onerror = function () { done(new Error('clip')); };
+    xhr.send();
+  }
+  function beep(done) {
+    try {
+      var t = ctx.currentTime + 0.05;
+      for (var i = 0; i < 2; i++) {
+        var osc = ctx.createOscillator(), gain = ctx.createGain ? ctx.createGain() : ctx.createGainNode();
+        osc.frequency.value = 880; gain.gain.value = 0.25;
+        osc.connect(gain); gain.connect(ctx.destination);
+        startNode(osc, t + i * 0.35); stopNode(osc, t + i * 0.35 + 0.22);
+      }
+    } catch (e) {}
+    setTimeout(done, 900);
+  }
+  function sayOne(number, done) {
+    var keys = french ? null : numberClips(number);
+    if (!keys) return beep(done);
+    keys = ['order'].concat(keys, ['ready']);
+    var buffers = [], i = 0, failed = false;
+    (function next() {
+      if (failed) return;
+      if (i === keys.length) return play();
+      loadClip(keys[i], function (err, buffer) {
+        if (err) { failed = true; return beep(done); }
+        buffers.push(buffer); i++; next();
+      });
+    })();
+    function play() {
+      var at = ctx.currentTime + 0.05;
+      for (var j = 0; j < buffers.length; j++) {
+        if (keys[j] === 'ready') at += 0.16;
+        var source = ctx.createBufferSource();
+        source.buffer = buffers[j]; source.connect(ctx.destination); startNode(source, at);
+        at += buffers[j].duration + (keys[j] === 'order' ? 0.14 : 0.03);
+      }
+      setTimeout(done, (at - ctx.currentTime) * 1000 + 300);
+    }
+  }
+  function announce(numbers) {
+    if (!soundOn || !ctx) return;
+    for (var i = 0; i < numbers.length && i < 4; i++) queue.push(numbers[i]);
+    if (!speaking) speakNext();
+  }
+  function speakNext() {
+    if (!queue.length) { speaking = false; return; }
+    speaking = true;
+    if (ctx.resume) ctx.resume();
+    sayOne(queue.shift(), speakNext);
+  }
+
+  // ---- loop ---------------------------------------------------------------
+  function readyNumbers(list) {
+    var set = {};
+    for (var i = 0; i < list.length; i++) if (list[i].status === 'ready') set[list[i].number] = true;
+    return set;
+  }
+  function poll() {
+    if (!token) return;
+    rpc('display_orders', { ticket: token }, function (err, data) {
+      if (err || !(data instanceof Array)) {
+        $('notice').hidden = false;
+      } else {
+        $('notice').hidden = true;
+        orders = data;
+        var current = readyNumbers(data), called = [], now = new Date().getTime();
+        if (previous) for (var n in current) if (current.hasOwnProperty(n) && !previous[n]) called.push(n);
+        previous = current;
+        for (var k = 0; k < called.length; k++) flash[called[k]] = now + FLASH_MS;
+        if (called.length) announce(called);
+        render();
+      }
+      setTimeout(poll, POLL_MS);
+    });
+  }
+  if (token) {
+    rpc('display_branding', { ticket: token }, function (err, data) {
+      if (err || !data) return;
+      if (!q.venue && data.name) setName(data.name);
+      if (typeof data.logo === 'string' && /^data:image\/(png|jpeg|webp);base64,/.test(data.logo)) {
+        $('logo').src = data.logo; $('logo').hidden = false; $('initial').hidden = true;
+      }
+    });
+    poll();
+  }
+  setInterval(render, 1000);
+  window.onresize = function () { lastDrawn = ''; render(); };
+})();
+</script>
+</body>
+</html>

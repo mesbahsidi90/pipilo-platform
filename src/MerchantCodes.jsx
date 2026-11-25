@@ -63,6 +63,17 @@ function ScreenActions({ link, showField = false }) {
 }
 
 export function waitingDisplayLink(token, venue, branch, clinic, calls = false) {
+  // «شاشة النداء» on a real branch opens /tv.html: a plain page that old TV
+  // browsers can run (the main site needs a recent browser). The trial keeps
+  // the in-app screen, which reads this browser's own orders.
+  if (calls && !clinic && token !== 'local') {
+    const tv = new URL('/tv.html', location.origin);
+    tv.searchParams.set('t', token);
+    tv.searchParams.set('lang', new URL(ticketLink('x')).searchParams.get('lang') || 'ar');
+    if (venue) tv.searchParams.set('venue', venue);
+    if (branch && branch !== venue) tv.searchParams.set('venueBranch', branch);
+    return tv.href;
+  }
   const url = new URL(ticketLink('display/' + token));
   if (clinic) url.searchParams.set('queue', '1');
   // «شاشة النداء»: only the called numbers, for shops using «نداء سريع».

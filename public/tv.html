@@ -29,7 +29,16 @@
     text-align: center; display: inline-block; }
   #name { display: block; font-size: 3.4vh; font-weight: 700; }
   #sub { display: block; font-size: 2vh; color: #9aa59f; }
-  #clock { font-size: 4.2vh; font-weight: 700; color: #d6dcd8; direction: ltr; letter-spacing: 0.2vh; }
+  #actions { display: -webkit-box; display: -webkit-flex; display: flex; -webkit-box-align: center;
+    -webkit-align-items: center; align-items: center; }
+  .tool { display: inline-block; margin-left: 1.4vh; padding: 1.2vh 2vh; border: 0.3vh solid #3a4a42; border-radius: 99vh;
+    background: #1c2620; color: #f3f6f4; font-family: inherit; font-size: 2.3vh; font-weight: 700; cursor: pointer;
+    white-space: nowrap; }
+  .tool.on { background: #0c3e38; border-color: #7ee2a8; }
+  .tool:focus { outline: 0.5vh solid #ffffff; }
+  .ico { display: inline-block; width: 2.8vh; height: 2.8vh; vertical-align: middle; margin-left: 0.8vh; }
+  .ico svg { width: 100%; height: 100%; display: block; }
+  #clock { margin-right: 1vh; font-size: 4.2vh; font-weight: 700; color: #d6dcd8; direction: ltr; letter-spacing: 0.2vh; }
   #board { -webkit-box-flex: 1; -webkit-flex: 1; flex: 1; background: #17191b; border-radius: 2.4vh;
     padding: 2.6vh 2.6vw; display: -webkit-box; display: -webkit-flex; display: flex;
     -webkit-box-orient: vertical; -webkit-flex-direction: column; flex-direction: column; min-height: 0; }
@@ -76,7 +85,11 @@
       <span id="initial">B</span>
       <div><b id="name">Bipilo</b><small id="sub">شاشة النداء</small></div>
     </div>
-    <div id="clock"></div>
+    <div id="actions">
+      <button id="soundBtn" type="button" class="tool"><span class="ico" id="soundIco"></span><span id="soundText">الصوت</span></button>
+      <button id="fullBtn" type="button" class="tool" hidden><span class="ico" id="fullIco"></span><span id="fullText">ملء الشاشة</span></button>
+      <div id="clock"></div>
+    </div>
   </header>
   <main id="board">
     <h2 id="label">تفضّل استلم طلبك</h2>
@@ -115,12 +128,14 @@
   var words = french ? {
     sub: 'Écran d’appel', label: 'Votre commande est prête', latest: 'Dernière commande prête',
     empty: 'Aucun appel pour l’instant.', connecting: 'Connexion…', notice: 'Écran hors ligne. Reconnexion…',
-    unlock: 'Appuyez ici (OK) pour activer le son', missing: 'Lien de l’écran incomplet.',
+    unlock: 'Appuyez ici (OK) pour activer le son', soundOn: 'Son activé', soundOff: 'Activer le son',
+    full: 'Plein écran', exitFull: 'Quitter', missing: 'Lien de l’écran incomplet.',
     badCode: 'Code d’écran inconnu. Vérifiez-le dans Bipilo : Succursales et codes.'
   } : {
     sub: 'شاشة النداء', label: 'تفضّل استلم طلبك', latest: 'آخر طلب واجد',
     empty: 'ما كاش نداء دروك.', connecting: 'جارٍ الاتصال…', notice: 'تعذر تحديث الشاشة. نعيد الاتصال…',
-    unlock: 'اضغط هنا (OK) باش تشغّل الصوت', missing: 'رابط الشاشة ناقص.',
+    unlock: 'اضغط هنا (OK) باش تشغّل الصوت', soundOn: 'الصوت شاعل', soundOff: 'شغّل الصوت',
+    full: 'ملء الشاشة', exitFull: 'خروج', missing: 'رابط الشاشة ناقص.',
     badCode: 'كود الشاشة غالط. شوفو في Bipilo: الفروع والأكواد.'
   };
   if (french) { document.documentElement.lang = 'fr'; document.documentElement.dir = 'ltr'; }
@@ -267,8 +282,19 @@
   function stopNode(node, at) { if (node.stop) node.stop(at); else node.noteOff(at); }
   function remember(on) { try { if (on) localStorage.setItem('bipilo-tv-sound', '1'); else localStorage.removeItem('bipilo-tv-sound'); } catch (e) {} }
   function recalled() { try { return localStorage.getItem('bipilo-tv-sound') === '1'; } catch (e) { return false; } }
+  var muted = false;
+  var ICON_ON = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 9h4l5-4v14l-5-4H4z"/><path d="M16 8.5a5 5 0 0 1 0 7M18.5 6a8.5 8.5 0 0 1 0 12"/></svg>';
+  var ICON_OFF = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 9h4l5-4v14l-5-4H4z"/><path d="M16 9l6 6M22 9l-6 6"/></svg>';
+  var ICON_FULL = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5"/></svg>';
+  function showSound() {
+    $('soundIco').innerHTML = soundOn ? ICON_ON : ICON_OFF;
+    $('soundText').innerHTML = '';
+    $('soundText').appendChild(document.createTextNode(soundOn ? words.soundOn : words.soundOff));
+    $('soundBtn').className = soundOn ? 'tool on' : 'tool';
+  }
   function unlock() {
-    if (!Context) { soundOn = true; $('unlock').hidden = true; return; }
+    muted = false;
+    if (!Context) { soundOn = true; $('unlock').hidden = true; showSound(); return; }
     try {
       if (!ctx) ctx = new Context();
       if (ctx.resume) ctx.resume();
@@ -277,6 +303,7 @@
       soundOn = true; remember(true);
       $('unlock').hidden = true;
     } catch (e) {}
+    showSound();
   }
   function askForSound() { $('unlock').hidden = false; try { $('unlock').focus(); } catch (e) {} }
   if (recalled() && Context) {
@@ -284,8 +311,50 @@
     if (ctx && (!ctx.state || ctx.state === 'running')) soundOn = true; else askForSound();
   } else askForSound();
   $('unlock').onclick = unlock;
-  document.addEventListener('keydown', function () { if (!soundOn) unlock(); }, false);
-  document.addEventListener('click', function () { if (!soundOn) unlock(); }, false);
+  // Any key or tap turns the sound on, unless someone switched it off on purpose.
+  document.addEventListener('keydown', function () { if (!soundOn && !muted) unlock(); }, false);
+  document.addEventListener('click', function () { if (!soundOn && !muted) unlock(); }, false);
+  $('soundBtn').onclick = function (event) {
+    if (event && event.stopPropagation) event.stopPropagation();
+    if (soundOn) {
+      soundOn = false; muted = true; remember(false);
+      queue = [];
+      showSound();
+    } else unlock();
+  };
+  showSound();
+
+  // Fullscreen, when the TV browser offers it (many have it in their own menu instead).
+  var root = document.documentElement;
+  var enterFull = root.requestFullscreen || root.webkitRequestFullscreen || root.webkitRequestFullScreen ||
+    root.mozRequestFullScreen || root.msRequestFullscreen;
+  function fullElement() {
+    return document.fullscreenElement || document.webkitFullscreenElement || document.webkitCurrentFullScreenElement ||
+      document.mozFullScreenElement || document.msFullscreenElement || null;
+  }
+  function showFull() {
+    var on = Boolean(fullElement());
+    $('fullIco').innerHTML = ICON_FULL;
+    $('fullText').innerHTML = '';
+    $('fullText').appendChild(document.createTextNode(on ? words.exitFull : words.full));
+  }
+  if (enterFull) {
+    $('fullBtn').hidden = false;
+    showFull();
+    $('fullBtn').onclick = function (event) {
+      if (event && event.stopPropagation) event.stopPropagation();
+      try {
+        if (fullElement()) {
+          var leave = document.exitFullscreen || document.webkitExitFullscreen || document.webkitCancelFullScreen ||
+            document.mozCancelFullScreen || document.msExitFullscreen;
+          if (leave) leave.call(document);
+        } else enterFull.call(root);
+      } catch (e) {}
+      if (!soundOn && !muted) unlock();
+    };
+    var events = ['fullscreenchange', 'webkitfullscreenchange', 'mozfullscreenchange', 'MSFullscreenChange'];
+    for (var ev = 0; ev < events.length; ev++) document.addEventListener(events[ev], showFull, false);
+  }
 
   var UNITS = 20, TENS = 10;
   function numberClips(text) {

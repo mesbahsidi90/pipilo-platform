@@ -410,6 +410,7 @@
         orders = null; lastDrawn = '';
         $('stage').hidden = true; $('empty').hidden = false;
         $('empty').firstChild.nodeValue = words.badCode;
+        $('unlock').hidden = true;
         return;
       }
       var changed = data !== token;

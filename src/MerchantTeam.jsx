@@ -1,5 +1,6 @@
 import React, { useEffect, useRef, useState } from 'react';
-import { Building2, Check, ChevronDown, Plus } from 'lucide-react';
+import { Building2, Check, ChevronDown, Plus, Share2 } from 'lucide-react';
+import { QRCodeSVG } from 'qrcode.react';
 import { t, ticketLink } from './i18n.js';
 import { db } from './store';
 import { rememberBranch } from './merchantBranches';
@@ -175,7 +176,16 @@ export default function MerchantTeam({ workspace, refresh, branchesOnly = false 
       </form>
       {link && (
         <div className="merchant-invite">
-          <p>{t('شارك رابط الدعوة مع الموظف. صالح لمدة 48 ساعة ويُستعمل لحساب واحد.')}</p>
+          <p>
+            {t(
+              'خلّي الموظف يمسح الكود بكاميرا تليفونو، ولا ابعثلو الرابط. صالح 48 ساعة ولحساب واحد.',
+            )}
+          </p>
+          {/* The worker scans it from the owner's screen, then joins with a WhatsApp code. */}
+          <div className="merchant-invite-qr">
+            <QRCodeSVG value={link} size={220} level="M" marginSize={2} title={t('كود الدعوة')} />
+            <small>{t('امسح باش تنضم للفريق')}</small>
+          </div>
           <input
             readOnly
             dir="ltr"
@@ -197,6 +207,20 @@ export default function MerchantTeam({ workspace, refresh, branchesOnly = false 
           >
             {t('نسخ الرابط')}
           </button>
+          {typeof navigator !== 'undefined' && navigator.share && (
+            <button
+              type="button"
+              className="button outline small"
+              onClick={() =>
+                navigator
+                  .share({ title: t('انضم للفريق'), text: t('انضم للفريق في Bipilo'), url: link })
+                  .catch(() => {})
+              }
+            >
+              <Share2 size={15} />
+              {t('شارك')}
+            </button>
+          )}
         </div>
       )}
       {message && <p role="status">{message}</p>}

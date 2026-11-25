@@ -31,6 +31,7 @@ export const defaults = {
   ordering_enabled: false,
   ordering_modes: ['pickup'],
   clinic_rooms: [],
+  display_language: 'ar',
 };
 export async function getSettings() {
   if (!cloud)
@@ -54,6 +55,18 @@ export async function getSettings() {
     ...profile.data,
     shop_id: id,
   };
+}
+// The waiting / call screen's language (ar | fr), chosen in «الفروع والأكواد».
+export async function saveScreenLanguage(lang) {
+  if (!['ar', 'fr'].includes(lang)) throw new Error(bippoT('تعذر حفظ التغيير. عاود المحاولة.'));
+  if (!cloud) {
+    const current = JSON.parse(localStorage.getItem(key) || '{}');
+    localStorage.setItem(key, JSON.stringify({ ...current, display_language: lang }));
+    return lang;
+  }
+  const { error } = await db.rpc('set_screen_language', { lang });
+  if (error) throw new Error(bippoT('تعذر حفظ التغيير. عاود المحاولة.'));
+  return lang;
 }
 export async function saveSettings(value) {
   const data = {

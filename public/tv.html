@@ -75,6 +75,13 @@
     color: #ffffff; font-family: inherit; font-size: 4.2vh; font-weight: 700; cursor: pointer; }
   #unlock:focus { outline: 0.6vh solid #ffffff; }
   [hidden] { display: none !important; }
+  /* French: the same spacing, mirrored. */
+  html[dir="ltr"] #logo, html[dir="ltr"] #initial { margin-left: 0; margin-right: 1.6vh; }
+  html[dir="ltr"] .tool { margin-left: 0; margin-right: 1.4vh; }
+  html[dir="ltr"] .ico { margin-left: 0; margin-right: 0.8vh; }
+  html[dir="ltr"] #clock { margin-right: 0; margin-left: 1vh; }
+  html[dir="ltr"] #latest { margin-left: 0; margin-right: 2vw; }
+  html[dir="ltr"] #recent li { margin: 0 4% 2vh 0; }
 </style>
 </head>
 <body>
@@ -124,28 +131,47 @@
   var pathCode = /^\/tv\/([A-Za-z0-9]{4,12})\/?$/.exec(window.location.pathname);
   var code = (pathCode ? pathCode[1] : q.c || '').toLowerCase();
   if (code) token = '';
+  var langFixed = q.lang === 'fr' || q.lang === 'ar';
   var french = q.lang === 'fr';
-  var words = french ? {
+  var WORDS = { fr: {
     sub: 'Écran d’appel', label: 'Votre commande est prête', latest: 'Dernière commande prête',
     empty: 'Aucun appel pour l’instant.', connecting: 'Connexion…', notice: 'Écran hors ligne. Reconnexion…',
     unlock: 'Appuyez ici (OK) pour activer le son', soundOn: 'Son activé', soundOff: 'Activer le son',
     full: 'Plein écran', exitFull: 'Quitter', missing: 'Lien de l’écran incomplet.',
     badCode: 'Code d’écran inconnu. Vérifiez-le dans Bipilo : Succursales et codes.'
-  } : {
+  }, ar: {
     sub: 'شاشة النداء', label: 'تفضّل استلم طلبك', latest: 'آخر طلب واجد',
     empty: 'ما كاش نداء دروك.', connecting: 'جارٍ الاتصال…', notice: 'تعذر تحديث الشاشة. نعيد الاتصال…',
     unlock: 'اضغط هنا (OK) باش تشغّل الصوت', soundOn: 'الصوت شاعل', soundOff: 'شغّل الصوت',
     full: 'ملء الشاشة', exitFull: 'خروج', missing: 'رابط الشاشة ناقص.',
     badCode: 'كود الشاشة غالط. شوفو في Bipilo: الفروع والأكواد.'
-  };
-  if (french) { document.documentElement.lang = 'fr'; document.documentElement.dir = 'ltr'; }
-  $('sub').innerHTML = '';
-  $('sub').appendChild(document.createTextNode(q.venueBranch || words.sub));
-  $('label').firstChild.nodeValue = words.label;
-  $('latestLabel').firstChild.nodeValue = words.latest;
-  $('empty').firstChild.nodeValue = token || code ? words.connecting : words.missing;
-  $('notice').firstChild.nodeValue = words.notice;
-  $('unlock').firstChild.nodeValue = words.unlock;
+  } };
+  var words = WORDS[french ? 'fr' : 'ar'];
+  var emptyKey = token || code ? 'connecting' : 'missing';
+  function setEmpty(key) { emptyKey = key; $('empty').firstChild.nodeValue = words[key]; }
+  function applyLanguage() {
+    document.documentElement.lang = french ? 'fr' : 'ar';
+    document.documentElement.dir = french ? 'ltr' : 'rtl';
+    $('sub').innerHTML = '';
+    $('sub').appendChild(document.createTextNode(q.venueBranch || words.sub));
+    $('label').firstChild.nodeValue = words.label;
+    $('latestLabel').firstChild.nodeValue = words.latest;
+    $('notice').firstChild.nodeValue = words.notice;
+    $('unlock').firstChild.nodeValue = words.unlock;
+    setEmpty(emptyKey);
+    if (typeof showSound === 'function' && $('soundIco').innerHTML) showSound();
+    if (typeof showFull === 'function' && $('fullIco').innerHTML) showFull();
+  }
+  // The branch's language from Bipilo («الفروع والأكواد»).
+  function setLanguage(lang) {
+    if (langFixed || (lang !== 'fr' && lang !== 'ar')) return;
+    if ((lang === 'fr') === french) return;
+    french = lang === 'fr';
+    words = WORDS[lang];
+    queue = [];
+    applyLanguage();
+  }
+  applyLanguage();
   setName(q.venue || 'Bipilo');
 
   function setName(name) {
@@ -254,7 +280,7 @@
     if (!shown.length) {
       $('stage').hidden = true;
       $('empty').hidden = false;
-      $('empty').firstChild.nodeValue = words.empty;
+      setEmpty('empty');
       return;
     }
     $('empty').hidden = true;
@@ -294,6 +320,7 @@
   }
   function unlock() {
     muted = false;
+    try { if (window.speechSynthesis) window.speechSynthesis.getVoices(); } catch (e) {}
     if (!Context) { soundOn = true; $('unlock').hidden = true; showSound(); return; }
     try {
       if (!ctx) ctx = new Context();
@@ -400,8 +427,25 @@
     } catch (e) {}
     setTimeout(done, 900);
   }
+  function speakFrench(number, done) {
+    var synth = window.speechSynthesis, voice = null, voices, i;
+    if (!synth || !window.SpeechSynthesisUtterance) return beep(done);
+    voices = synth.getVoices() || [];
+    for (i = 0; i < voices.length; i++) if (/^fr/i.test(voices[i].lang || '')) { voice = voices[i]; break; }
+    if (!voice) return beep(done);
+    beep(function () {
+      var finished = false;
+      function end() { if (!finished) { finished = true; done(); } }
+      var u = new window.SpeechSynthesisUtterance('Commande numéro ' + number + ', votre commande est prête.');
+      u.voice = voice; u.lang = voice.lang; u.rate = 0.92;
+      u.onend = end; u.onerror = end;
+      setTimeout(end, 9000);
+      synth.speak(u);
+    });
+  }
   function sayOne(number, done) {
-    var keys = french ? null : numberClips(number);
+    if (french) return speakFrench(number, done);
+    var keys = numberClips(number);
     if (!keys) return beep(done);
     keys = ['order'].concat(keys, ['ready']);
     var buffers = [], i = 0, failed = false;
@@ -464,6 +508,7 @@
     rpc('display_branding', { ticket: token }, function (err, data) {
       if (err || !data) return;
       if (!q.venue && data.name) setName(data.name);
+      if (data.language) setLanguage(data.language);
       if (typeof data.logo === 'string' && /^data:image\/(png|jpeg|webp);base64,/.test(data.logo)) {
         $('logo').src = data.logo; $('logo').hidden = false; $('initial').hidden = true;
       }
@@ -478,13 +523,12 @@
         token = '';
         orders = null; lastDrawn = '';
         $('stage').hidden = true; $('empty').hidden = false;
-        $('empty').firstChild.nodeValue = words.badCode;
+        setEmpty('badCode');
         $('unlock').hidden = true;
         return;
       }
-      var changed = data !== token;
       token = data;
-      if (first || changed) { brand(); if (first) poll(); }
+      if (first) { brand(); poll(); }
     });
   }
   if (code) {
@@ -494,6 +538,7 @@
     brand();
     poll();
   }
+  setInterval(function () { if (token) brand(); }, 2 * 60000);
   setInterval(render, 1000);
   window.onresize = function () { lastDrawn = ''; render(); };
 })();

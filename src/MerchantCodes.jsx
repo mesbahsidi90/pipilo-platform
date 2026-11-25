@@ -16,6 +16,7 @@ import { rememberBranch } from './merchantBranches';
 import { CounterPoster } from './CounterTicket';
 import { workspaceAction } from './MerchantTeam';
 import ShopSettings from './ShopSettings.jsx';
+import { saveScreenLanguage } from './shopSettings';
 import './merchant-codes.css';
 
 function screenLink(screen, shopId) {
@@ -67,7 +68,16 @@ export function shortScreenLink(code) {
   return code ? new URL('/tv/' + code, location.origin).href : null;
 }
 
-export function waitingDisplayLink(token, venue, branch, clinic, calls = false, code = null) {
+export function waitingDisplayLink(
+  token,
+  venue,
+  branch,
+  clinic,
+  calls = false,
+  code = null,
+  lang = null,
+) {
+  // The short address takes its language from the server (the branch's setting).
   if (calls && !clinic && code) return shortScreenLink(code);
   // «شاشة النداء» on a real branch opens /tv.html: a plain page that old TV
   // browsers can run (the main site needs a recent browser). The trial keeps
@@ -75,12 +85,13 @@ export function waitingDisplayLink(token, venue, branch, clinic, calls = false, 
   if (calls && !clinic && token !== 'local') {
     const tv = new URL('/tv.html', location.origin);
     tv.searchParams.set('t', token);
-    tv.searchParams.set('lang', new URL(ticketLink('x')).searchParams.get('lang') || 'ar');
+    tv.searchParams.set('lang', lang || new URL(ticketLink('x')).searchParams.get('lang') || 'ar');
     if (venue) tv.searchParams.set('venue', venue);
     if (branch && branch !== venue) tv.searchParams.set('venueBranch', branch);
     return tv.href;
   }
   const url = new URL(ticketLink('display/' + token));
+  if (lang) url.searchParams.set('lang', lang);
   if (clinic) url.searchParams.set('queue', '1');
   // «شاشة النداء»: only the called numbers, for shops using «نداء سريع».
   if (calls) url.searchParams.set('calls', '1');
@@ -113,13 +124,31 @@ export function useWaitingToken() {
   return { token, setToken, code, setCode, error, setError };
 }
 
-function WaitingScreen({ canManage, venue, branch, clinic }) {
+function WaitingScreen({ canManage, venue, branch, clinic, language = 'ar', onLanguage }) {
   const { token, setToken, code, setCode, error, setError } = useWaitingToken();
-  const link = token ? waitingDisplayLink(token, venue, branch, clinic) : null;
+  const [lang, setLang] = useState(language === 'fr' ? 'fr' : 'ar');
+  const [langBusy, setLangBusy] = useState(false);
+  const link = token ? waitingDisplayLink(token, venue, branch, clinic, false, null, lang) : null;
   const callsLink =
-    token && !clinic ? waitingDisplayLink(token, venue, branch, false, true, code) : null;
+    token && !clinic ? waitingDisplayLink(token, venue, branch, false, true, code, lang) : null;
   const tvAddress = !clinic && code ? shortScreenLink(code).replace(/^https?:\/\//, '') : null;
   const [busy, setBusy] = useState(false);
+
+  async function changeLanguage(next) {
+    const previous = lang;
+    setLang(next);
+    setLangBusy(true);
+    setError('');
+    try {
+      await saveScreenLanguage(next);
+      onLanguage?.(next);
+    } catch (e) {
+      setLang(previous);
+      setError(e.message);
+    } finally {
+      setLangBusy(false);
+    }
+  }
 
   async function rotate() {
     if (!window.confirm(t('تبدّل رابط شاشة الانتظار؟ الرابط القديم يتوقف.'))) return;
@@ -151,6 +180,20 @@ function WaitingScreen({ canManage, venue, branch, clinic }) {
           {error}
         </p>
       )}
+      <label className="branch-screen-language">
+        {t('لغة الشاشة')}
+        <select
+          value={lang}
+          disabled={!canManage || langBusy}
+          onChange={(event) => changeLanguage(event.target.value)}
+        >
+          <option value="ar">العربية</option>
+          <option value="fr">Français</option>
+        </select>
+        <small>
+          {t('الكتابة والنداء في التلفاز يتبعو هاذ اللغة. التلفاز يتبدّل وحدو في دقائق.')}
+        </small>
+      </label>
       {!link && !error && <p role="status">{t('جارٍ الاتصال…')}</p>}
       {link && <ScreenActions key={link} link={link} showField />}
       {callsLink && (
@@ -246,6 +289,8 @@ function BranchTools({ shop, canManage, onSaved, foodService, venue }) {
           venue={venue || shop.name}
           branch={shop.name}
           clinic={clinic}
+          language={shop.display_language}
+          onLanguage={(display_language) => onSaved?.({ ...shop, display_language })}
         />
       </div>
       {canManage && (

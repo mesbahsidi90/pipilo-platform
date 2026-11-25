@@ -63,3 +63,16 @@
   text-align: left;
   word-break: break-all;
 }
+.branch-screen-language {
+  display: grid;
+  gap: 6px;
+  margin: 10px 0;
+  font-weight: 600;
+}
+.branch-screen-language select {
+  max-width: 220px;
+}
+.branch-screen-language small {
+  font-weight: 400;
+  color: var(--bippo-muted, #54645f);
+}

@@ -464,11 +464,13 @@ export default function Orders({ Share, workspace }) {
 
   const rows = orders || [];
   // Plan features for this branch; null while unknown (and in the demo = all on).
-  const planFeatures =
-    cloud && paidPlan?.branch === shop?.shop_id ? paidPlan.features : cloud ? null : undefined;
+  // Only once both the plan and the shop are loaded (both empty must not match).
+  const branchPlan =
+    paidPlan && shop?.shop_id && paidPlan.branch === shop.shop_id ? paidPlan : null;
+  const planFeatures = cloud ? (branchPlan?.features ?? null) : undefined;
   const hasFeature = (key) => !cloud || Boolean(planFeatures?.includes(key));
   const freeBranch = Array.isArray(planFeatures) && !planFeatures.includes('reports');
-  const graceUntil = cloud && paidPlan?.branch === shop?.shop_id ? paidPlan.grace : null;
+  const graceUntil = cloud ? (branchPlan?.grace ?? null) : null;
   const current = (order) =>
     !activity.clinic || Date.parse(order.restored_at || order.created_at) > Date.now() - 86400000;
   const laneLabels = activity.clinic
@@ -957,7 +959,7 @@ export default function Orders({ Share, workspace }) {
               insightsEnabled={!cloud || Boolean(workspaceData?.manager && hasFeature('reports'))}
               feedbackEnabled={tabs.some(([id]) => id === 'feedback')}
               canManage={Boolean(managerActions)}
-              paid={!cloud || (paidPlan?.branch === shop?.shop_id && Boolean(paidPlan?.enabled))}
+              paid={!cloud || Boolean(branchPlan?.enabled)}
               onSaved={setShop}
               navigate={(target, period) => {
                 setAssistantReportPeriod(period || null);

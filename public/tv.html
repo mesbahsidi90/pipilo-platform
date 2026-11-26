@@ -29,6 +29,8 @@
     text-align: center; display: inline-block; }
   #name { display: block; font-size: 3.4vh; font-weight: 700; }
   #sub { display: block; font-size: 2vh; color: #9aa59f; }
+  #by { padding-top: 0.8vh; text-align: left; font-size: 1.9vh; line-height: 1; color: #9aa59f; letter-spacing: 0.04em; direction: ltr; }
+  #by b { font-weight: 700; }
   #actions { display: -webkit-box; display: -webkit-flex; display: flex; -webkit-box-align: center;
     -webkit-align-items: center; align-items: center; }
   .tool { display: inline-block; margin-left: 1.4vh; padding: 1.2vh 2vh; border: 0.3vh solid #3a4a42; border-radius: 99vh;
@@ -115,6 +117,7 @@
     </div>
     <p id="empty">جارٍ الاتصال…</p>
   </main>
+  <div id="by">by <b>Bipilo</b></div>
   <p id="notice" hidden>تعذر تحديث الشاشة. نعيد الاتصال…</p>
   <button id="unlock" type="button" hidden>اضغط هنا (OK) باش تشغّل الصوت</button>
 </div>
@@ -244,7 +247,7 @@
     themeName = key;
     var css =
       'html, body { background: ' + t.bg + '; color: ' + t.text + '; }' +
-      '#sub, #empty { color: ' + t.muted + '; }' +
+      '#sub, #empty, #by { color: ' + t.muted + '; }' +
       '#clock { color: ' + t.text + '; }' +
       '#board { background: ' + t.panel + '; }' +
       '#label { color: ' + t.accent + '; }' +

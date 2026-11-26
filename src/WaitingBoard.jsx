@@ -385,6 +385,9 @@ export default function WaitingBoard({ orders, error, branding }) {
           </section>
         )}
       </div>
+      <div className="waiting-board-by" dir="ltr">
+        by <b>Bipilo</b>
+      </div>
     </main>
   );
 }

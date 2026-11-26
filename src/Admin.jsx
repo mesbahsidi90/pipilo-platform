@@ -34,6 +34,15 @@ import { AdminAnnouncements } from './PlatformAnnouncements';
 import AdminAccess from './AdminAccess';
 import { AlertList, ShopSheet, StatsTab, WelcomeButton, exportShops } from './AdminInsights';
 import { adminAlerts, welcomeLink } from './adminDomain';
+import {
+  BILLING,
+  PLAN_FEATURES,
+  algiersDay,
+  defaultEnd,
+  extendEnd,
+  planLines,
+  subscriptionState,
+} from './planRules';
 import { cloud, db } from './store';
 import {
   isAdmin,
@@ -68,7 +77,9 @@ const nav = [
   ['activity', bippoT('سجل التغييرات'), History],
 ];
 const formatDate = (d) =>
-  d ? new Date(d).toLocaleDateString(bippoLocale) : bippoT('بدون تاريخ نهاية');
+  d
+    ? new Date(d).toLocaleDateString(bippoLocale, { timeZone: 'Africa/Algiers' })
+    : bippoT('بدون تاريخ نهاية');
 const money = (p, c = 'DZD') =>
   p === null
     ? bippoT('السعر غير محدد')
@@ -327,7 +338,8 @@ function AdminPanel({ session }) {
       status: shop?.status || 'active',
       plan_id: sub?.plan_id || plans.find((p) => p.active)?.id || '',
       sub_status: sub?.status || 'active',
-      period_end: sub?.period_end?.slice(0, 10) || '',
+      started_at: algiersDay(sub?.started_at || new Date().toISOString()),
+      period_end: algiersDay(sub?.period_end),
       notes: sub?.notes || '',
     });
   }
@@ -724,7 +736,7 @@ function AdminPanel({ session }) {
                         </th>
                         <th>{bippoT('حالة المحل')}</th>
                         <th>{bippoT('الاشتراك')}</th>
-                        <th>{bippoT('الصلاحية')}</th>
+                        <th>{bippoT('المدة')}</th>
                         <th>
                           <span className="sr-only">{bippoT('الإجراءات')}</span>
                         </th>
@@ -749,11 +761,7 @@ function AdminPanel({ session }) {
                               ) : (
                                 <>
                                   {p?.name || bippoT('بدون خطة')}
-                                  <small>
-                                    {p
-                                      ? money(p.purchase_price ?? p.monthly_price, p.currency)
-                                      : '—'}
-                                  </small>
+                                  <small>{p ? priceText(p) : '—'}</small>
                                 </>
                               )}
                             </td>
@@ -761,9 +769,11 @@ function AdminPanel({ session }) {
                               <Badge status={s.status} />
                             </td>
                             <td>
-                              <Badge status={expired(sub) ? 'expired' : sub?.status || 'none'} />
+                              <SubState sub={sub} />
                             </td>
-                            <td>{formatDate(sub?.period_end)}</td>
+                            <td>
+                              <SubDates sub={sub} />
+                            </td>
                             <td>
                               <button
                                 className="button outline small"
@@ -786,7 +796,7 @@ function AdminPanel({ session }) {
                     <AlertCircle size={18} />
                     <p>
                       {bippoT(
-                        'إيقاف المحل أو انتهاء/إلغاء الاشتراك يمنع إنشاء طلبات جديدة. الطلبات الحالية تبقى قابلة للتحديث والاستلام.',
+                        'إيقاف المحل أو إلغاء الاشتراك يمنع إنشاء طلبات جديدة. كي يكمل تاريخ النهاية، المحل يبقى بباقتو 7 أيام (مهلة)، ومن بعد يرجع للباقة المجانية وحدو.',
                       )}
                     </p>
                   </div>
@@ -802,8 +812,16 @@ function AdminPanel({ session }) {
                     onClick={() =>
                       setPlanEdit({
                         name: '',
-                        monthly_price: '',
+                        name_fr: '',
+                        price: '',
+                        billing: 'monthly',
                         currency: 'DZD',
+                        ticket_limit: '',
+                        features: [],
+                        notes_ar: '',
+                        notes_fr: '',
+                        is_public: false,
+                        position: plans.length,
                         active: true,
                       })
                     }
@@ -813,39 +831,57 @@ function AdminPanel({ session }) {
                   </button>
                 </div>
                 <div className="admin-plan-grid">
-                  {plans.map((p) => (
-                    <article className="panel admin-plan-card" key={p.id}>
-                      <div>
-                        <Layers size={24} />
-                        <Badge status={p.active ? 'active' : 'archived'} />
-                      </div>
-                      <h2>{p.name}</h2>
-                      <strong>{money(p.purchase_price ?? p.monthly_price, p.currency)}</strong>
-                      <p>
-                        {bippoT(
-                          p.purchase_price != null
-                            ? 'دفعة واحدة · إدارة يدوية'
-                            : 'للشهر · إدارة يدوية',
+                  {[...plans]
+                    .sort((a, b) => (a.position ?? 0) - (b.position ?? 0))
+                    .map((p) => (
+                      <article className="panel admin-plan-card" key={p.id}>
+                        <div>
+                          <Layers size={24} />
+                          <span className="admin-plan-badges">
+                            {p.is_default && (
+                              <span className="admin-badge trial">{bippoT('الافتراضية')}</span>
+                            )}
+                            {p.is_public && p.active && (
+                              <span className="admin-badge">{bippoT('في صفحة الأسعار')}</span>
+                            )}
+                            <Badge status={p.active ? 'active' : 'archived'} />
+                          </span>
+                        </div>
+                        <h2>{p.name}</h2>
+                        <strong>{priceText(p)}</strong>
+                        {p.billing !== 'free' && (
+                          <p>{bippoT(BILLING[p.billing]?.[0] || 'دفعة واحدة (مدى الحياة)')}</p>
                         )}
-                      </p>
-                      <hr />
-                      <small>
-                        {subs.filter((s) => s.plan_id === p.id).length}
-                        {bippoT(' محل مرتبط بالخطة')}
-                      </small>
-                      <button
-                        className="button outline full"
-                        onClick={() =>
-                          setPlanEdit({
-                            ...p,
-                            monthly_price: p.monthly_price ?? '',
-                          })
-                        }
-                      >
-                        {bippoT('تعديل الخطة')}
-                      </button>
-                    </article>
-                  ))}
+                        <ul className="admin-plan-features">
+                          {planLines(p).map((line) => (
+                            <li key={line}>
+                              <Check size={13} />
+                              {bippoT(line)}
+                            </li>
+                          ))}
+                        </ul>
+                        <hr />
+                        <small>
+                          {subs.filter((s) => s.plan_id === p.id).length}
+                          {bippoT(' محل مرتبط بالخطة')}
+                        </small>
+                        <button
+                          className="button outline full"
+                          onClick={() =>
+                            setPlanEdit({
+                              ...p,
+                              price: p.price ?? p.purchase_price ?? p.monthly_price ?? '',
+                              ticket_limit: p.ticket_limit ?? '',
+                              features: p.features || [],
+                              billing: p.billing || 'once',
+                              position: p.position ?? 0,
+                            })
+                          }
+                        >
+                          {bippoT('تعديل الخطة')}
+                        </button>
+                      </article>
+                    ))}
                 </div>
               </>
             )}
@@ -1048,6 +1084,7 @@ function AdminPanel({ session }) {
                       setEdit({
                         ...edit,
                         plan_id: e.target.value,
+                        period_end: defaultEnd(planFor(e.target.value)?.billing, edit.started_at),
                       })
                     }
                   >
@@ -1080,23 +1117,59 @@ function AdminPanel({ session }) {
                     ))}
                   </select>
                 </label>
-                <label className="admin-span">
-                  {bippoT('نهاية الصلاحية — اختياري')}
+                <label>
+                  {bippoT('تاريخ البداية')}
                   <input
                     type="date"
-                    disabled={edit.plan_id === professionalPlanId}
-                    value={edit.plan_id === professionalPlanId ? '' : edit.period_end}
-                    onChange={(e) =>
+                    required
+                    value={edit.started_at}
+                    onChange={(e) => {
+                      const billing = planFor(edit.plan_id)?.billing;
                       setEdit({
                         ...edit,
-                        period_end: e.target.value,
-                      })
-                    }
+                        started_at: e.target.value,
+                        period_end: ['monthly', 'yearly'].includes(billing)
+                          ? defaultEnd(billing, e.target.value)
+                          : edit.period_end,
+                      });
+                    }}
                   />
-                  <small>
-                    {bippoT('فارغ = بلا تاريخ نهاية. التاريخ حتى نهاية اليوم بتوقيت UTC.')}
-                  </small>
                 </label>
+                <label>
+                  {bippoT('تاريخ النهاية')}
+                  <input
+                    type="date"
+                    min={edit.started_at || undefined}
+                    value={edit.period_end}
+                    onChange={(e) => setEdit({ ...edit, period_end: e.target.value })}
+                  />
+                </label>
+                <div className="admin-span admin-date-tools">
+                  {[
+                    [
+                      'حسب الباقة',
+                      () => defaultEnd(planFor(edit.plan_id)?.billing, edit.started_at),
+                    ],
+                    ['+ شهر', () => extendEnd(edit.period_end, 1)],
+                    ['+ 3 أشهر', () => extendEnd(edit.period_end, 3)],
+                    ['+ عام', () => extendEnd(edit.period_end, 12)],
+                    ['بلا نهاية', () => ''],
+                  ].map(([label, next]) => (
+                    <button
+                      key={label}
+                      type="button"
+                      className="button outline small"
+                      onClick={() => setEdit({ ...edit, period_end: next() })}
+                    >
+                      {bippoT(label)}
+                    </button>
+                  ))}
+                  <small>
+                    {edit.period_end
+                      ? bippoT('بعد النهاية: 7 أيام مهلة، ومن بعد يرجع للباقة المجانية.')
+                      : bippoT('بلا تاريخ نهاية: الباقة تبقى حتى تبدّلها.')}
+                  </small>
+                </div>
                 <label className="admin-span">
                   {bippoT('ملاحظات داخلية')}
                   <textarea
@@ -1164,13 +1237,35 @@ function AdminPanel({ session }) {
                 />
               </label>
               <div className="admin-form-grid">
+                <label>
+                  {bippoT('الاسم بالفرنسية — اختياري')}
+                  <input
+                    maxLength={80}
+                    dir="ltr"
+                    value={planEdit.name_fr || ''}
+                    onChange={(e) => setPlanEdit({ ...planEdit, name_fr: e.target.value })}
+                  />
+                </label>
+                <label>
+                  {bippoT('نوع الدفع')}
+                  <select
+                    value={planEdit.billing}
+                    disabled={planEdit.id === professionalPlanId || planEdit.is_default}
+                    onChange={(e) => setPlanEdit({ ...planEdit, billing: e.target.value })}
+                  >
+                    {Object.entries(BILLING).map(([key, [label]]) => (
+                      <option key={key} value={key}>
+                        {bippoT(label)}
+                      </option>
+                    ))}
+                  </select>
+                </label>
                 {planEdit.id === professionalPlanId ? (
                   <>
                     {[
                       ['purchase_price', 'سعر الإطلاق بالدينار', 1, '0.01', 9999999999],
                       ['standard_price', 'السعر العادي بالدينار', 1, '0.01', 9999999999],
                       ['launch_branches', 'عدد الفروع في عرض الإطلاق', 0, '1', 100000],
-                      ['free_ticket_limit', 'حد التيكيات الشهري للمجانية', 1, '1', 100000],
                     ].map(([field, label, min, step, max]) => (
                       <label key={field}>
                         {bippoT(label)}
@@ -1190,52 +1285,117 @@ function AdminPanel({ session }) {
                     </p>
                   </>
                 ) : (
-                  <>
-                    <label>
-                      {bippoT('السعر الشهري — اختياري')}
-                      <input
-                        type="number"
-                        min="0"
-                        max="9999999999"
-                        step="0.01"
-                        value={planEdit.monthly_price}
-                        onChange={(e) =>
-                          setPlanEdit({
-                            ...planEdit,
-                            monthly_price: e.target.value,
-                          })
-                        }
-                      />
-                    </label>
-                    <label>
-                      {bippoT('العملة')}
-                      <select
-                        value={planEdit.currency}
-                        onChange={(e) =>
-                          setPlanEdit({
-                            ...planEdit,
-                            currency: e.target.value,
-                          })
-                        }
-                      >
-                        <option>DZD</option>
-                        <option>EUR</option>
-                        <option>USD</option>
-                      </select>
-                    </label>
-                  </>
+                  planEdit.billing !== 'free' && (
+                    <>
+                      <label>
+                        {bippoT(
+                          { yearly: 'السعر في العام', monthly: 'السعر في الشهر' }[
+                            planEdit.billing
+                          ] || 'السعر',
+                        )}
+                        <input
+                          type="number"
+                          required
+                          min="0"
+                          max="9999999999"
+                          step="0.01"
+                          value={planEdit.price}
+                          onChange={(e) => setPlanEdit({ ...planEdit, price: e.target.value })}
+                        />
+                      </label>
+                      <label>
+                        {bippoT('العملة')}
+                        <select
+                          value={planEdit.currency}
+                          onChange={(e) => setPlanEdit({ ...planEdit, currency: e.target.value })}
+                        >
+                          <option>DZD</option>
+                          <option>EUR</option>
+                          <option>USD</option>
+                        </select>
+                      </label>
+                    </>
+                  )
                 )}
+                <label>
+                  {bippoT('حد التيكيات في الشهر')}
+                  <input
+                    type="number"
+                    min="1"
+                    max="1000000"
+                    step="1"
+                    placeholder={bippoT('بلا حد')}
+                    value={planEdit.ticket_limit}
+                    onChange={(e) => setPlanEdit({ ...planEdit, ticket_limit: e.target.value })}
+                  />
+                </label>
+                <label>
+                  {bippoT('الترتيب في صفحة الأسعار')}
+                  <input
+                    type="number"
+                    min="-1000"
+                    max="1000"
+                    step="1"
+                    value={planEdit.position}
+                    onChange={(e) => setPlanEdit({ ...planEdit, position: e.target.value })}
+                  />
+                </label>
+              </div>
+              <fieldset className="admin-plan-checks">
+                <legend>{bippoT('الميزات في هاد الخطة')}</legend>
+                {PLAN_FEATURES.map(([key, label]) => (
+                  <label className="admin-checkbox" key={key}>
+                    <input
+                      type="checkbox"
+                      checked={planEdit.features.includes(key)}
+                      onChange={(e) =>
+                        setPlanEdit({
+                          ...planEdit,
+                          features: e.target.checked
+                            ? [...planEdit.features, key]
+                            : planEdit.features.filter((item) => item !== key),
+                        })
+                      }
+                    />
+                    {bippoT(label)}
+                  </label>
+                ))}
+              </fieldset>
+              <div className="admin-form-grid">
+                <label>
+                  {bippoT('أسطر إضافية في صفحة الأسعار (سطر لكل ميزة)')}
+                  <textarea
+                    rows={4}
+                    maxLength={1000}
+                    value={planEdit.notes_ar || ''}
+                    onChange={(e) => setPlanEdit({ ...planEdit, notes_ar: e.target.value })}
+                  />
+                </label>
+                <label>
+                  {bippoT('نفس الأسطر بالفرنسية')}
+                  <textarea
+                    rows={4}
+                    maxLength={1000}
+                    dir="ltr"
+                    value={planEdit.notes_fr || ''}
+                    onChange={(e) => setPlanEdit({ ...planEdit, notes_fr: e.target.value })}
+                  />
+                </label>
               </div>
               <label className="admin-checkbox">
                 <input
                   type="checkbox"
+                  checked={Boolean(planEdit.is_public)}
+                  onChange={(e) => setPlanEdit({ ...planEdit, is_public: e.target.checked })}
+                />
+                {bippoT('تبان في صفحة الأسعار')}
+              </label>
+              <label className="admin-checkbox">
+                <input
+                  type="checkbox"
                   checked={planEdit.active}
-                  onChange={(e) =>
-                    setPlanEdit({
-                      ...planEdit,
-                      active: e.target.checked,
-                    })
-                  }
+                  disabled={planEdit.is_default}
+                  onChange={(e) => setPlanEdit({ ...planEdit, active: e.target.checked })}
                 />
                 {bippoT(' متاحة للاشتراكات الجديدة')}
               </label>
@@ -1379,6 +1539,47 @@ function AdminPanel({ session }) {
     </div>
   );
 }
+// Price with its billing: «2 500 د.ج / شهر».
+function priceText(plan) {
+  const value = plan.price ?? plan.purchase_price ?? plan.monthly_price;
+  if (plan.billing === 'free' || !Number(value)) return bippoT('مجانية');
+  const per = { monthly: ' / ' + bippoT('شهر'), yearly: ' / ' + bippoT('عام') }[plan.billing] || '';
+  return money(value, plan.currency) + per;
+}
+
+// Subscription state as a badge: active, ends in N days, grace, expired…
+function SubState({ sub }) {
+  const { state, days } = subscriptionState(sub);
+  const badge = {
+    none: ['none', 'بدون اشتراك'],
+    off: [sub?.status, null],
+    upcoming: ['trial', 'يبدا بعد {0} يوم'],
+    active: ['active', 'نشط'],
+    ending: ['past_due', 'يكمل بعد {0} يوم'],
+    grace: ['past_due', 'مهلة: {0} يوم'],
+    expired: ['expired', 'رجع للمجانية'],
+  }[state];
+  if (!badge[1]) return <Badge status={badge[0]} />;
+  return (
+    <span className={'admin-badge ' + badge[0]}>
+      <i />
+      {bippoT(badge[1], [days])}
+    </span>
+  );
+}
+
+function SubDates({ sub }) {
+  if (!sub) return '—';
+  return (
+    <>
+      {sub.started_at ? bippoT('من {0}', [formatDate(sub.started_at)]) : '—'}
+      <small>
+        {sub.period_end ? bippoT('حتى {0}', [formatDate(sub.period_end)]) : bippoT('بلا نهاية')}
+      </small>
+    </>
+  );
+}
+
 function Badge({ status }) {
   const labels = {
     active: bippoT('نشط'),

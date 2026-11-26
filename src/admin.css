@@ -307,3 +307,57 @@
   color: #428d63;
   white-space: nowrap;
 }
+
+/* Plans: features on the card, badges, form checks; subscription date tools. */
+.admin-plan-badges {
+  display: inline-flex;
+  flex-wrap: wrap;
+  gap: 5px;
+  justify-content: flex-end;
+}
+.admin-plan-features {
+  list-style: none;
+  margin: 14px 0 0;
+  padding: 0;
+  display: grid;
+  gap: 6px;
+  font-size: 12px;
+  color: #4d6156;
+}
+.admin-plan-features li {
+  display: flex;
+  align-items: flex-start;
+  gap: 6px;
+  line-height: 1.5;
+}
+.admin-plan-features svg {
+  flex: none;
+  margin-top: 3px;
+  color: #3f8a64;
+}
+.admin-plan-checks {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));
+  gap: 8px 16px;
+  border: 1px solid #e3ebe0;
+  border-radius: 12px;
+  padding: 12px 14px;
+  margin: 0;
+}
+.admin-plan-checks legend {
+  padding: 0 6px;
+  font-size: 12px;
+  font-weight: 600;
+  color: #35543f;
+}
+.admin-date-tools {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+}
+.admin-date-tools small {
+  flex-basis: 100%;
+  font-size: 11px;
+  color: #6b7a5c;
+}

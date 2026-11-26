@@ -1,11 +1,12 @@
 import React, { useEffect, useState } from 'react';
 import { ChevronLeft, MessageCircle } from 'lucide-react';
 import { cloud, db, sandbox } from './store';
-import { t, locale } from './i18n.js';
+import { t, locale, language } from './i18n.js';
 import { subStates } from './adminData';
 import { supportWhatsApp } from './contactDetails';
 import { PlanCards } from './PlanCards';
 import { professionalPlanId } from './planConfig';
+import { planLines, subscriptionState } from './planRules';
 import { myPlanRequest, requestPlanUpgrade } from './planRequest';
 import ReferralCard from './ReferralCard';
 import { ProQuote } from './ProQuote';
@@ -20,7 +21,9 @@ export default function MerchantSubscription({ shopId, shopError, branchCount })
       try {
         const { data, error } = await db
           .from('subscriptions')
-          .select('status,period_end,plan_id,plans(name)')
+          .select(
+            'status,period_end,started_at,plan_id,plans(name,features,ticket_limit,notes_ar,notes_fr)',
+          )
           .eq('shop_id', shopId)
           .maybeSingle();
         if (error) throw error;
@@ -48,37 +51,58 @@ export default function MerchantSubscription({ shopId, shopError, branchCount })
   const subscription = result?.data;
   const plan = subscription?.plans;
   const expiry = subscription?.period_end ? new Date(subscription.period_end) : null;
-  const daysLeft = expiry
-    ? Math.max(0, Math.ceil((expiry.getTime() - Date.now()) / 86400000))
-    : null;
+  const start = subscription?.started_at ? new Date(subscription.started_at) : null;
+  const { state: phase, days } = subscriptionState(subscription);
   const trial = subscription?.status === 'trial';
-  const state =
-    daysLeft === 0
-      ? t('منتهي')
-      : subscription
-        ? subStates[subscription.status]
-        : t(cloud ? 'ما كاش اشتراك مربوط بهذا المحل.' : 'وضع تجريبي');
+  const state = !subscription
+    ? t(cloud ? 'ما كاش اشتراك مربوط بهذا المحل.' : 'وضع تجريبي')
+    : {
+        upcoming: t('يبدا بعد {0} يوم', [days]),
+        ending: t('يكمل بعد {0} يوم', [days]),
+        grace: t('مهلة: {0} يوم', [days]),
+        expired: t('رجع للباقة المجانية'),
+      }[phase] || subStates[subscription.status];
   const activeProfessional =
-    subscription?.plan_id === professionalPlanId &&
-    subscription.status === 'active' &&
-    daysLeft !== 0;
+    subscription?.plan_id === professionalPlanId && ['active', 'ending'].includes(phase);
+  const lines =
+    plan && ['active', 'ending', 'grace'].includes(phase) ? planLines(plan, language === 'fr') : [];
   return (
     <div className="merchant-billing">
       <section className="panel billing-summary" aria-label={t('الباقة الحالية')}>
         <div>
           <span className="billing-badge">{state}</span>
-          <h2>
-            {trial && daysLeft > 0
-              ? t('باقي {0} يوم', [daysLeft])
-              : plan?.name || t('الباقة الحالية')}
-          </h2>
-          {trial && daysLeft > 0 && plan?.name && <p>{plan.name}</p>}
+          <h2>{plan?.name || t('الباقة الحالية')}</h2>
+          {trial && <p>{subStates.trial}</p>}
           {activeProfessional && !expiry && <p>{t('دفعة واحدة، بلا تجديد إجباري')}</p>}
+          {start && (
+            <p className="billing-expiry">
+              {t('تاريخ البداية')}{' '}
+              <time dateTime={subscription.started_at}>
+                {start.toLocaleDateString(locale, { timeZone: 'Africa/Algiers' })}
+              </time>
+            </p>
+          )}
           {expiry && (
             <p className="billing-expiry">
               {t('تاريخ نهاية الاشتراك')}{' '}
-              <time dateTime={subscription.period_end}>{expiry.toLocaleDateString(locale)}</time>
+              <time dateTime={subscription.period_end}>
+                {expiry.toLocaleDateString(locale, { timeZone: 'Africa/Algiers' })}
+              </time>
             </p>
+          )}
+          {phase === 'grace' && (
+            <p className="billing-expiry">
+              {t('اشتراكك كمل. باقتك تبقى تخدم {0} يوم آخرين، ومن بعد يرجع المحل للمجانية.', [
+                days,
+              ])}
+            </p>
+          )}
+          {lines.length > 0 && (
+            <ul className="billing-lines">
+              {lines.map((line) => (
+                <li key={line}>{line}</li>
+              ))}
+            </ul>
           )}
           {!cloud && (
             <p className="billing-expiry">{t('وضع تجريبي · البيانات في هذا المتصفح فقط')}</p>
@@ -133,7 +157,7 @@ function PlanRequest() {
         <h3>{t('طلبك وصلنا ✓')}</h3>
         <p>
           {t('بعثت طلب تفعيل الاحترافية نهار {0}. نتصلو بيك باش نكمّلو.', [
-            new Date(request.created_at).toLocaleDateString(locale),
+            new Date(request.created_at).toLocaleDateString(locale, { timeZone: 'Africa/Algiers' }),
           ])}
         </p>
         <ProQuote />

@@ -14,7 +14,8 @@ test('only an active shop with a current active or trial subscription can operat
   for (const state of ['cancelled', 'past_due', undefined])
     assert.equal(operating(shop, { status: state }, now), false);
   assert.equal(operating({ status: 'suspended' }, { status: 'active' }, now), false);
-  assert.equal(operating(shop, { status: 'active', period_end: '2026-11-06' }, now), false);
+  // Ended = back to the free plan, still working.
+  assert.equal(operating(shop, { status: 'active', period_end: '2026-11-06' }, now), true);
   assert.equal(operating(shop, undefined, now), false);
 });
 test('order follow-up waits for three full Algerian days and skips unused or suspended shops', () => {

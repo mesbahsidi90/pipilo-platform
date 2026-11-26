@@ -131,8 +131,15 @@ export default function Orders({ Share, workspace }) {
   useEffect(() => {
     if (!cloud || !shop?.shop_id) return;
     let active = true;
-    db.rpc('current_branch_has_paid_plan').then(({ data, error }) => {
-      if (active && !error) setPaidPlan({ branch: shop.shop_id, enabled: data });
+    // The plan this branch runs on now: its features, and the grace end date.
+    db.rpc('current_branch_plan').then(({ data, error }) => {
+      if (active && !error && data)
+        setPaidPlan({
+          branch: shop.shop_id,
+          enabled: Boolean(data.paid),
+          features: data.features || [],
+          grace: data.grace_until || null,
+        });
     });
     return () => {
       active = false;
@@ -456,7 +463,12 @@ export default function Orders({ Share, workspace }) {
   }
 
   const rows = orders || [];
-  const freeBranch = paidPlan?.branch === shop?.shop_id && paidPlan?.enabled === false;
+  // Plan features for this branch; null while unknown (and in the demo = all on).
+  const planFeatures =
+    cloud && paidPlan?.branch === shop?.shop_id ? paidPlan.features : cloud ? null : undefined;
+  const hasFeature = (key) => !cloud || Boolean(planFeatures?.includes(key));
+  const freeBranch = Array.isArray(planFeatures) && !planFeatures.includes('reports');
+  const graceUntil = cloud && paidPlan?.branch === shop?.shop_id ? paidPlan.grace : null;
   const current = (order) =>
     !activity.clinic || Date.parse(order.restored_at || order.created_at) > Date.now() - 86400000;
   const laneLabels = activity.clinic
@@ -504,8 +516,7 @@ export default function Orders({ Share, workspace }) {
     ...(!activity.clinic ? [['call', bippoT('نداء سريع'), Megaphone]] : []),
     ...(!workspaceData?.staff ? [['features', bippoT('المزايا'), LayoutGrid]] : []),
     ['reports', bippoT('التحليلات'), BarChart3],
-    ...(!cloud ||
-    (workspaceData?.manager && paidPlan?.branch === shop?.shop_id && paidPlan?.enabled)
+    ...(!cloud || (workspaceData?.manager && hasFeature('feedback'))
       ? [['feedback', bippoT('ملاحظات الزبائن'), MessageCircle]]
       : []),
     ['codes', bippoT('الفروع والأكواد'), QrCode],
@@ -874,6 +885,18 @@ export default function Orders({ Share, workspace }) {
           </header>
         )}
         {tab === 'orders' && <ShopAnnouncements key={shop?.shop_id || 'shop'} />}
+        {graceUntil && managerActions && (
+          <p className="notice plan-grace" role="status">
+            {bippoT(
+              'اشتراكك كمل. باقتك تبقى تخدم حتى {0}، ومن بعد يرجع المحل للباقة المجانية. جدّد من «الاشتراك».',
+              [
+                new Date(graceUntil).toLocaleDateString(bippoLocale, {
+                  timeZone: 'Africa/Algiers',
+                }),
+              ],
+            )}
+          </p>
+        )}
         {tab === 'call' && !activity.clinic && (
           <QuickCall
             calls={calledOrders(orders || [])}
@@ -897,7 +920,7 @@ export default function Orders({ Share, workspace }) {
         {tab === 'features' && managerActions && (
           <MerchantFeatures
             key={shop?.shop_id}
-            paid={paidPlan && shop && paidPlan.branch === shop.shop_id ? paidPlan.enabled : null}
+            features={cloud ? planFeatures : null}
             onOpen={setTab}
             onSaved={setShop}
           />
@@ -931,12 +954,7 @@ export default function Orders({ Share, workspace }) {
               key={shop?.shop_id || 'local'}
               shop={shop}
               clinic={activity.clinic}
-              insightsEnabled={
-                !cloud ||
-                Boolean(
-                  workspaceData?.manager && paidPlan?.branch === shop?.shop_id && paidPlan?.enabled,
-                )
-              }
+              insightsEnabled={!cloud || Boolean(workspaceData?.manager && hasFeature('reports'))}
               feedbackEnabled={tabs.some(([id]) => id === 'feedback')}
               canManage={Boolean(managerActions)}
               paid={!cloud || (paidPlan?.branch === shop?.shop_id && Boolean(paidPlan?.enabled))}

@@ -60,19 +60,20 @@ function FeatureCard({ icon: Icon, title, status, control, pro, children }) {
         </div>
       </header>
       {children}
-      {pro && <small className="feature-plan">{bippoT('في الباقة الاحترافية')}</small>}
+      {pro && <small className="feature-plan">{bippoT('ماشي في باقتك')}</small>}
     </article>
   );
 }
 
 // «المزايا»: every customer-facing feature with its switch and settings.
-export default function MerchantFeatures({ paid = null, onOpen, onSaved }) {
+// `features`: the plan's feature list; null = unknown or demo (everything open).
+export default function MerchantFeatures({ features = null, onOpen, onSaved }) {
   const [settings, setSettings] = useState(null),
     [error, setError] = useState(''),
     [busy, setBusy] = useState(''),
     [editing, setEditing] = useState(''),
     [draft, setDraft] = useState({});
-  const locked = paid === false;
+  const lockedFor = (key) => Array.isArray(features) && !features.includes(key);
 
   useEffect(() => {
     let alive = true;
@@ -124,11 +125,12 @@ export default function MerchantFeatures({ paid = null, onOpen, onSaved }) {
   const options = settings.customer_options || {};
   const review = settings.google_review_url || '';
   const goal = draft.loyalty_goal || settings.loyalty_goal || 9;
-  const upgrade = locked && (
-    <button type="button" className="button outline small" onClick={() => onOpen?.('billing')}>
-      {bippoT('فعّل الاحترافية')}
-    </button>
-  );
+  const upgradeFor = (key) =>
+    lockedFor(key) && (
+      <button type="button" className="button outline small" onClick={() => onOpen?.('billing')}>
+        {bippoT('بدّل الباقة')}
+      </button>
+    );
 
   return (
     <section className="merchant-features">
@@ -184,7 +186,7 @@ export default function MerchantFeatures({ paid = null, onOpen, onSaved }) {
           <FeatureCard
             icon={Smartphone}
             title={bippoT('الطلب من التليفون')}
-            pro
+            pro={lockedFor('ordering')}
             status={
               <Status
                 on={settings.ordering_enabled}
@@ -196,7 +198,7 @@ export default function MerchantFeatures({ paid = null, onOpen, onSaved }) {
                 label={bippoT('فعّل الطلب من التليفون')}
                 checked={Boolean(settings.ordering_enabled)}
                 disabled={
-                  locked ||
+                  lockedFor('ordering') ||
                   busy === 'ordering' ||
                   (!settings.menu_enabled && !settings.ordering_enabled)
                 }
@@ -228,7 +230,9 @@ export default function MerchantFeatures({ paid = null, onOpen, onSaved }) {
                     <input
                       type="checkbox"
                       checked={on}
-                      disabled={locked || busy === 'ordering' || (on && modes.length === 1)}
+                      disabled={
+                        lockedFor('ordering') || busy === 'ordering' || (on && modes.length === 1)
+                      }
                       onChange={(e) =>
                         save('ordering', {
                           ordering_modes: e.target.checked
@@ -260,7 +264,9 @@ export default function MerchantFeatures({ paid = null, onOpen, onSaved }) {
             ) : (
               <small className="hint">{bippoT('فعّل «على الطاولة» باش تطبع كود لكل طاولة.')}</small>
             )}
-            {upgrade && <div className="feature-actions">{upgrade}</div>}
+            {upgradeFor('ordering') && (
+              <div className="feature-actions">{upgradeFor('ordering')}</div>
+            )}
           </FeatureCard>
         </>
       )}
@@ -269,7 +275,7 @@ export default function MerchantFeatures({ paid = null, onOpen, onSaved }) {
         <FeatureCard
           icon={Gift}
           title={bippoT('بطاقة الولاء')}
-          pro
+          pro={lockedFor('loyalty')}
           status={
             <Status
               on={settings.loyalty_enabled}
@@ -280,7 +286,7 @@ export default function MerchantFeatures({ paid = null, onOpen, onSaved }) {
             <Switch
               label={bippoT('فعّل بطاقة الولاء')}
               checked={Boolean(settings.loyalty_enabled)}
-              disabled={locked || busy === 'loyalty'}
+              disabled={lockedFor('loyalty') || busy === 'loyalty'}
               onChange={(on) => save('loyalty', { loyalty_enabled: on })}
             />
           }
@@ -301,7 +307,7 @@ export default function MerchantFeatures({ paid = null, onOpen, onSaved }) {
             >
               {bippoT('إعدادات البطاقة')}
             </button>
-            {upgrade}
+            {upgradeFor('loyalty')}
           </div>
           {editing === 'loyalty' && (
             <form
@@ -382,7 +388,7 @@ export default function MerchantFeatures({ paid = null, onOpen, onSaved }) {
       <FeatureCard
         icon={MessageSquareText}
         title={bippoT(activity.clinic ? 'ملاحظات خاصة بعد الزيارة' : 'ملاحظات خاصة بعد الاستلام')}
-        pro
+        pro={lockedFor('feedback')}
         status={
           <Status
             on={settings.private_feedback_enabled}
@@ -395,7 +401,7 @@ export default function MerchantFeatures({ paid = null, onOpen, onSaved }) {
               activity.clinic ? 'ملاحظات خاصة بعد الزيارة' : 'ملاحظات خاصة بعد الاستلام',
             )}
             checked={Boolean(settings.private_feedback_enabled)}
-            disabled={locked || busy === 'feedback'}
+            disabled={lockedFor('feedback') || busy === 'feedback'}
             onChange={(on) => save('feedback', { private_feedback_enabled: on })}
           />
         }
@@ -407,7 +413,7 @@ export default function MerchantFeatures({ paid = null, onOpen, onSaved }) {
               : 'الزبون يكتبلك ملاحظة بعد الاستلام، توصلك وحدك في «ملاحظات الزبائن».',
           )}
         </p>
-        {upgrade && <div className="feature-actions">{upgrade}</div>}
+        {upgradeFor('feedback') && <div className="feature-actions">{upgradeFor('feedback')}</div>}
       </FeatureCard>
 
       <FeatureCard
@@ -537,7 +543,7 @@ export default function MerchantFeatures({ paid = null, onOpen, onSaved }) {
       <FeatureCard
         icon={Plug}
         title={bippoT('الربط مع الكاشير')}
-        pro
+        pro={lockedFor('pos')}
         status={<Status label={bippoT('واجهة API')} />}
       >
         <p>
@@ -554,9 +560,9 @@ export default function MerchantFeatures({ paid = null, onOpen, onSaved }) {
           >
             {bippoT('مفاتيح الربط')}
           </button>
-          {upgrade}
+          {upgradeFor('pos')}
         </div>
-        {editing === 'pos' && <PosKeys locked={locked} />}
+        {editing === 'pos' && <PosKeys locked={lockedFor('pos')} />}
       </FeatureCard>
     </section>
   );

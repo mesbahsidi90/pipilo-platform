@@ -161,3 +161,12 @@
 .admin-pro-quote p {
   margin: 0 0 4px;
 }
+
+/* Current plan: what it includes. */
+.billing-lines {
+  margin: 10px 0 0;
+  padding-inline-start: 18px;
+  display: grid;
+  gap: 4px;
+  font-size: 13px;
+}

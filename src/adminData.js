@@ -1,15 +1,38 @@
 import { t as bippoT } from './i18n.js';
 import { cloud, db } from './store';
 import { defaultPlanCatalog, demoAdminKey, professionalPlanId } from './planConfig';
+import { FEATURE_KEYS, dayEnd, dayStart, planRow } from './planRules';
 export { expired, operating } from './adminDomain';
 const KEY = demoAdminKey;
 const demoProfessional = {
   ...defaultPlanCatalog,
   id: professionalPlanId,
   name: 'احترافية · دفعة واحدة',
+  name_fr: 'Pro',
   currency: 'DZD',
   monthly_price: null,
+  billing: 'once',
+  price: defaultPlanCatalog.purchase_price,
+  features: FEATURE_KEYS,
+  ticket_limit: null,
+  is_public: true,
+  position: 1,
 };
+// Demo data saved before plans had features: give them the new fields.
+function withPlanFields(plan) {
+  if (plan.billing) return plan;
+  const free = !(plan.purchase_price > 0) && !(plan.monthly_price > 0);
+  return {
+    ...plan,
+    billing: free ? 'free' : plan.purchase_price > 0 ? 'once' : 'monthly',
+    price: plan.purchase_price ?? plan.monthly_price ?? 0,
+    features: plan.id === professionalPlanId ? FEATURE_KEYS : [],
+    ticket_limit: free ? defaultPlanCatalog.free_ticket_limit : null,
+    is_public: true,
+    is_default: free,
+    position: free ? 0 : 1,
+  };
+}
 export { shopTypes } from './shopActivities';
 export const subStates = {
   trial: bippoT('تجريبي'),
@@ -23,6 +46,7 @@ function read() {
     const data = JSON.parse(stored);
     if (!data.plans.some((plan) => plan.id === professionalPlanId))
       data.plans.push(demoProfessional);
+    data.plans = data.plans.map(withPlanFields);
     return data;
   }
   const plan = crypto.randomUUID(),
@@ -43,9 +67,17 @@ function read() {
       {
         id: plan,
         name: bippoT('البداية'),
+        name_fr: 'Gratuite',
         monthly_price: 0,
         currency: 'DZD',
         active: true,
+        billing: 'free',
+        price: 0,
+        features: [],
+        ticket_limit: defaultPlanCatalog.free_ticket_limit,
+        is_public: true,
+        is_default: true,
+        position: 0,
       },
       demoProfessional,
     ],
@@ -55,6 +87,7 @@ function read() {
         plan_id: plan,
         status: 'active',
         period_end: null,
+        started_at: new Date().toISOString(),
         notes: '',
       },
     ],
@@ -143,10 +176,11 @@ export async function loadDailyOrders(branchIds, day, page) {
 export async function saveShop(form) {
   if (!form.name.trim()) throw new Error(bippoT('دخل اسم المحل'));
   if (!form.plan_id) throw new Error(bippoT('اختار خطة الاشتراك'));
-  const ends =
-    form.period_end && form.plan_id !== professionalPlanId
-      ? new Date(form.period_end + 'T23:59:59Z').toISOString()
-      : null;
+  // Dates are whole Algiers days: the start at 00:00 and the end at 23:59.
+  const starts = dayStart(form.started_at);
+  const ends = dayEnd(form.period_end);
+  if (starts && ends && ends <= starts)
+    throw new Error(bippoT('تاريخ النهاية لازم يكون بعد تاريخ البداية.'));
   if (!cloud) {
     const d = read(),
       id = form.id || crypto.randomUUID();
@@ -165,6 +199,7 @@ export async function saveShop(form) {
         plan_id: form.plan_id,
         status: form.sub_status,
         period_end: ends,
+        started_at: starts || new Date().toISOString(),
         notes: form.notes,
       },
       ...d.subscriptions.filter((s) => s.shop_id !== id),
@@ -183,42 +218,38 @@ export async function saveShop(form) {
       subscription_status: form.sub_status,
       ends_at: ends,
       internal_notes: form.notes,
+      starts_at: starts,
     }),
   );
 }
 export async function savePlan(form) {
-  const price = form.monthly_price === '' ? null : Number(form.monthly_price);
-  if (price !== null && (!Number.isFinite(price) || price < 0))
-    throw new Error(bippoT('السعر لازم يكون رقم موجب أو صفر'));
-  const item = {
-    name: form.name.trim(),
-    monthly_price: price,
-    currency: form.currency,
-    active: form.active,
-  };
+  let item;
+  try {
+    item = planRow(form);
+  } catch (e) {
+    throw new Error(bippoT(e.message));
+  }
   if (form.id === professionalPlanId) {
     const purchasePrice = Number(form.purchase_price);
     const standardPrice = Number(form.standard_price);
     const launchBranches = Number(form.launch_branches);
-    const freeTicketLimit = Number(form.free_ticket_limit);
     if (
       ![purchasePrice, standardPrice].every(
         (value) => Number.isFinite(value) && value > 0 && value < 1e10,
       ) ||
       !Number.isInteger(launchBranches) ||
       launchBranches < 0 ||
-      launchBranches > 100000 ||
-      !Number.isInteger(freeTicketLimit) ||
-      freeTicketLimit < 1 ||
-      freeTicketLimit > 100000
+      launchBranches > 100000
     ) {
       throw new Error(bippoT('راجع أسعار الباقة وحدودها.'));
     }
+    // The Pro plan is paid once; its price is the launch price.
     Object.assign(item, {
+      billing: 'once',
+      price: purchasePrice,
       purchase_price: purchasePrice,
       standard_price: standardPrice,
       launch_branches: launchBranches,
-      free_ticket_limit: freeTicketLimit,
       monthly_price: null,
       currency: 'DZD',
     });
@@ -226,13 +257,8 @@ export async function savePlan(form) {
   if (!cloud) {
     const d = read(),
       id = form.id || crypto.randomUUID();
-    d.plans = [
-      ...d.plans.filter((p) => p.id !== id),
-      {
-        ...item,
-        id,
-      },
-    ];
+    const old = d.plans.find((p) => p.id === id) || {};
+    d.plans = [...d.plans.filter((p) => p.id !== id), { ...old, ...item, id }];
     write(d, 'plans', id);
     return;
   }

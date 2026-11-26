@@ -221,15 +221,33 @@ export async function track(token) {
   if (error) throw error;
   return data?.[0] || null;
 }
+// «نادي» again / «بيبيلو مرة تانية»: the waiting screen shows and says the
+// number again. Not twice within 10 seconds.
+export async function recallOrder(order) {
+  if (!cloud) {
+    const rows = read();
+    const current = rows.find((o) => o.id === order.id);
+    if (!current || current.status !== 'ready') return false;
+    if (current.recalled_at && Date.now() - Date.parse(current.recalled_at) < 10000) return false;
+    const next = { ...current, recalled_at: new Date().toISOString() };
+    save(rows.map((o) => (o.id === current.id ? next : o)));
+    return true;
+  }
+  const { data, error } = await db.rpc('recall_order', { target: order.id });
+  if (error) throw new Error(bippoT('تعذر إعادة النداء في الشاشة.'));
+  return Boolean(data);
+}
 export async function display(token) {
   if (!cloud)
     return read()
       .filter(active)
-      .map(({ number, status, room, ready_at }) => ({
+      .map(({ number, status, room, ready_at, recalled_at }) => ({
         number,
         status,
         room: status === 'ready' ? room || null : null,
-        ready_at: status === 'ready' ? ready_at || null : null,
+        // A re-call shows as a new call on the screen.
+        ready_at:
+          status === 'ready' ? [ready_at, recalled_at].filter(Boolean).sort().at(-1) || null : null,
       }));
   const { data, error } = await db.rpc('display_orders', {
     ticket: token,
@@ -250,6 +268,7 @@ export async function displayBranding(token) {
         language: shop.display_language || 'ar',
         digits: shop.display_style?.digits || 'dots',
         theme: shop.display_style?.theme || 'dark',
+        palette: shop.display_style?.palette || null,
       };
     } catch {
       return null;

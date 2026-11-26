@@ -1992,5 +1992,10 @@
   "أزرق": "Bleu",
   "أحمر قاتم": "Bordeaux",
   "قهوة": "Café",
-  "فاتح": "Clair"
+  "فاتح": "Clair",
+  "لون البراند تاعك": "La couleur de votre marque",
+  "لون آخر": "Autre couleur",
+  "نحسبو من لونك ألوان الشاشة باش الرقم يبان مليح من بعيد.": "Nous en tirons les couleurs de l’écran pour que le numéro reste lisible de loin.",
+  "تعذر إعادة النداء في الشاشة.": "Impossible de rappeler le numéro à l’écran.",
+  "عاودنا نادينا {0} في الشاشة.": "Le numéro {0} est rappelé à l’écran."
 }

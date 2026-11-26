@@ -76,7 +76,11 @@ export async function saveScreenStyle(style) {
     localStorage.setItem(key, JSON.stringify({ ...current, display_style: style }));
     return style;
   }
-  const { error } = await db.rpc('set_screen_style', { digits: style.digits, theme: style.theme });
+  const { error } = await db.rpc('set_screen_style', {
+    digits: style.digits,
+    theme: style.theme,
+    palette: style.theme === 'custom' ? style.palette : null,
+  });
   if (error) throw new Error(bippoT('تعذر حفظ التغيير. عاود المحاولة.'));
   return style;
 }

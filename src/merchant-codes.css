@@ -113,3 +113,12 @@
 .screen-style .swatch { display: inline-grid; place-items: center; width: 26px; height: 26px; border-radius: 8px; }
 .screen-style .swatch i { display: grid; place-items: center; width: 16px; height: 16px; border-radius: 5px; }
 .screen-style fieldset:disabled button { cursor: default; opacity: 0.7; }
+.screen-style-brand { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; }
+.screen-style-brand button {
+  display: grid; place-items: center; width: 28px; height: 28px; padding: 0; border-radius: 50%;
+  border: 2px solid #fff; box-shadow: 0 0 0 1px var(--bippo-border, #e2e3dc); color: #fff; cursor: pointer;
+}
+.screen-style-brand button.active { box-shadow: 0 0 0 2px var(--bippo-primary, #0c3e38); }
+.screen-style-picker { display: inline-flex; align-items: center; gap: 6px; font-size: 13px; margin-inline-start: 6px; }
+.screen-style-picker input { width: 34px; height: 28px; padding: 0; border: 1px solid var(--bippo-border, #e2e3dc); border-radius: 8px; background: none; }
+.screen-style-note { display: block; margin-top: 6px; color: var(--bippo-muted, #54645f); }

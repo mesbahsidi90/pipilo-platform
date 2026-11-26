@@ -1,8 +1,14 @@
-import React, { useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { Check } from 'lucide-react';
 import { t } from './i18n.js';
 import DotNumber from './DotNumber';
-import { SCREEN_THEMES, screenStyle, themeVars } from './screenThemes';
+import {
+  BRAND_SWATCHES,
+  SCREEN_THEMES,
+  brandPalette,
+  screenStyle,
+  themeVars,
+} from './screenThemes';
 import { saveScreenStyle } from './shopSettings';
 
 // «شكل الشاشة»: number style + colour set, with a small preview of the TV.
@@ -10,10 +16,13 @@ export default function ScreenStylePicker({ value, canManage, onSaved }) {
   const [style, setStyle] = useState(() => screenStyle(value));
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
+  const later = useRef(null);
+  useEffect(() => () => clearTimeout(later.current), []);
 
   async function choose(next) {
     const previous = style;
     const chosen = screenStyle({ ...style, ...next });
+    if (chosen.theme !== 'custom') delete chosen.palette;
     setStyle(chosen);
     setBusy(true);
     setError('');
@@ -36,7 +45,11 @@ export default function ScreenStylePicker({ value, canManage, onSaved }) {
 
   return (
     <div className="screen-style">
-      <div className="screen-preview" style={themeVars(style.theme)} aria-hidden="true">
+      <div
+        className="screen-preview"
+        style={themeVars(style.theme, style.palette)}
+        aria-hidden="true"
+      >
         <div className="screen-preview-latest">{number('57', 'big')}</div>
         <div className="screen-preview-tiles">
           <span>{number('56', 'small')}</span>
@@ -84,6 +97,49 @@ export default function ScreenStylePicker({ value, canManage, onSaved }) {
             </button>
           ))}
         </div>
+      </fieldset>
+      <fieldset disabled={!canManage || busy}>
+        <legend>{t('لون البراند تاعك')}</legend>
+        <div className="screen-style-brand">
+          {BRAND_SWATCHES.map((colour) => {
+            const active = style.theme === 'custom' && style.palette?.color === colour;
+            return (
+              <button
+                key={colour}
+                type="button"
+                className={active ? 'active' : ''}
+                aria-pressed={active}
+                aria-label={colour}
+                title={colour}
+                style={{ background: colour }}
+                onClick={() => choose({ theme: 'custom', palette: brandPalette(colour) })}
+              >
+                {active && <Check size={14} />}
+              </button>
+            );
+          })}
+          <label className="screen-style-picker">
+            <input
+              type="color"
+              value={style.theme === 'custom' ? style.palette.color : '#0c3e38'}
+              onChange={(event) => {
+                // Preview at once; save when the colour has settled.
+                const next = {
+                  ...style,
+                  theme: 'custom',
+                  palette: brandPalette(event.target.value),
+                };
+                setStyle(next);
+                clearTimeout(later.current);
+                later.current = setTimeout(() => choose(next), 600);
+              }}
+            />
+            {t('لون آخر')}
+          </label>
+        </div>
+        <small className="screen-style-note">
+          {t('نحسبو من لونك ألوان الشاشة باش الرقم يبان مليح من بعيد.')}
+        </small>
       </fieldset>
       {error && (
         <p role="alert" className="error">

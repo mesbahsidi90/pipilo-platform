@@ -4,7 +4,7 @@ import { t, language } from './i18n';
 import DotNumber from './DotNumber';
 import { createOrderAudio } from './orderAudio';
 import { toneSource } from './alertTones';
-import { newlyReady, speakCalls } from './announce';
+import { newCalls, speakCalls } from './announce';
 import { boardView } from './boardRules';
 import { createVoiceCaller } from './voiceCall';
 import { screenStyle, themeVars } from './screenThemes';
@@ -71,7 +71,11 @@ export default function WaitingBoard({ orders, error, branding }) {
       : '';
   const view = boardView(orders || [], { clinic, now });
   // The look chosen in «الفروع والأكواد»: dots or plain digits, and a colour set.
-  const look = screenStyle({ digits: branding?.digits, theme: branding?.theme });
+  const look = screenStyle({
+    digits: branding?.digits,
+    theme: branding?.theme,
+    palette: branding?.palette,
+  });
   const number = (value) =>
     look.digits === 'bold' ? (
       <b className="board-number" dir="ltr">
@@ -142,12 +146,15 @@ export default function WaitingBoard({ orders, error, branding }) {
   // New calls: flash them, ring, say the number (twice when asked).
   useEffect(() => {
     if (!orders || error) return;
-    const current = new Set(
-      orders.filter((order) => order.status === 'ready').map((order) => order.number),
+    // number → call time; a later time means staff called it again.
+    const current = new Map(
+      orders
+        .filter((order) => order.status === 'ready')
+        .map((order) => [order.number, Date.parse(order.ready_at || '') || 1]),
     );
     const previous = previousReady.current;
     previousReady.current = current;
-    const called = newlyReady(previous, current);
+    const called = newCalls(previous, current);
     if (!called.length) return;
     const until = Date.now() + FLASH_MS;
     setFlash((value) => ({ ...value, ...Object.fromEntries(called.map((n) => [n, until])) }));
@@ -248,7 +255,7 @@ export default function WaitingBoard({ orders, error, branding }) {
       className={
         'waiting-board themed' + (clinic ? ' clinic' : '') + (callsOnly ? ' calls-only' : '')
       }
-      style={themeVars(look.theme)}
+      style={themeVars(look.theme, look.palette)}
       data-theme={look.theme}
     >
       <header className="waiting-board-header">

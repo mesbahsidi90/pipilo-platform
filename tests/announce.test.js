@@ -35,3 +35,24 @@ test('speaking is skipped without a matching voice', () => {
     ['الطلب رقم 5، طلبك واجد.', 'الطلب رقم 6، طلبك واجد.'],
   );
 });
+
+test('a number called again (its call time moved) is announced again', async () => {
+  const { newCalls } = await import('../src/announce.js');
+  const before = new Map([
+    ['57', 100],
+    ['46', 50],
+  ]);
+  assert.deepEqual(newCalls(null, before), []);
+  assert.deepEqual(newCalls(before, new Map(before)), []);
+  assert.deepEqual(
+    newCalls(
+      before,
+      new Map([
+        ['57', 100],
+        ['46', 200],
+        ['12', 300],
+      ]),
+    ),
+    ['46', '12'],
+  );
+});

@@ -39,6 +39,7 @@ import {
   listOrders,
   createOrder,
   transition,
+  recallOrder,
   subscribe,
   counterScanRequired,
   sandbox,
@@ -321,6 +322,17 @@ export default function Orders({ Share, workspace }) {
   async function ringAgain(order) {
     setBusy(true);
     try {
+      // The waiting screen calls the number again too.
+      const onScreen = await recallOrder(order).catch(() => false);
+      const canPush = cloud || (sandbox && trialAvailable);
+      if (!canPush) {
+        setNotice(
+          onScreen
+            ? bippoT('عاودنا نادينا {0} في الشاشة.', [order.number])
+            : bippoT('استنّى شوية قبل ما تعاود الرنّة.'),
+        );
+        return;
+      }
       const result = sandbox ? await ringTrialOrder(order.token) : await retryPush(order.id, true);
       setNotice(
         result.sent > 0
@@ -341,8 +353,7 @@ export default function Orders({ Share, workspace }) {
   async function quickCall(number) {
     const action = callAction(orders || [], number);
     if (action.type === 'already') {
-      if (cloud || (sandbox && trialAvailable)) await ringAgain(action.order);
-      else setNotice(bippoT('الرقم {0} راه في الشاشة.', [number]));
+      await ringAgain(action.order);
       return true;
     }
     if (action.type === 'ready') {
@@ -681,7 +692,7 @@ export default function Orders({ Share, workspace }) {
                   <Check size={15} />
                 </button>
               )}
-              {order.status === 'ready' && (cloud || (sandbox && trialAvailable)) && (
+              {order.status === 'ready' && (
                 <button
                   type="button"
                   className="button outline small"
@@ -869,7 +880,7 @@ export default function Orders({ Share, workspace }) {
             busy={busy}
             onCall={quickCall}
             onCollect={(order) => mark(order, 'collected')}
-            onRingAgain={cloud || (sandbox && trialAvailable) ? ringAgain : null}
+            onRingAgain={ringAgain}
             venue={shop?.name}
             notice={notice}
             labelNumber={bippoT('رقم الفاتورة')}

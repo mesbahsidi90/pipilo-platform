@@ -69,6 +69,13 @@
   #latest .dot.on { background: #ffffff; }
   .glyph { font-weight: 700; color: #ffffff; vertical-align: middle; }
   .boldnum { font-weight: 800; line-height: 1; letter-spacing: 0.04em; }
+  #latestNum .num { display: inline-block; -webkit-animation: pulse 1.6s ease-in-out infinite; animation: pulse 1.6s ease-in-out infinite; }
+  #recent li .num { display: inline-block; -webkit-animation: pulse-soft 2.4s ease-in-out infinite; animation: pulse-soft 2.4s ease-in-out infinite; }
+  @-webkit-keyframes pulse { 0%, 100% { -webkit-transform: scale(1); opacity: 1; } 50% { -webkit-transform: scale(1.06); opacity: 0.86; } }
+  @keyframes pulse { 0%, 100% { transform: scale(1); opacity: 1; } 50% { transform: scale(1.06); opacity: 0.86; } }
+  @-webkit-keyframes pulse-soft { 0%, 100% { -webkit-transform: scale(1); } 50% { -webkit-transform: scale(1.04); } }
+  @keyframes pulse-soft { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.04); } }
+  @media (prefers-reduced-motion: reduce) { #latestNum .num, #recent li .num { -webkit-animation: none; animation: none; } }
   #notice { position: absolute; bottom: 2vh; left: 2vw; right: 2vw; margin: 0; padding: 1.6vh; text-align: center;
     background: #5a2a1f; color: #ffd7cc; border-radius: 1.4vh; font-size: 2.4vh; }
   #unlock { position: absolute; top: 50%; left: 50%; width: 70vw; margin-left: -35vw; margin-top: -10vh;
@@ -94,6 +101,7 @@
       <div><b id="name">Bipilo</b><small id="sub">شاشة النداء</small></div>
     </div>
     <div id="actions">
+      <button id="repeatBtn" type="button" class="tool"><span class="ico" id="repeatIco"></span><span id="repeatText">مرتين</span></button>
       <button id="soundBtn" type="button" class="tool"><span class="ico" id="soundIco"></span><span id="soundText">الصوت</span></button>
       <button id="fullBtn" type="button" class="tool" hidden><span class="ico" id="fullIco"></span><span id="fullText">ملء الشاشة</span></button>
       <div id="clock"></div>
@@ -138,13 +146,13 @@
     sub: 'Écran d’appel', label: 'Votre commande est prête', latest: 'Dernière commande prête',
     empty: 'Aucun appel pour l’instant.', connecting: 'Connexion…', notice: 'Écran hors ligne. Reconnexion…',
     unlock: 'Appuyez ici (OK) pour activer le son', soundOn: 'Son activé', soundOff: 'Activer le son',
-    full: 'Plein écran', exitFull: 'Quitter', missing: 'Lien de l’écran incomplet.',
+    full: 'Plein écran', exitFull: 'Quitter', repeat: 'Deux fois', missing: 'Lien de l’écran incomplet.',
     badCode: 'Code d’écran inconnu. Vérifiez-le dans Bipilo : Succursales et codes.'
   }, ar: {
     sub: 'شاشة النداء', label: 'تفضّل استلم طلبك', latest: 'آخر طلب واجد',
     empty: 'ما كاش نداء دروك.', connecting: 'جارٍ الاتصال…', notice: 'تعذر تحديث الشاشة. نعيد الاتصال…',
     unlock: 'اضغط هنا (OK) باش تشغّل الصوت', soundOn: 'الصوت شاعل', soundOff: 'شغّل الصوت',
-    full: 'ملء الشاشة', exitFull: 'خروج', missing: 'رابط الشاشة ناقص.',
+    full: 'ملء الشاشة', exitFull: 'خروج', repeat: 'مرتين', missing: 'رابط الشاشة ناقص.',
     badCode: 'كود الشاشة غالط. شوفو في Bipilo: الفروع والأكواد.'
   } };
   var words = WORDS[french ? 'fr' : 'ar'];
@@ -162,6 +170,7 @@
     setEmpty(emptyKey);
     if (typeof showSound === 'function' && $('soundIco').innerHTML) showSound();
     if (typeof showFull === 'function' && $('fullIco').innerHTML) showFull();
+    if (typeof showRepeat === 'function' && $('repeatIco').innerHTML) showRepeat();
   }
   // The branch's language from Bipilo («الفروع والأكواد»).
   function setLanguage(lang) {
@@ -221,10 +230,18 @@
     light: { bg: '#eef1ec', panel: '#ffffff', latest: '#0c3e38', fresh: '#157a5c', tile: '#e3ede7', accent: '#0c3e38', digit: '#ffffff', tileDigit: '#0c3e38', text: '#13211e', muted: '#56665f' }
   };
   var digitsStyle = 'dots', themeName = '';
-  function applyTheme(name) {
-    var t = THEMES[name] || THEMES.dark;
-    if (name === themeName) return;
-    themeName = THEMES[name] ? name : 'dark';
+  function validPalette(p) {
+    if (!p || typeof p !== 'object') return false;
+    var keys = ['bg', 'panel', 'latest', 'fresh', 'tile', 'accent', 'digit', 'tileDigit', 'text', 'muted'];
+    for (var i = 0; i < keys.length; i++) if (!/^#[0-9a-f]{6}$/i.test(p[keys[i]] || '')) return false;
+    return true;
+  }
+  function applyTheme(name, palette) {
+    var custom = name === 'custom' && validPalette(palette);
+    var t = custom ? palette : THEMES[name] || THEMES.dark;
+    var key = custom ? 'custom' + t.latest + t.bg + t.accent : THEMES[name] ? name : 'dark';
+    if (key === themeName) return;
+    themeName = key;
     var css =
       'html, body { background: ' + t.bg + '; color: ' + t.text + '; }' +
       '#sub, #empty { color: ' + t.muted + '; }' +
@@ -398,6 +415,23 @@
   // Any key or tap turns the sound on, unless someone switched it off on purpose.
   document.addEventListener('keydown', function () { if (!soundOn && !muted) unlock(); }, false);
   document.addEventListener('click', function () { if (!soundOn && !muted) unlock(); }, false);
+  // «مرتين»: each call is said again 7 seconds later. Remembered on this TV.
+  var ICON_REPEAT = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 2l4 4-4 4"/><path d="M3 11V9a3 3 0 0 1 3-3h15"/><path d="M7 22l-4-4 4-4"/><path d="M21 13v2a3 3 0 0 1-3 3H3"/></svg>';
+  var repeatOn = false;
+  try { repeatOn = localStorage.getItem('bipilo-tv-repeat') === '1'; } catch (e) {}
+  function showRepeat() {
+    $('repeatIco').innerHTML = ICON_REPEAT;
+    $('repeatText').innerHTML = '';
+    $('repeatText').appendChild(document.createTextNode(words.repeat));
+    $('repeatBtn').className = repeatOn ? 'tool on' : 'tool';
+  }
+  $('repeatBtn').onclick = function (event) {
+    if (event && event.stopPropagation) event.stopPropagation();
+    repeatOn = !repeatOn;
+    try { if (repeatOn) localStorage.setItem('bipilo-tv-repeat', '1'); else localStorage.removeItem('bipilo-tv-repeat'); } catch (e) {}
+    showRepeat();
+  };
+  showRepeat();
   $('soundBtn').onclick = function (event) {
     if (event && event.stopPropagation) event.stopPropagation();
     if (soundOn) {
@@ -525,10 +559,11 @@
       setTimeout(done, (at - ctx.currentTime) * 1000 + 300);
     }
   }
-  function announce(numbers) {
+  function announce(numbers, again) {
     if (!soundOn || !ctx) return;
     for (var i = 0; i < numbers.length && i < 4; i++) queue.push(numbers[i]);
     if (!speaking) speakNext();
+    if (repeatOn && !again) setTimeout(function () { announce(numbers, true); }, 7000);
   }
   function speakNext() {
     if (!queue.length) { speaking = false; return; }
@@ -538,9 +573,11 @@
   }
 
   // ---- loop ---------------------------------------------------------------
+  // number → when it was (last) called; a later time = staff called it again.
   function readyNumbers(list) {
     var set = {};
-    for (var i = 0; i < list.length; i++) if (list[i].status === 'ready') set[list[i].number] = true;
+    for (var i = 0; i < list.length; i++)
+      if (list[i].status === 'ready') set[list[i].number] = Date.parse(list[i].ready_at || '') || 1;
     return set;
   }
   function poll() {
@@ -552,7 +589,9 @@
         $('notice').hidden = true;
         orders = data;
         var current = readyNumbers(data), called = [], now = new Date().getTime();
-        if (previous) for (var n in current) if (current.hasOwnProperty(n) && !previous[n]) called.push(n);
+        if (previous)
+          for (var n in current)
+            if (current.hasOwnProperty(n) && (!previous[n] || current[n] > previous[n])) called.push(n);
         previous = current;
         for (var k = 0; k < called.length; k++) flash[called[k]] = now + FLASH_MS;
         if (called.length) announce(called);
@@ -566,7 +605,7 @@
       if (err || !data) return;
       if (!q.venue && data.name) setName(data.name);
       if (data.language) setLanguage(data.language);
-      applyTheme(data.theme);
+      applyTheme(data.theme, data.palette);
       applyDigits(data.digits);
       render();
       if (typeof data.logo === 'string' && /^data:image\/(png|jpeg|webp);base64,/.test(data.logo)) {

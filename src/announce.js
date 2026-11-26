@@ -39,3 +39,12 @@ export function speakCalls(numbers, options, synth = globalThis.speechSynthesis)
   }
   return true;
 }
+
+// Calls to announce: numbers newly ready, and numbers staff called again
+// (their call time moved on). `previous` / `current`: Map number → time.
+export function newCalls(previous, current) {
+  if (!previous) return [];
+  return [...current.entries()]
+    .filter(([number, at]) => !previous.has(number) || at > previous.get(number))
+    .map(([number]) => number);
+}

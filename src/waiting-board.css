@@ -274,3 +274,15 @@ body:has(.waiting-board) .language-switcher { display: none; }
 @media (prefers-reduced-motion: reduce) {
   .waiting-board.themed .waiting-board-latest.fresh { animation: none; background: var(--wb-fresh); }
 }
+
+/* The numbers pulse gently; the newest call stronger. */
+.waiting-board-latest .dot-number,
+.waiting-board-latest .board-number { animation: board-pulse 1.6s ease-in-out infinite; }
+.waiting-board-recent .dot-number,
+.waiting-board-recent .board-number { animation: board-pulse-soft 2.4s ease-in-out infinite; }
+@keyframes board-pulse { 0%, 100% { transform: scale(1); opacity: 1; } 50% { transform: scale(1.06); opacity: 0.86; } }
+@keyframes board-pulse-soft { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.04); } }
+@media (prefers-reduced-motion: reduce) {
+  .waiting-board-latest .dot-number, .waiting-board-latest .board-number,
+  .waiting-board-recent .dot-number, .waiting-board-recent .board-number { animation: none; }
+}

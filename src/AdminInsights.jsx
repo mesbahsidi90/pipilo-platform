@@ -1,9 +1,9 @@
 import { t as bippoT, locale } from './i18n.js';
 import { AdminProQuote } from './ProQuote';
 import React, { useState } from 'react';
-import { Bell, Copy, Mail, MessageCircle, Phone, Store } from 'lucide-react';
-import { shopTypes, subStates } from './adminData';
-import { toCsv } from './adminDomain';
+import { Bell, Check, Copy, Mail, MessageCircle, Phone, Store } from 'lucide-react';
+import { markWelcomed, shopTypes, subStates } from './adminData';
+import { toCsv, welcomeLink } from './adminDomain';
 import { SOURCE_ANSWERS, SOURCE_LABELS, trackingLink } from './signupSourceRules';
 
 // «فيسبوك · ramadan-cafes» from a shop's signup source.
@@ -28,6 +28,57 @@ export function alertText(alert) {
   if (alert.kind === 'trial_ending')
     return bippoT('التجربة تكمل بعد {0} يوم', [Math.max(alert.days, 0)]);
   return bippoT('استعمل {0} من {1} طلب هذا الشهر', [alert.used, alert.limit]);
+}
+
+// «رسالة ترحيب»: opens the admin's WhatsApp with the welcome written, and
+// remembers the shop as welcomed. Shows «رحّبنا» once done.
+export function WelcomeButton({ shop, row, onMarked, full = false }) {
+  const [busy, setBusy] = useState(false);
+  const link = welcomeLink(row?.owner?.phone, shop.name);
+  async function mark(done) {
+    setBusy(true);
+    try {
+      onMarked?.(shop.id, await markWelcomed(shop.id, done));
+    } catch {
+      // The link still opened; the mark can be retried.
+    } finally {
+      setBusy(false);
+    }
+  }
+  if (row?.welcomed_at)
+    return (
+      <span className="admin-welcomed" title={dateTime(row.welcomed_at)}>
+        <Check size={13} />
+        {full ? bippoT('رحّبنا بيه في {0}', [dateTime(row.welcomed_at)]) : bippoT('رحّبنا')}
+        {full && (
+          <button
+            type="button"
+            className="admin-text-link"
+            disabled={busy}
+            onClick={() => mark(false)}
+          >
+            {bippoT('ما بعثتهاش؟ نحّي العلامة')}
+          </button>
+        )}
+      </span>
+    );
+  if (!link)
+    return full ? (
+      <small className="admin-muted">{bippoT('ما عندوش رقم تليفون للترحيب.')}</small>
+    ) : null;
+  return (
+    <a
+      className="button small admin-welcome"
+      href={link}
+      target="_blank"
+      rel="noopener noreferrer"
+      aria-disabled={busy}
+      onClick={() => void mark(true)}
+    >
+      <MessageCircle size={14} />
+      {bippoT('رسالة ترحيب')}
+    </a>
+  );
 }
 
 // Contact links for a shop owner: call, WhatsApp, email.
@@ -140,6 +191,7 @@ export function ShopSheet({
   invitedBy,
   invited = [],
   onEdit,
+  onWelcomed,
 }) {
   const features = row?.features || {};
   const used = row?.orders_month || 0;
@@ -163,6 +215,10 @@ export function ShopSheet({
           <dt>{bippoT('صاحب المحل')}</dt>
           <dd>
             <ContactLinks owner={row?.owner} />
+          </dd>
+          <dt>{bippoT('الترحيب')}</dt>
+          <dd>
+            <WelcomeButton shop={shop} row={row} onMarked={onWelcomed} full />
           </dd>
           <dt>{bippoT('عرفنا من')}</dt>
           <dd>{sourceText(row?.source)}</dd>

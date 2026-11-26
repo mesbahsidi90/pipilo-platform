@@ -320,7 +320,8 @@ export async function loadAdminExtras() {
           orders_month: s.order_count || 0,
           orders_total: s.order_count || 0,
           last_order_at: null,
-          owner: null,
+          owner: s.owner || null,
+          welcomed_at: (d.welcomes || {})[s.id] || null,
           members: d.memberships.filter((m) => m.shop_id === s.id).length,
           features: {},
           request: (d.requests || []).find((r) => r.shop_id === s.id) || null,
@@ -425,4 +426,15 @@ export async function loadShopInsights(days = 30) {
     loyalty_stamps: 0,
   }));
   return { days, since: new Date(since).toISOString(), shops, trial: null };
+}
+
+// «رسالة ترحيب»: remember that a shop owner was welcomed (or forget it).
+export async function markWelcomed(shopId, done = true) {
+  if (cloud) return check(await db.rpc('admin_mark_welcomed', { target: shopId, done }));
+  const d = read();
+  d.welcomes = { ...(d.welcomes || {}) };
+  if (done) d.welcomes[shopId] = new Date().toISOString();
+  else delete d.welcomes[shopId];
+  write(d, 'shop_welcomes', shopId);
+  return d.welcomes[shopId] || null;
 }

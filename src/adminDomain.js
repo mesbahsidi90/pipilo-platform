@@ -110,3 +110,23 @@ export function insightHints(shop, now = Date.now()) {
   if (Number(shop.prep_median) >= 25) hints.push('slow');
   return hints;
 }
+
+// «رسالة ترحيب»: the WhatsApp welcome for a new shop owner.
+export function welcomeMessage(shopName) {
+  return [
+    'السلام عليكم 👋 مرحبا بيك في Bipilo!',
+    `محلك «${shopName}» راهو واجد.`,
+    'باش تبدا: اطبع الكود من «الفروع والأكواد» وحطّو في الكونتوار، وحل «نداء سريع» في تليفون العامل.',
+    'إذا تحتاج مساعدة ولا عندك سؤال، كتبلي هنا ونعاونك.',
+    '— فريق Bipilo',
+  ].join('\n');
+}
+
+// wa.me link with the welcome ready to send; null without a usable number.
+// Algerian local numbers (0550…) get the 213 country code.
+export function welcomeLink(phone, shopName) {
+  let digits = String(phone || '').replace(/\D/g, '');
+  if (/^0[5-7]\d{8}$/.test(digits)) digits = '213' + digits.slice(1);
+  if (!/^[1-9]\d{7,14}$/.test(digits)) return null;
+  return 'https://wa.me/' + digits + '?text=' + encodeURIComponent(welcomeMessage(shopName));
+}

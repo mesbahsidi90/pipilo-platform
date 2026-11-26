@@ -32,8 +32,8 @@ import AdminOrderActivity from './AdminOrderActivity';
 import AdminShopInsights from './AdminShopInsights';
 import { AdminAnnouncements } from './PlatformAnnouncements';
 import AdminAccess from './AdminAccess';
-import { AlertList, ShopSheet, StatsTab, exportShops } from './AdminInsights';
-import { adminAlerts } from './adminDomain';
+import { AlertList, ShopSheet, StatsTab, WelcomeButton, exportShops } from './AdminInsights';
+import { adminAlerts, welcomeLink } from './adminDomain';
 import { cloud, db } from './store';
 import {
   isAdmin,
@@ -351,6 +351,22 @@ function AdminPanel({ session }) {
   const overview = extras?.overview?.shops || [],
     freeLimit = extras?.overview?.free_limit || 100;
   const alerts = adminAlerts({ shops, subs, overview, freeLimit });
+  // «رسالة ترحيب»: shops with an owner number not yet welcomed.
+  const toWelcome = overview.filter(
+    (r) => !r.parent_id && !r.welcomed_at && welcomeLink(r.owner?.phone, ''),
+  ).length;
+  function welcomed(id, stamp) {
+    setExtras(
+      (x) =>
+        x && {
+          ...x,
+          overview: {
+            ...x.overview,
+            shops: x.overview.shops.map((r) => (r.id === id ? { ...r, welcomed_at: stamp } : r)),
+          },
+        },
+    );
+  }
   const accounts = extras?.members || members.map((m) => ({ ...m }));
   function resolveRequest(id, outcome, shop) {
     perform(
@@ -567,7 +583,11 @@ function AdminPanel({ session }) {
                     <div className="admin-section-title">
                       <div>
                         <h2>{bippoT('آخر المحلات')}</h2>
-                        <p>{bippoT('المقاهي والمطاعم اللي انضمّو للمنصة.')}</p>
+                        <p>
+                          {toWelcome
+                            ? bippoT('{0} محلات جداد مازال ما رحّبتش بيهم.', [toWelcome])
+                            : bippoT('المقاهي والمطاعم اللي انضمّو للمنصة.')}
+                        </p>
                       </div>
                       <button onClick={() => setTab('shops')} className="admin-text-link">
                         {bippoT('شوف الكل ')}
@@ -585,6 +605,11 @@ function AdminPanel({ session }) {
                             {shopTypes[s.kind]} · {s.city || bippoT('المدينة غير محددة')}
                           </small>
                         </div>
+                        <WelcomeButton
+                          shop={s}
+                          row={overview.find((r) => r.id === s.id)}
+                          onMarked={welcomed}
+                        />
                         <Badge status={s.status} />
                         <button
                           className="icon-button"
@@ -1243,6 +1268,7 @@ function AdminPanel({ session }) {
               invitedBy={shops.find(
                 (s) => s.id === overview.find((r) => r.id === sheetShop.id)?.source?.referred_by,
               )}
+              onWelcomed={welcomed}
               invited={shops.filter((s) =>
                 overview.some((r) => r.id === s.id && r.source?.referred_by === sheetShop.id),
               )}

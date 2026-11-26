@@ -282,3 +282,28 @@
 }
 .admin-access-form{display:flex;align-items:flex-end;gap:10px;flex-wrap:wrap;margin-bottom:16px}.admin-access-form label{display:grid;gap:6px;flex:1;min-width:220px;font-size:12px;color:var(--bippo-muted)}.admin-access-form input{width:100%;padding:10px;border:1px solid #dce6d4;border-radius:9px;background:#fafcf8;font-size:13px}.admin-access-confirm{display:inline-flex;gap:6px}.admin-main .button.admin-danger{background:#a43326;border-color:#a43326;color:#fff}
 .admin-table-scroll{position:relative}
+
+/* «رسالة ترحيب» */
+.admin-main .admin-welcome,
+.admin-sheet .admin-welcome {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  white-space: nowrap;
+  background: #1f8f5a;
+  font-size: 11px;
+  padding: 6px 11px;
+}
+.admin-welcome[aria-disabled='true'] {
+  opacity: 0.6;
+  pointer-events: none;
+}
+.admin-welcomed {
+  display: inline-flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px;
+  font-size: 11px;
+  color: #428d63;
+  white-space: nowrap;
+}

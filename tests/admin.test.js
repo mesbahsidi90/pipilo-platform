@@ -106,3 +106,14 @@ test('«أداء الأنشطة» sums the funnel and points at what to improve'
   assert.equal(share(1, 3), 33);
   assert.equal(share(1, 0), null);
 });
+
+test('«رسالة ترحيب» opens WhatsApp with the shop name, or nothing without a number', async () => {
+  const { welcomeLink, welcomeMessage } = await import('../src/adminDomain.js');
+  const link = welcomeLink('+213 550 12 34 56', 'البسطة');
+  assert.ok(link.startsWith('https://wa.me/213550123456?text='));
+  assert.ok(decodeURIComponent(link.split('text=')[1]).includes('«البسطة»'));
+  assert.ok(welcomeLink('0661234567', 'x').startsWith('https://wa.me/213661234567?'));
+  assert.equal(welcomeLink('', 'x'), null);
+  assert.equal(welcomeLink('123', 'x'), null);
+  assert.match(welcomeMessage('x'), /تحتاج مساعدة/);
+});

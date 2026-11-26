@@ -29,3 +29,12 @@ export function calledOrders(rows, limit = 12) {
     .sort((a, b) => (Date.parse(b.ready_at || '') || 0) - (Date.parse(a.ready_at || '') || 0))
     .slice(0, limit);
 }
+
+// Numbers waiting to be called, first come first: mostly customers who scanned
+// the counter QR and typed their invoice number (they are on the alert page).
+export function waitingOrders(rows, limit = 24) {
+  return rows
+    .filter((order) => order.status === 'preparing' && !order.counter_pending)
+    .sort((a, b) => (Date.parse(a.created_at || '') || 0) - (Date.parse(b.created_at || '') || 0))
+    .slice(0, limit);
+}

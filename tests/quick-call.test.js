@@ -37,3 +37,29 @@ test('the called list shows ready numbers, newest call first', () => {
   );
   assert.equal(calledOrders(rows, 1).length, 1);
 });
+
+test('numbers registered from the QR wait in «نداء سريع», first come first', async () => {
+  const { waitingOrders } = await import('../src/quickCallRules.js');
+  const rows = [
+    { id: 'a', number: '12', status: 'preparing', created_at: '2026-11-26T10:05:00Z' },
+    {
+      id: 'b',
+      number: '9',
+      status: 'preparing',
+      created_at: '2026-11-26T10:01:00Z',
+      invoice_request_key: 'k',
+    },
+    { id: 'c', number: '7', status: 'ready', created_at: '2026-11-26T10:00:00Z' },
+    {
+      id: 'd',
+      number: '5',
+      status: 'preparing',
+      counter_pending: true,
+      created_at: '2026-11-26T10:00:00Z',
+    },
+  ];
+  assert.deepEqual(
+    waitingOrders(rows).map((o) => o.number),
+    ['9', '12'],
+  );
+});

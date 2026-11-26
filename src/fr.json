@@ -1997,5 +1997,9 @@
   "لون آخر": "Autre couleur",
   "نحسبو من لونك ألوان الشاشة باش الرقم يبان مليح من بعيد.": "Nous en tirons les couleurs de l’écran pour que le numéro reste lisible de loin.",
   "تعذر إعادة النداء في الشاشة.": "Impossible de rappeler le numéro à l’écran.",
-  "عاودنا نادينا {0} في الشاشة.": "Le numéro {0} est rappelé à l’écran."
+  "عاودنا نادينا {0} في الشاشة.": "Le numéro {0} est rappelé à l’écran.",
+  "زبائن يستنّاو في تليفوناتهم": "Clients qui attendent sur leur téléphone",
+  "كي يوجد الطلب، اضغط على الرقم: يبان في الشاشة ويصوني تليفون الزبون.": "Quand la commande est prête, touchez le numéro : il s’affiche à l’écran et le téléphone du client sonne.",
+  "نادي {0}": "Appeler {0}",
+  "كي يمسح الزبون الكود ويكتب رقم فاتورتو، يبان رقمو هنا.": "Quand un client scanne le code et saisit son numéro de ticket, il apparaît ici."
 }

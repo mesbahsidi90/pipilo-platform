@@ -1,5 +1,5 @@
 import React, { useEffect, useRef, useState } from 'react';
-import { Check, Delete, ExternalLink, Megaphone, Monitor, Repeat } from 'lucide-react';
+import { Check, Delete, ExternalLink, Megaphone, Monitor, Repeat, Smartphone } from 'lucide-react';
 import { t } from './i18n.js';
 import DotNumber from './DotNumber';
 import { cleanCallNumber } from './quickCallRules';
@@ -11,6 +11,7 @@ import './quick-call.css';
 // big on the waiting screen with sound. No «قيد التحضير» step.
 export default function QuickCall({
   calls,
+  waiting = [],
   busy,
   onCall,
   onCollect,
@@ -56,6 +57,46 @@ export default function QuickCall({
           </a>
         )}
       </header>
+
+      <section className="quick-call-waiting" aria-labelledby="quick-call-waiting-title">
+        <h2 id="quick-call-waiting-title">
+          <Smartphone size={20} />
+          {t('زبائن يستنّاو في تليفوناتهم')}
+          {waiting.length > 0 && <span className="quick-call-count">{waiting.length}</span>}
+        </h2>
+        {waiting.length ? (
+          <>
+            <p className="quick-call-hint">
+              {t('كي يوجد الطلب، اضغط على الرقم: يبان في الشاشة ويصوني تليفون الزبون.')}
+            </p>
+            <ul>
+              {waiting.map((order) => (
+                <li key={order.id}>
+                  <button
+                    type="button"
+                    className={
+                      Date.now() - (Date.parse(order.created_at || '') || 0) < 30000 ? 'new' : ''
+                    }
+                    disabled={busy}
+                    onClick={() => onCall(order.number)}
+                    aria-label={t('نادي {0}', [order.number])}
+                  >
+                    <b dir="ltr">{order.number}</b>
+                    <span>
+                      <Megaphone size={18} />
+                      {t('نادي')}
+                    </span>
+                  </button>
+                </li>
+              ))}
+            </ul>
+          </>
+        ) : (
+          <p className="quick-call-empty">
+            {t('كي يمسح الزبون الكود ويكتب رقم فاتورتو، يبان رقمو هنا.')}
+          </p>
+        )}
+      </section>
 
       <div className="quick-call-body">
         <form className="quick-call-pad" onSubmit={submit}>

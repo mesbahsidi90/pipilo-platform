@@ -168,3 +168,93 @@
 .quick-call-pad {
   max-width: 460px;
 }
+
+/* Customers who scanned the counter QR: one tap = screen + phone ring. */
+.quick-call-waiting {
+  background: var(--bippo-surface, #fff);
+  border: 2px solid var(--bippo-primary, #0c3e38);
+  border-radius: 24px;
+  padding: 18px 20px;
+}
+.quick-call-waiting h2 {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 0 0 6px;
+  font-size: 19px;
+}
+.quick-call-count {
+  min-width: 28px;
+  padding: 2px 9px;
+  border-radius: 999px;
+  background: var(--bippo-primary, #0c3e38);
+  color: #fff;
+  font-size: 15px;
+  text-align: center;
+}
+.quick-call-hint {
+  margin: 0 0 14px;
+  color: var(--bippo-muted, #54645f);
+}
+.quick-call-waiting ul {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(132px, 1fr));
+  gap: 12px;
+}
+.quick-call-waiting li button {
+  width: 100%;
+  display: grid;
+  gap: 6px;
+  justify-items: center;
+  padding: 14px 10px 12px;
+  border-radius: 18px;
+  border: 1px solid var(--bippo-border, #e2e3dc);
+  background: var(--bippo-surface-muted, #f1f1ed);
+  color: var(--bippo-text, #192a27);
+  font: inherit;
+  cursor: pointer;
+}
+.quick-call-waiting li b {
+  font-size: 44px;
+  line-height: 1;
+  font-weight: 800;
+}
+.quick-call-waiting li span {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  width: 100%;
+  justify-content: center;
+  padding: 9px 0;
+  border-radius: 12px;
+  background: var(--bippo-primary, #0c3e38);
+  color: #fff;
+  font-weight: 700;
+  font-size: 18px;
+}
+.quick-call-waiting li button:hover span {
+  filter: brightness(1.15);
+}
+.quick-call-waiting li button:disabled {
+  opacity: 0.6;
+  cursor: wait;
+}
+.quick-call-waiting li button.new {
+  animation: quick-call-arrive 1.2s ease-out 3;
+}
+@keyframes quick-call-arrive {
+  0% {
+    box-shadow: 0 0 0 0 rgba(12, 62, 56, 0.45);
+  }
+  100% {
+    box-shadow: 0 0 0 14px rgba(12, 62, 56, 0);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .quick-call-waiting li button.new {
+    animation: none;
+  }
+}

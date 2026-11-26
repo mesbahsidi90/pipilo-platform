@@ -83,7 +83,7 @@ import { toneSource } from './alertTones';
 import { branchLoyalty, redeemLoyalty } from './loyalty';
 import MerchantFeatures from './MerchantFeatures';
 import QuickCall from './QuickCall';
-import { callAction, calledOrders } from './quickCallRules';
+import { callAction, calledOrders, waitingOrders } from './quickCallRules';
 import { ShopAnnouncements } from './PlatformAnnouncements';
 import OnlineOrderInfo from './OnlineOrderInfo';
 import { acceptOnlineOrder } from './ordering';
@@ -877,6 +877,7 @@ export default function Orders({ Share, workspace }) {
         {tab === 'call' && !activity.clinic && (
           <QuickCall
             calls={calledOrders(orders || [])}
+            waiting={waitingOrders(orders || [])}
             busy={busy}
             onCall={quickCall}
             onCollect={(order) => mark(order, 'collected')}

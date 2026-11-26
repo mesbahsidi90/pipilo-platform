@@ -58,3 +58,55 @@ export function toCsv(rows) {
   };
   return '﻿' + rows.map((row) => row.map(cell).join(',')).join('\r\n');
 }
+
+// «أداء الأنشطة»: share of orders, as a whole percent (null when no orders).
+export const share = (part, whole) => (whole > 0 ? Math.round((part / whole) * 100) : null);
+
+// Platform totals for the guest funnel, summed over the shops.
+export function insightTotals(shops) {
+  const keys = [
+    'orders',
+    'today',
+    'followed',
+    'alerts_on',
+    'rang',
+    'delivered',
+    'saw_ready',
+    'coming',
+    'played',
+    'ratings',
+    'comments',
+    'recalled',
+    'cancelled',
+    'loyalty_stamps',
+  ];
+  const totals = Object.fromEntries(keys.map((key) => [key, 0]));
+  let stars = 0;
+  for (const shop of shops) {
+    for (const key of keys) totals[key] += Number(shop[key]) || 0;
+    stars += (Number(shop.rating_avg) || 0) * (Number(shop.ratings) || 0);
+  }
+  totals.rating_avg = totals.ratings ? Math.round((stars / totals.ratings) * 10) / 10 : null;
+  totals.active = shops.filter((shop) => Number(shop.orders) > 0).length;
+  return totals;
+}
+
+// Short hints for product work, from one shop's numbers. Needs ≥ 10 orders to
+// say anything about rates, so a few test orders do not raise alarms.
+export function insightHints(shop, now = Date.now()) {
+  const hints = [];
+  const orders = Number(shop.orders) || 0;
+  const last = shop.last_order_at ? Date.parse(shop.last_order_at) : null;
+  if (!orders) hints.push('no_orders');
+  else if (last && now - last > 7 * 86400000) hints.push('stopped');
+  if (orders >= 10) {
+    const followed = share(shop.followed, orders);
+    if (followed < 30) hints.push('few_follow');
+    if (shop.followed >= 5 && share(shop.alerts_on, shop.followed) < 50) hints.push('few_alerts');
+    if (shop.rang >= 5 && share(shop.delivered, shop.rang) < 60) hints.push('weak_delivery');
+    if (share(shop.cancelled, orders) >= 15) hints.push('many_cancelled');
+    if (!shop.ratings) hints.push('no_ratings');
+  }
+  if (Number(shop.prep_median) >= 25) hints.push('slow');
+  return hints;
+}

@@ -652,6 +652,7 @@ function Customer({ token }) {
       number={o?.number}
       status={o?.status}
       room={o?.room}
+      onGame={() => void report('game')}
       acknowledged={(ack || Boolean(o?.coming_at)) && !again}
       loading={!o && !last && !error}
       error={error || (!o && last ? bippoT('راجع موظف المحل باش يعطيك رابط الطلب.') : '')}

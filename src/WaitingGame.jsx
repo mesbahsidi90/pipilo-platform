@@ -23,7 +23,7 @@ const readBest = (key) => {
     return 0;
   }
 };
-export default function WaitingGame({ kind }) {
+export default function WaitingGame({ kind, onStart }) {
   const name = gameFor(kind) || 'coffee';
   const theme = gameThemes[name];
   const key = bestKey(name);
@@ -72,6 +72,7 @@ function CupGameModal({ theme, storeKey, best, onBest, onClose }) {
     setView({ phase: next.phase, score: next.score, perfect: next.perfect });
   }
   function start() {
+    onStart?.();
     lastFrame.current = null;
     lastDrop.current = 0;
     sync(startCupGame(reduced.current));

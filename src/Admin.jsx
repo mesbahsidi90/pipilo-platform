@@ -25,9 +25,11 @@ import {
   FileText,
   Megaphone,
   KeyRound,
+  Gauge,
 } from 'lucide-react';
 import Brand from './Brand';
 import AdminOrderActivity from './AdminOrderActivity';
+import AdminShopInsights from './AdminShopInsights';
 import { AdminAnnouncements } from './PlatformAnnouncements';
 import AdminAccess from './AdminAccess';
 import { AlertList, ShopSheet, StatsTab, exportShops } from './AdminInsights';
@@ -56,6 +58,7 @@ const nav = [
   ['requests', bippoT('طلبات وتنبيهات'), Bell],
   ['shops', bippoT('المحلات والأنشطة'), Store],
   ['orders', bippoT('نشاط الطلبات'), ClipboardList],
+  ['insights', bippoT('أداء الأنشطة'), Gauge],
   ['subscriptions', bippoT('الاشتراكات'), CreditCard],
   ['plans', bippoT('الخطط والأسعار'), Layers],
   ['team', bippoT('حسابات المحلات'), Users],
@@ -380,6 +383,9 @@ function AdminPanel({ session }) {
     overview: bippoT('كل واش صاري في المنصة، في بلاصة وحدة.'),
     shops: bippoT('زيد محل جديد، نظّم معلوماتو، وتحكّم في حالتو.'),
     orders: bippoT('تابع الطلبات اليومية وتواصل مع أصحاب المحلات عند توقف النشاط.'),
+    insights: bippoT(
+      'كيفاش كل محل يستعمل Bipilo: الطلبات، وقت التحضير، التليفونات، التقييمات والألعاب.',
+    ),
     subscriptions: bippoT('تابع الاشتراكات وبدّل الخطط وفترات الصلاحية.'),
     plans: bippoT('الخطط والأسعار'),
     team: bippoT('حسابات المحلات'),
@@ -456,7 +462,11 @@ function AdminPanel({ session }) {
             <button
               className="button outline small"
               aria-label={bippoT('تحديث بيانات الإدارة')}
-              onClick={tab === 'orders' ? () => setOrdersRefresh((value) => value + 1) : refresh}
+              onClick={
+                ['orders', 'insights'].includes(tab)
+                  ? () => setOrdersRefresh((value) => value + 1)
+                  : refresh
+              }
               disabled={loading || busy}
             >
               <RefreshCw size={15} />
@@ -475,6 +485,7 @@ function AdminPanel({ session }) {
           </div>
         </header>
         {tab === 'orders' && <AdminOrderActivity refreshKey={ordersRefresh} />}
+        {tab === 'insights' && <AdminShopInsights refreshKey={ordersRefresh} />}
         {!cloud && (
           <div className="admin-demo">
             <span className="dot" />

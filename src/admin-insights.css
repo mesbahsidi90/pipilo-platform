@@ -1,0 +1,179 @@
+/* «أداء الأنشطة» in the admin page. */
+.admin-insights {
+  display: grid;
+  gap: 18px;
+}
+.insight-tools {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 12px;
+}
+.insight-tools .button {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+.insight-periods {
+  display: inline-flex;
+  padding: 3px;
+  border-radius: 11px;
+  background: #eef3ee;
+}
+.insight-periods button {
+  border: 0;
+  background: transparent;
+  padding: 7px 13px;
+  border-radius: 8px;
+  font: inherit;
+  font-size: 12px;
+  color: #56685d;
+  cursor: pointer;
+}
+.insight-periods button.active {
+  background: #fff;
+  color: #183e34;
+  font-weight: 600;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+}
+.insight-figures {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(104px, 1fr));
+  gap: 10px;
+}
+.insight-figures > div {
+  display: grid;
+  gap: 3px;
+  padding: 12px 14px;
+  border-radius: 14px;
+  background: #f6f9f5;
+}
+.insight-figures small,
+.insight-figures span {
+  font-size: 11px;
+  color: #66776c;
+}
+.insight-figures b {
+  font-size: 22px;
+  font-weight: 650;
+  color: #183e34;
+}
+.insight-funnel {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(190px, 1fr));
+  gap: 10px 22px;
+  margin-top: 16px;
+}
+.insight-step > div {
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+  font-size: 12px;
+  color: #4d5f54;
+}
+.insight-step b {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 6px;
+  font-weight: 600;
+  color: #183e34;
+}
+.insight-step b small {
+  font-weight: 400;
+  color: #66776c;
+}
+.insight-step i {
+  display: block;
+  height: 6px;
+  margin-top: 6px;
+  border-radius: 6px;
+  background:
+    linear-gradient(#5f9b7d, #5f9b7d) 0 0 / var(--w, 0%) 100% no-repeat,
+    #edf2ec;
+}
+[dir='rtl'] .insight-step i {
+  background-position:
+    100% 0,
+    0 0;
+}
+.insight-trial {
+  margin: 16px 0 0;
+  padding: 10px 12px;
+  border-radius: 11px;
+  background: #f4f6fb;
+  color: #4f5f80;
+  font-size: 12px;
+  line-height: 1.8;
+}
+.insight-shops {
+  display: grid;
+  gap: 14px;
+}
+.insight-shop {
+  display: grid;
+  gap: 14px;
+  padding: 18px;
+  border-radius: 20px;
+  border: 1px solid var(--bippo-border);
+  background: #fff;
+}
+.insight-shop > header {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 8px;
+}
+.insight-shop h3 {
+  margin: 0 0 3px;
+  font-size: 17px;
+  font-weight: 650;
+}
+.insight-shop header small {
+  font-size: 11px;
+  color: #66776c;
+}
+.insight-shop .insight-funnel {
+  margin-top: 0;
+}
+.insight-shop footer {
+  display: grid;
+  gap: 10px;
+}
+.insight-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+.insight-chips span {
+  padding: 4px 10px;
+  border-radius: 20px;
+  background: #f1f4f1;
+  font-size: 11px;
+  color: #56685d;
+}
+.insight-chips b {
+  color: #183e34;
+}
+.insight-hints {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 5px;
+}
+.insight-hints li {
+  display: flex;
+  align-items: flex-start;
+  gap: 6px;
+  padding: 7px 10px;
+  border-radius: 10px;
+  background: #fff6e6;
+  color: #7a5a1e;
+  font-size: 12px;
+  line-height: 1.6;
+}
+.insight-hints svg {
+  flex: none;
+  margin-top: 3px;
+}

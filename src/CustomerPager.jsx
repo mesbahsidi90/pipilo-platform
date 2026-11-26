@@ -22,6 +22,7 @@ export default function CustomerPager({
   extra,
   loyalty = null,
   room = null,
+  onGame,
 }) {
   const lang = previewLanguage || language;
   const bippoT = (text) => translate(text, lang);
@@ -155,7 +156,7 @@ export default function CustomerPager({
           </div>
         ) : (
           <Suspense fallback={null}>
-            <WaitingGame key={number} kind={branding?.kind} />
+            <WaitingGame key={number} kind={branding?.kind} onStart={onGame} />
           </Suspense>
         ))}
       {!calling && number && (branding?.banner_text || branding?.banner_image) && (

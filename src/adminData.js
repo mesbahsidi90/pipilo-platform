@@ -367,3 +367,62 @@ export async function findAccount(contact) {
   if (!cloud) return null;
   return check(await db.rpc('admin_find_user', { contact: value }));
 }
+
+// «أداء الأنشطة»: per-shop numbers over the last `days` days.
+export async function loadShopInsights(days = 30) {
+  if (cloud) return check(await db.rpc('admin_shop_insights', { days }));
+  // Demo: the first example shop gets this browser's demo orders.
+  const { listOrders } = await import('./store');
+  const since = Date.now() - days * 86400000;
+  const orders = (await listOrders()).filter((o) => Date.parse(o.created_at) >= since);
+  const minutes = (a, b) => (Date.parse(b) - Date.parse(a)) / 60000;
+  const prep = orders
+    .filter((o) => o.ready_at && minutes(o.created_at, o.ready_at) > 0)
+    .map((o) => minutes(o.created_at, o.ready_at))
+    .sort((a, b) => a - b);
+  const round = (value) => (value === null ? null : Math.round(value * 10) / 10);
+  const hours = {};
+  orders.forEach((o) => {
+    const hour = new Date(o.created_at).getHours();
+    hours[hour] = (hours[hour] || 0) + 1;
+  });
+  const count = (test) => orders.filter(test).length;
+  const days_ = new Set(orders.map((o) => o.created_at.slice(0, 10)));
+  const shops = read().shops.map((shop, index) => ({
+    ...shop,
+    branches: 0,
+    plan_name: null,
+    orders: index ? 0 : orders.length,
+    today: index
+      ? 0
+      : count((o) => o.created_at.slice(0, 10) === new Date().toISOString().slice(0, 10)),
+    active_days: index ? 0 : days_.size,
+    cancelled: index ? 0 : count((o) => o.status === 'cancelled'),
+    last_order_at: index
+      ? null
+      : orders
+          .map((o) => o.created_at)
+          .sort()
+          .pop() || null,
+    prep_avg: index || !prep.length ? null : round(prep.reduce((a, b) => a + b, 0) / prep.length),
+    prep_median: index || !prep.length ? null : round(prep[Math.floor(prep.length / 2)]),
+    pickup_avg: null,
+    peak_hour: index
+      ? null
+      : Number(Object.entries(hours).sort((a, b) => b[1] - a[1])[0]?.[0] ?? NaN) || null,
+    from_invoice: index ? 0 : count((o) => o.invoice_request_key),
+    recalled: index ? 0 : count((o) => o.recalled_at),
+    followed: 0,
+    alerts_on: 0,
+    rang: 0,
+    delivered: 0,
+    saw_ready: 0,
+    coming: 0,
+    played: 0,
+    ratings: 0,
+    rating_avg: null,
+    comments: 0,
+    loyalty_stamps: 0,
+  }));
+  return { days, since: new Date(since).toISOString(), shops, trial: null };
+}

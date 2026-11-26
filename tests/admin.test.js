@@ -68,3 +68,41 @@ test('CSV export escapes and blocks formulas', async () => {
   ]);
   assert.equal(csv, '﻿name,note\r\n"مقهى, ""الرواق""","\'=HYPERLINK(""x"")"');
 });
+
+test('«أداء الأنشطة» sums the funnel and points at what to improve', async () => {
+  const { insightTotals, insightHints, share } = await import('../src/adminDomain.js');
+  const now = Date.parse('2026-11-26T12:00:00Z');
+  const busy = {
+    orders: 40,
+    followed: 8,
+    alerts_on: 2,
+    rang: 6,
+    delivered: 2,
+    cancelled: 8,
+    ratings: 0,
+    prep_median: 30,
+    last_order_at: '2026-11-26T10:00:00Z',
+  };
+  assert.deepEqual(insightHints(busy, now), [
+    'few_follow',
+    'few_alerts',
+    'weak_delivery',
+    'many_cancelled',
+    'no_ratings',
+    'slow',
+  ]);
+  assert.deepEqual(insightHints({ orders: 3, last_order_at: '2026-11-10T10:00:00Z' }, now), [
+    'stopped',
+  ]);
+  assert.deepEqual(insightHints({ orders: 0 }, now), ['no_orders']);
+  const totals = insightTotals([
+    { orders: 10, ratings: 2, rating_avg: 5, played: 1 },
+    { orders: 5, ratings: 2, rating_avg: 4 },
+    { orders: 0 },
+  ]);
+  assert.equal(totals.orders, 15);
+  assert.equal(totals.rating_avg, 4.5);
+  assert.equal(totals.active, 2);
+  assert.equal(share(1, 3), 33);
+  assert.equal(share(1, 0), null);
+});

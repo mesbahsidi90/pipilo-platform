@@ -24,6 +24,7 @@ export async function signalGuest(ticket, event) {
       push_enabled: 'push_enabled_at',
       ready_seen: 'ready_seen_at',
       coming: 'coming_at',
+      game: 'game_played_at',
     };
     if (!map[event]) return false;
     const all = read(),

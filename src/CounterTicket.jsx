@@ -4,7 +4,8 @@ import { createPortal } from 'react-dom';
 import { QRCodeSVG } from 'qrcode.react';
 import Brand from './Brand';
 import { clinicRoute } from './ClinicQueue';
-import { t, ticketLink } from './i18n.js';
+import { language, t, ticketLink, translate } from './i18n.js';
+import { BellRing } from 'lucide-react';
 import {
   claimCounterTicket,
   counterRoute,
@@ -33,21 +34,41 @@ export function CounterPoster({ shop, clinic = false, enabled = true }) {
     anchor.click();
     setTimeout(() => URL.revokeObjectURL(fileUrl), 1000);
   }
+  // A6 card for the counter, in the shop's own colour.
+  const ink =
+    (shop.display_style?.theme === 'custom' && shop.display_style.palette?.latest) || '#0c3e38';
+  const other = language === 'fr' ? 'ar' : 'fr';
+  const title = 'سكاني الـ QR';
+  const promise = clinic ? 'وكي يجي دورك، نبيبيولك!' : 'وكي توجد لاكوموند، نبيبيولك!';
   const poster = (
-    <article className="counter-poster">
-      <h3>{shop.name}</h3>
-      <p>{t(clinic ? 'امسح الكود وخذ رقم دورك.' : 'امسح الرمز وتابع طلبك')}</p>
-      <QRCodeSVG value={url} size={200} marginSize={4} />
-      <p>
-        {t(
-          clinic
-            ? 'فعّل التنبيه باش تعرف كي يجي دورك.'
-            : invoice
-              ? 'دخل رقم الطلب اللي في الفاتورة وفعّل التنبيه.'
-              : 'امسح بعد ما يسجّل الكاشير طلبك، وفعّل التنبيه.',
+    <article className="counter-poster" style={{ '--poster-ink': ink }}>
+      <header className="counter-poster-top">
+        {shop.logo ? (
+          <img src={shop.logo} alt="" />
+        ) : (
+          <span aria-hidden="true">{Array.from(shop.name || 'B')[0].toUpperCase()}</span>
         )}
+        <h3 dir="auto">{shop.name}</h3>
+      </header>
+      <div className="counter-poster-title">
+        <h4>{t(title)}</h4>
+      </div>
+      <div className="counter-poster-qr">
+        <QRCodeSVG value={url} size={220} marginSize={1} fgColor="#111" />
+      </div>
+      <p className="counter-poster-promise">
+        <BellRing size={24} aria-hidden="true" />
+        {t(promise)}
       </p>
-      <Brand linked={false} />
+      <p className="counter-poster-other" dir={other === 'fr' ? 'ltr' : 'rtl'}>
+        {translate(title, other)} · {translate(promise, other)}
+      </p>
+      <footer className="counter-poster-foot">
+        <span>{t('بلا تطبيق · بلا تسجيل')}</span>
+        <span dir="ltr">
+          by <b>Bipilo</b>
+        </span>
+      </footer>
     </article>
   );
   return (

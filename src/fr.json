@@ -2001,5 +2001,17 @@
   "زبائن يستنّاو في تليفوناتهم": "Clients qui attendent sur leur téléphone",
   "كي يوجد الطلب، اضغط على الرقم: يبان في الشاشة ويصوني تليفون الزبون.": "Quand la commande est prête, touchez le numéro : il s’affiche à l’écran et le téléphone du client sonne.",
   "نادي {0}": "Appeler {0}",
-  "كي يمسح الزبون الكود ويكتب رقم فاتورتو، يبان رقمو هنا.": "Quand un client scanne le code et saisit son numéro de ticket, il apparaît ici."
+  "كي يمسح الزبون الكود ويكتب رقم فاتورتو، يبان رقمو هنا.": "Quand un client scanne le code et saisit son numéro de ticket, il apparaît ici.",
+  "خذ رقم دورك من تليفونك": "Prenez votre tour depuis votre téléphone",
+  "تابع طلبك من تليفونك": "Suivez votre commande sur votre téléphone",
+  "امسح الكود بكاميرا تليفونك": "Scannez le code avec l’appareil photo",
+  "خذ رقم دورك": "Prenez votre numéro de passage",
+  "فعّل التنبيه وتليفونك يصوني كي يجي دورك": "Activez l’alerte : votre téléphone sonne à votre tour",
+  "دخّل رقم الطلب اللي في الفاتورة": "Saisissez le numéro de commande du ticket",
+  "امسح بعد ما يسجّل الكاشير طلبك": "Scannez après l’enregistrement de votre commande",
+  "فعّل التنبيه وتليفونك يصوني كي يوجد": "Activez l’alerte : votre téléphone sonne quand c’est prêt",
+  "بلا تطبيق · بلا تسجيل": "Sans application · sans inscription",
+  "سكاني الـ QR": "Scannez le QR",
+  "وكي توجد لاكوموند، نبيبيولك!": "On vous bipe dès que c’est prêt !",
+  "وكي يجي دورك، نبيبيولك!": "On vous bipe à votre tour !"
 }

@@ -1,5 +1,5 @@
 import { PlanCards } from './PlanCards';
-import { t as bippoT } from './i18n.js';
+import { t as bippoT, language, switchLanguage } from './i18n.js';
 import PublicFooter from './PublicFooter';
 import Brand from './Brand';
 import React, { useState, useEffect, useRef } from 'react';
@@ -24,6 +24,7 @@ import LiveDemo from './LiveDemo';
 import ActivityFeatures from './ActivityFeatures';
 import { CallboardHero, Moments } from './Callboard';
 import './landing-scan.css';
+import './landing-nav.css';
 export { default as Brand } from './Brand';
 const jump = (id) => (e) => {
   e.preventDefault();
@@ -278,8 +279,8 @@ export default function Landing() {
   }, []);
   return (
     <div className="marketing">
-      <header className="site-header">
-        <div className="nav wrap">
+      <header className="site-header pill-header">
+        <div className="nav pill-nav">
           <Brand />
           <nav aria-label={bippoT('روابط الصفحة')}>
             <a href="#how" onClick={jump('how')}>
@@ -291,20 +292,24 @@ export default function Landing() {
             <a href="#activities" onClick={jump('activities')}>
               {bippoT('حسب نشاطك')}
             </a>
-            <a href="#try" onClick={jump('try')}>
-              {bippoT('جرّبها')}
-            </a>
             <a href="#plans" onClick={jump('plans')}>
-              {bippoT('الباقات')}
-            </a>
-            <a href="#faq" onClick={jump('faq')}>
-              {bippoT('الأسئلة الشائعة')}
+              {bippoT('الأسعار')}
             </a>
           </nav>
           <div className="nav-end">
-            <a href="/login">{bippoT('دخول')}</a>
-            <a className="button small" href="/signup">
-              {bippoT('إنشاء حساب')}
+            <button
+              type="button"
+              className="pill-lang"
+              lang={language === 'ar' ? 'fr' : 'ar'}
+              onClick={() => switchLanguage(language === 'ar' ? 'fr' : 'ar')}
+            >
+              {language === 'ar' ? 'Français' : 'العربية'}
+            </button>
+            <a className="pill-login" href="/login">
+              {bippoT('دخول')}
+            </a>
+            <a className="button small pill-cta" href="/signup">
+              {bippoT('ابدا مجانًا')}
             </a>
           </div>
         </div>

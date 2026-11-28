@@ -21,6 +21,7 @@ export default function FollowTicket() {
               if (
                 ![
                   location.origin,
+                  'https://bipilo.app',
                   'https://bippo-platform.pages.dev',
                   'https://bipilo-platform.pages.dev',
                 ].includes(url.origin)
@@ -58,7 +59,7 @@ export default function FollowTicket() {
             value={value}
             onChange={(e) => setValue(e.target.value)}
             dir="ltr"
-            placeholder="https://bipilo-platform.pages.dev/#track/…"
+            placeholder="https://bipilo.app/#track/…"
           />
         </label>
         <button className="button">{bippoT('افتح الطلب')}</button>
@@ -68,6 +69,14 @@ export default function FollowTicket() {
           </p>
         )}
       </form>
+      {/* Shop owners and staff who installed the app land here when signed out. */}
+      <section className="panel login follow-owner">
+        <h2>{bippoT('صاحب محل ولا عامل؟')}</h2>
+        <p>{bippoT('ادخل لحسابك، ومن بعد التطبيق يتحل مباشرة على لوحة التحكم.')}</p>
+        <a className="button outline" href="/login?next=%2Fdashboard">
+          {bippoT('ادخل للوحة التحكم')}
+        </a>
+      </section>
     </>
   );
 }

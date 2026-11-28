@@ -77,12 +77,7 @@ function ScanPhone() {
         <Brand linked={false} />
         <span>{bippoT('امسح بكاميرا تليفونك')}</span>
         <div className="scan-target">
-          <QRCodeSVG
-            value="https://bipilo-platform.pages.dev/#try"
-            size={112}
-            level="M"
-            marginSize={4}
-          />
+          <QRCodeSVG value="https://bipilo.app/#try" size={112} level="M" marginSize={4} />
           <div className="scan-corners">
             <i />
             <i />

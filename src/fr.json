@@ -2118,5 +2118,8 @@
   "+ عام": "+ 1 an",
   "السعر في العام": "Prix par an",
   "السعر في الشهر": "Prix par mois",
-  "{0} تيكي في الشهر": "{0} tickets par mois"
+  "{0} تيكي في الشهر": "{0} tickets par mois",
+  "صاحب محل ولا عامل؟": "Commerçant ou employé ?",
+  "ادخل لحسابك، ومن بعد التطبيق يتحل مباشرة على لوحة التحكم.": "Connectez-vous : l’application s’ouvrira ensuite directement sur le tableau de bord.",
+  "ادخل للوحة التحكم": "Accéder au tableau de bord"
 }

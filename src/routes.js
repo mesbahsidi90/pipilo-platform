@@ -18,3 +18,25 @@ export function dashboardDestination(search) {
     ? next
     : '/dashboard';
 }
+
+// Where the installed app (home-screen icon) opens: the dashboard for a
+// signed-in shop, else the customer's last order, else the follow page.
+export function standaloneStart({ signedIn, ticket, ticketRoute }) {
+  if (signedIn) return ['dashboard', ''];
+  if (ticket) return [ticketRoute === 'demo' ? 'demo' : 'track', ticket];
+  return ['follow', ''];
+}
+
+// A Supabase sign-in is stored under sb-<project>-auth-token.
+export function hasStoredSession(...stores) {
+  for (const store of stores) {
+    try {
+      for (let i = 0; i < store.length; i++)
+        if (/^sb-.+-auth-token$/.test(store.key(i) || '') && store.getItem(store.key(i)))
+          return true;
+    } catch {
+      // Storage blocked: treat as signed out.
+    }
+  }
+  return false;
+}

@@ -76,7 +76,7 @@ import { signalGuest, guestExtras } from './guestApi';
 import { reviewUrl } from './guestExperience';
 import './guest-experience.css';
 import { printWithTitle, usePanelTitle, useRouteTitle } from './pageTitle';
-import { readRoute, dashboardDestination } from './routes';
+import { readRoute, dashboardDestination, hasStoredSession, standaloneStart } from './routes';
 import LoyaltyCard from './LoyaltyCard';
 import MenuView from './MenuView';
 import { ticketMenu } from './menu';
@@ -91,15 +91,14 @@ if (
   !location.hash &&
   (window.matchMedia('(display-mode: standalone)').matches || navigator.standalone)
 ) {
-  const ticket = localStorage.getItem('bippo-last-ticket');
-  if (ticket)
-    route.splice(
-      0,
-      2,
-      localStorage.getItem('bippo-last-ticket-route') === 'demo' ? 'demo' : 'track',
-      ticket,
-    );
-  else route.splice(0, 2, 'follow', '');
+  const start = standaloneStart({
+    signedIn: hasStoredSession(localStorage, sessionStorage),
+    ticket: localStorage.getItem('bippo-last-ticket'),
+    ticketRoute: localStorage.getItem('bippo-last-ticket-route'),
+  });
+  route.splice(0, 2, ...start);
+  // Keep the address in step so a reload stays on the dashboard.
+  if (start[0] === 'dashboard') history.replaceState(null, '', '/dashboard');
 }
 const link = (path) => ticketLink(path);
 const homeTitle =
@@ -629,6 +628,15 @@ function Customer({ token }) {
       localStorage.setItem('bippo-last-ticket-route', 'track');
     }
   }, [token]);
+  // The saved order is finished or gone: forget it, and in the installed app
+  // open the follow page instead of an error.
+  useEffect(() => {
+    if (o || !last || error || localStorage.getItem('bippo-last-ticket') !== token) return;
+    localStorage.removeItem('bippo-last-ticket');
+    localStorage.removeItem('bippo-last-ticket-route');
+    if (window.matchMedia('(display-mode: standalone)').matches || navigator.standalone)
+      location.replace('/#follow');
+  }, [o, last, error, token]);
   // «بيبيلو مرة تانية»: the shop rings again, so the page calls again.
   const [again, setAgain] = useState(false);
   const ringAgain = () => {

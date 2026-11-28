@@ -1,14 +1,32 @@
 import fr from './fr.json' with { type: 'json' };
 export const normalizeText = (text) => String(text).replace(/\s+/g, ' ').trim();
-export function resolveLanguage(search = '', saved = 'ar') {
+// Language order: a ?lang= in the link, then the visitor's own choice (the
+// language button), then the browser's language; Arabic otherwise.
+export function resolveLanguage(search = '', chosen = '', browser = []) {
   const requested = new URLSearchParams(search).get('lang');
-  return requested === 'fr' || requested === 'ar' ? requested : saved === 'fr' ? 'fr' : 'ar';
+  if (requested === 'fr' || requested === 'ar') return requested;
+  if (chosen === 'fr' || chosen === 'ar') return chosen;
+  for (const tag of browser || []) {
+    const base = String(tag).toLowerCase().split('-')[0];
+    if (base === 'fr' || base === 'ar') return base;
+  }
+  return 'ar';
 }
-let saved = 'ar';
+// Set only when the visitor picks a language with the button.
+const chosenKey = 'bipilo-language-chosen';
+let chosen = '';
 try {
-  saved = globalThis.localStorage?.getItem('bippo-language') || 'ar';
+  chosen = globalThis.localStorage?.getItem(chosenKey) || '';
 } catch {}
-export const language = resolveLanguage(globalThis.location?.search || '', saved);
+const browserLanguages =
+  globalThis.navigator?.languages?.length > 0
+    ? globalThis.navigator.languages
+    : [globalThis.navigator?.language].filter(Boolean);
+export const language = resolveLanguage(
+  globalThis.location?.search || '',
+  chosen,
+  browserLanguages,
+);
 export const locale = language === 'fr' ? 'fr-DZ' : 'ar-DZ';
 export const direction = language === 'fr' ? 'ltr' : 'rtl';
 export function translate(text, lang = language, values = []) {
@@ -33,6 +51,7 @@ export function switchLanguage(next) {
   if (!['ar', 'fr'].includes(next) || next === language) return;
   try {
     localStorage.setItem('bippo-language', next);
+    localStorage.setItem(chosenKey, next);
   } catch {}
   const url = new URL(location.href);
   url.searchParams.set('lang', next);

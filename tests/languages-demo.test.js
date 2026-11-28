@@ -9,6 +9,15 @@ test('language choice persists with an explicit supported URL choice taking prio
   assert.equal(resolveLanguage('?lang=de', 'fr'), 'fr');
   assert.equal(resolveLanguage('', 'xx'), 'ar');
 });
+test('a first visit follows the browser language; a chosen language wins after', () => {
+  assert.equal(resolveLanguage('', '', ['fr-FR', 'en']), 'fr');
+  assert.equal(resolveLanguage('', '', ['ar-DZ']), 'ar');
+  assert.equal(resolveLanguage('', '', ['en-US', 'fr']), 'fr');
+  assert.equal(resolveLanguage('', '', ['en-US']), 'ar');
+  assert.equal(resolveLanguage('', '', []), 'ar');
+  assert.equal(resolveLanguage('', 'ar', ['fr-FR']), 'ar');
+  assert.equal(resolveLanguage('?lang=ar', 'fr', ['fr-FR']), 'ar');
+});
 test('French translations preserve whitespace and interpolate values without translating user content', () => {
   assert.equal(translate(' جاهز ', 'fr'), ' Prête ');
   assert.equal(translate('الطلب {0} راه واجد.', 'fr', ['0057']), 'La commande 0057 est prête.');

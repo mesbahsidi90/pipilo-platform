@@ -106,7 +106,8 @@ export default function QuickCall({
               ref={input}
               value={value}
               onChange={(event) => setValue(cleanCallNumber(event.target.value))}
-              inputMode="numeric"
+              // The page keypad types the number; the phone keyboard stays closed.
+              inputMode="none"
               autoComplete="off"
               enterKeyHint="send"
               maxLength={8}

@@ -2,7 +2,8 @@ import React, { useEffect, useRef, useState } from 'react';
 import { Check, Delete, ExternalLink, Megaphone, Monitor, Repeat, Smartphone } from 'lucide-react';
 import { t } from './i18n.js';
 import DotNumber from './DotNumber';
-import { cleanCallNumber } from './quickCallRules';
+import { cleanCallNumber, screenLink as linkState } from './quickCallRules';
+import { screenStatus } from './store';
 import { useWaitingToken, waitingDisplayLink } from './MerchantCodes';
 import './quick-call.css';
 
@@ -22,6 +23,21 @@ export default function QuickCall({
 }) {
   const [value, setValue] = useState('');
   const { token, code } = useWaitingToken();
+  // Is the waiting screen on? Checked every 30 seconds.
+  const [screen, setScreen] = useState({ state: 'unknown' });
+  useEffect(() => {
+    let live = true;
+    const check = () =>
+      screenStatus()
+        .then((status) => live && setScreen(linkState(status)))
+        .catch(() => live && setScreen({ state: 'unknown' }));
+    check();
+    const timer = setInterval(check, 30000);
+    return () => {
+      live = false;
+      clearInterval(timer);
+    };
+  }, []);
   const screenLink = token ? waitingDisplayLink(token, venue, venue, false, true, code) : null;
   const input = useRef(null);
   useEffect(() => {
@@ -49,6 +65,16 @@ export default function QuickCall({
             {t('اكتب رقم الفاتورة واضغط «نادي». يبان كبير في الشاشة ويتقال بالصوت.')}
           </p>
         </div>
+        {screen.state !== 'unknown' && (
+          <span className={'quick-call-screen ' + screen.state} role="status">
+            <i aria-hidden="true" />
+            {screen.state === 'on'
+              ? t('الشاشة متصلة')
+              : screen.state === 'never'
+                ? t('الشاشة مازال ما تشعلت')
+                : t('الشاشة ما راهيش متصلة منذ {0} د', [screen.minutes])}
+          </span>
+        )}
         {screenLink && (
           <a className="button outline small" href={screenLink} target="_blank" rel="noreferrer">
             <Monitor size={16} />

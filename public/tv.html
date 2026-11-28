@@ -78,8 +78,9 @@
   @-webkit-keyframes pulse-soft { 0%, 100% { -webkit-transform: scale(1); } 50% { -webkit-transform: scale(1.04); } }
   @keyframes pulse-soft { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.04); } }
   @media (prefers-reduced-motion: reduce) { #latestNum .num, #recent li .num { -webkit-animation: none; animation: none; } }
-  #notice { position: absolute; bottom: 2vh; left: 2vw; right: 2vw; margin: 0; padding: 1.6vh; text-align: center;
-    background: #5a2a1f; color: #ffd7cc; border-radius: 1.4vh; font-size: 2.4vh; }
+  #notice { position: absolute; bottom: 2vh; left: 2vw; right: 2vw; margin: 0; padding: 2vh; text-align: center;
+    background: #c62828; color: #ffffff; border-radius: 1.6vh; font-size: 3.6vh; font-weight: 700;
+    border: 0.4vh solid #ffcdd2; }
   #unlock { position: absolute; top: 50%; left: 50%; width: 70vw; margin-left: -35vw; margin-top: -10vh;
     min-height: 20vh; padding: 3vh; border: 0.6vh solid #7ee2a8; border-radius: 3vh; background: #0c3e38;
     color: #ffffff; font-family: inherit; font-size: 4.2vh; font-weight: 700; cursor: pointer; }
@@ -147,13 +148,13 @@
   var french = q.lang === 'fr';
   var WORDS = { fr: {
     sub: 'Écran d’appel', label: 'Votre commande est prête', latest: 'Dernière commande prête',
-    empty: 'Aucun appel pour l’instant.', connecting: 'Connexion…', notice: 'Écran hors ligne. Reconnexion…',
+    empty: 'Aucun appel pour l’instant.', connecting: 'Connexion…', notice: 'Écran hors ligne. Reconnexion…', lastUpdate: 'Dernière mise à jour',
     unlock: 'Appuyez ici (OK) pour activer le son', soundOn: 'Son activé', soundOff: 'Activer le son',
     full: 'Plein écran', exitFull: 'Quitter', repeat: 'Deux fois', missing: 'Lien de l’écran incomplet.',
     badCode: 'Code d’écran inconnu. Vérifiez-le dans Bipilo : Succursales et codes.'
   }, ar: {
     sub: 'شاشة النداء', label: 'تفضّل استلم طلبك', latest: 'آخر طلب واجد',
-    empty: 'ما كاش نداء دروك.', connecting: 'جارٍ الاتصال…', notice: 'تعذر تحديث الشاشة. نعيد الاتصال…',
+    empty: 'ما كاش نداء دروك.', connecting: 'جارٍ الاتصال…', notice: 'ما كاش اتصال بالإنترنت. نعيدو الاتصال…', lastUpdate: 'آخر تحديث',
     unlock: 'اضغط هنا (OK) باش تشغّل الصوت', soundOn: 'الصوت شاعل', soundOff: 'شغّل الصوت',
     full: 'ملء الشاشة', exitFull: 'خروج', repeat: 'مرتين', missing: 'رابط الشاشة ناقص.',
     badCode: 'كود الشاشة غالط. شوفو في Bipilo: الفروع والأكواد.'
@@ -583,13 +584,34 @@
       if (list[i].status === 'ready') set[list[i].number] = Date.parse(list[i].ready_at || '') || 1;
     return set;
   }
+  // Offline banner, with the time of the last good update.
+  var lastOk = 0, lastBeat = 0;
+  function showNotice(on) {
+    if (!on) { $('notice').hidden = true; return; }
+    var text = words.notice;
+    if (lastOk) {
+      var d = new Date(lastOk);
+      text += ' · ' + words.lastUpdate + ' ' + pad(d.getHours()) + ':' + pad(d.getMinutes());
+    }
+    $('notice').firstChild.nodeValue = text;
+    $('notice').hidden = false;
+  }
+  // «الشاشة متصلة» in «نداء سريع»: tell the server we are on, about once a minute.
+  function heartbeat() {
+    var now = new Date().getTime();
+    if (!token || now - lastBeat < 55000) return;
+    lastBeat = now;
+    rpc('display_heartbeat', { ticket: token }, function () {});
+  }
   function poll() {
     if (!token) return;
     rpc('display_orders', { ticket: token }, function (err, data) {
       if (err || !(data instanceof Array)) {
-        $('notice').hidden = false;
+        showNotice(true);
       } else {
-        $('notice').hidden = true;
+        showNotice(false);
+        lastOk = new Date().getTime();
+        heartbeat();
         orders = data;
         var current = readyNumbers(data), called = [], now = new Date().getTime();
         if (previous)
@@ -620,7 +642,7 @@
   // screen token, checked again every 10 minutes in case the link was changed.
   function resolve(first) {
     rpc('display_code_token', { code: code }, function (err, data) {
-      if (err) { if (first) $('notice').hidden = false; return setTimeout(function () { resolve(first); }, POLL_MS); }
+      if (err) { if (first) showNotice(true); return setTimeout(function () { resolve(first); }, POLL_MS); }
       if (typeof data !== 'string' || !data) {
         token = '';
         orders = null; lastDrawn = '';

@@ -63,3 +63,15 @@ test('numbers registered from the QR wait in «نداء سريع», first come f
     ['9', '12'],
   );
 });
+
+test('«الشاشة متصلة» when the screen reported in the last 2.5 minutes', async () => {
+  const { screenLink } = await import('../src/quickCallRules.js');
+  const now = '2026-11-28T12:00:00Z';
+  assert.deepEqual(screenLink(null), { state: 'unknown' });
+  assert.deepEqual(screenLink({ seen_at: null, now }), { state: 'never' });
+  assert.deepEqual(screenLink({ seen_at: '2026-11-28T11:59:10Z', now }), { state: 'on' });
+  assert.deepEqual(screenLink({ seen_at: '2026-11-28T11:54:00Z', now }), {
+    state: 'off',
+    minutes: 6,
+  });
+});

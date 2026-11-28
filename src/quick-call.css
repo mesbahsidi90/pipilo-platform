@@ -258,3 +258,43 @@
     animation: none;
   }
 }
+
+/* «الشاشة متصلة»: is the waiting screen on? */
+.quick-call-screen {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 7px 14px;
+  border-radius: 999px;
+  font-size: 14px;
+  font-weight: 700;
+  background: #f1f3f1;
+  color: #56685d;
+}
+.quick-call-screen i {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: currentColor;
+}
+.quick-call-screen.on {
+  background: #e3f6ea;
+  color: #18794e;
+}
+.quick-call-screen.off {
+  background: #fde8e8;
+  color: #c62828;
+}
+.quick-call-screen.on i {
+  animation: quick-call-live 2s ease-in-out infinite;
+}
+@keyframes quick-call-live {
+  50% {
+    opacity: 0.35;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .quick-call-screen.on i {
+    animation: none;
+  }
+}

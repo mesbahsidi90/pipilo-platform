@@ -38,3 +38,13 @@ export function waitingOrders(rows, limit = 24) {
     .sort((a, b) => (Date.parse(a.created_at || '') || 0) - (Date.parse(b.created_at || '') || 0))
     .slice(0, limit);
 }
+
+// «الشاشة متصلة»: the screen counts as connected when it was seen in the last
+// 2.5 minutes (it reports about once a minute). Times from the server clock.
+export function screenLink(status) {
+  if (!status) return { state: 'unknown' };
+  if (!status.seen_at) return { state: 'never' };
+  const ago = Date.parse(status.now) - Date.parse(status.seen_at);
+  if (ago < 150000) return { state: 'on' };
+  return { state: 'off', minutes: Math.max(1, Math.round(ago / 60000)) };
+}

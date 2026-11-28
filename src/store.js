@@ -253,6 +253,22 @@ export async function display(token) {
     ticket: token,
   });
   if (error) throw error;
+  // «الشاشة متصلة» in «نداء سريع»: about once a minute while the screen works.
+  if (Date.now() - lastHeartbeat > 55000) {
+    lastHeartbeat = Date.now();
+    db.rpc('display_heartbeat', { ticket: token }).then(
+      () => {},
+      () => {},
+    );
+  }
+  return data;
+}
+let lastHeartbeat = 0;
+// When this branch's waiting screen was last seen: { seen_at, now } (server clock).
+export async function screenStatus() {
+  if (!cloud) return null;
+  const { data, error } = await db.rpc('waiting_screen_status');
+  if (error) throw error;
   return data;
 }
 // The waiting screen's header and sound: shop name, logo, activity, tone.

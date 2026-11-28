@@ -2124,5 +2124,8 @@
   "ادخل للوحة التحكم": "Accéder au tableau de bord",
   "امسح الكود اللي في الكونتوار بكاميرا تليفونك، وتابع طلبك من هنا.": "Scannez le code au comptoir avec l’appareil photo et suivez votre commande ici.",
   "ما تحتاج لا تطبيق لا حساب.": "Ni application, ni compte.",
-  "عندك رابط طلب؟": "Vous avez un lien de commande ?"
+  "عندك رابط طلب؟": "Vous avez un lien de commande ?",
+  "الشاشة متصلة": "Écran connecté",
+  "الشاشة مازال ما تشعلت": "Écran pas encore allumé",
+  "الشاشة ما راهيش متصلة منذ {0} د": "Écran déconnecté depuis {0} min"
 }

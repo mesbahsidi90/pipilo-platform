@@ -112,7 +112,7 @@ export default function OrderAlerts({
         setView(value);
         if (value.armed) sessionStorage.setItem('bippo-alert-armed-' + ticket, '1');
       },
-      onError: () => setError(bippoT('اضغط «شغّل الرنة» باش يرجع الصوت.')),
+      onError: () => setError(bippoT('ما قدرناش نشغّلو الصوت. خلّي هاد الصفحة مفتوحة.')),
     });
     session.current = current;
     if (
@@ -283,17 +283,12 @@ export default function OrderAlerts({
           {bippoT(' بلغناهم بلي راك جاي')}
         </div>
       ) : isReady ? (
-        <>
-          <button className="pager-action" onClick={() => acknowledge()}>
-            <Check size={22} />
-            {bippoT(' راني جاي 🏃')}
-          </button>
-          {!view.armed && (
-            <button className="pager-retry" onClick={enable}>
-              {bippoT('شغّل الرنة')}
-            </button>
-          )}
-        </>
+        // The customer is looking at «جاهز»: they already know, so no ring
+        // button here, only «راني جاي».
+        <button className="pager-action" onClick={() => acknowledge()}>
+          <Check size={22} />
+          {bippoT(' راني جاي 🏃')}
+        </button>
       ) : view.armed &&
         (push === 'enabled' ||
           push === 'local' ||

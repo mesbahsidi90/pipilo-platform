@@ -192,16 +192,6 @@
 .pager-hint-ios svg {
   flex: 0 0 auto;
 }
-.pager-retry {
-  display: block;
-  margin: 13px auto 0;
-  color: inherit;
-  text-decoration: underline;
-  background: transparent;
-  font: inherit;
-  font-size: 12px;
-  cursor: pointer;
-}
 .pager-alert-error,
 .pager-connection {
   font-size: 11px;
